@@ -87,8 +87,12 @@ export function UpgradeClient({
     fetchWallet();
   }, [user]);
 
+  // Extract wallet channel and other channels
+  const walletChannel = paymentChannels.find((pc: any) => pc.id === '11111111-1111-1111-1111-111111111111' || pc.account_number === 'WALLET');
+  const otherChannels = paymentChannels.filter((pc: any) => pc.id !== '11111111-1111-1111-1111-111111111111' && pc.account_number !== 'WALLET');
+
   // Group payment channels by category
-  const channelCategories = Array.from(new Set(paymentChannels.map(c => c.category || "Transfer Bank")));
+  const channelCategories = Array.from(new Set(otherChannels.map(c => c.category || "Transfer Bank")));
 
   const currentRole = currentLevel.toUpperCase();
 
@@ -257,9 +261,60 @@ export function UpgradeClient({
           <div className="space-y-6 pt-6 border-t border-white/10">
             <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase">METODE PEMBAYARAN</h2>
 
+            {/* Wallet Payment Channel (Khusus Member) */}
+            {walletChannel && (
+              <div className="mb-6 pb-6 border-b border-white/10">
+                {(() => {
+                  const channel = walletChannel;
+                  const isChannelSelected = selectedPaymentId === channel.id;
+                  const isWalletInsufficient = walletBalance === null || walletBalance < Number(activeSelectedPkg.price);
+                  const isDisabled = isWalletInsufficient;
+
+                  return (
+                    <div
+                      key={channel.id}
+                      onClick={() => {
+                        if (isDisabled) return;
+                        setSelectedPaymentId(channel.id);
+                      }}
+                      className={`relative p-4 rounded-2xl border transition-all flex items-center justify-between overflow-hidden ${
+                        isDisabled 
+                          ? "opacity-50 cursor-not-allowed bg-[#121316] border-transparent" 
+                          : isChannelSelected
+                            ? "bg-blue-600/10 border-[#2B95FF] text-white shadow-md shadow-blue-900/20 cursor-pointer"
+                            : "bg-[#121316] border-[#2B95FF]/30 hover:border-[#2B95FF]/60 text-gray-300 cursor-pointer"
+                      }`}
+                    >
+                      {/* Badge Khusus Member */}
+                      <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-blue-400 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-lg z-10 tracking-widest uppercase">
+                        Khusus Member
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden shrink-0 border border-white/5">
+                          {channel.code ? (
+                            <span className="text-xs font-black text-blue-400 uppercase">{channel.code}</span>
+                          ) : (
+                            <Wallet className="w-5 h-5 text-gray-400" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-white">{channel.name}</p>
+                          <p className={`text-[10px] font-bold mt-0.5 ${isWalletInsufficient ? 'text-red-400' : 'text-green-400'}`}>
+                            Saldo: Rp {(walletBalance || 0).toLocaleString('id-ID')}
+                            {isWalletInsufficient && ` (Kurang Rp ${(Number(activeSelectedPkg.price) - (walletBalance || 0)).toLocaleString('id-ID')})`}
+                          </p>
+                        </div>
+                      </div>
+                      {isChannelSelected && !isDisabled && <CheckCircle2 className="w-5 h-5 text-[#2B95FF] shrink-0" />}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             <div className="space-y-6">
               {channelCategories.map((category) => {
-                const categoryChannels = paymentChannels.filter(c => (c.category || "Transfer Bank") === category);
+                const categoryChannels = otherChannels.filter(c => (c.category || "Transfer Bank") === category);
                 if (categoryChannels.length === 0) return null;
 
                 return (
@@ -276,24 +331,14 @@ export function UpgradeClient({
                       {categoryChannels.map((channel) => {
                         const isChannelSelected = selectedPaymentId === channel.id;
                         
-                        // Wallet Logic
-                        const isWallet = channel.id === '11111111-1111-1111-1111-111111111111' || channel.account_number === 'WALLET';
-                        const isWalletInsufficient = isWallet && (walletBalance === null || walletBalance < Number(activeSelectedPkg.price));
-                        const isDisabled = isWalletInsufficient;
-
                         return (
                           <div
                             key={channel.id}
-                            onClick={() => {
-                              if (isDisabled) return;
-                              setSelectedPaymentId(channel.id);
-                            }}
-                            className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${
-                              isDisabled 
-                                ? "opacity-50 cursor-not-allowed bg-[#121316] border-transparent" 
-                                : isChannelSelected
-                                  ? "bg-blue-600/10 border-[#2B95FF] text-white shadow-md shadow-blue-900/20 cursor-pointer"
-                                  : "bg-[#121316] border-white/10 hover:border-white/20 text-gray-300 cursor-pointer"
+                            onClick={() => setSelectedPaymentId(channel.id)}
+                            className={`p-4 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
+                              isChannelSelected
+                                ? "bg-blue-600/10 border-[#2B95FF] text-white shadow-md shadow-blue-900/20"
+                                : "bg-[#121316] border-white/10 hover:border-white/20 text-gray-300"
                             }`}
                           >
                             <div className="flex items-center gap-3">
@@ -306,17 +351,10 @@ export function UpgradeClient({
                               </div>
                               <div>
                                 <p className="font-bold text-sm text-white">{channel.name}</p>
-                                {isWallet ? (
-                                  <p className={`text-[10px] font-bold mt-0.5 ${isWalletInsufficient ? 'text-red-400' : 'text-green-400'}`}>
-                                    Saldo: Rp {(walletBalance || 0).toLocaleString('id-ID')}
-                                    {isWalletInsufficient && ` (Kurang Rp ${(Number(activeSelectedPkg.price) - (walletBalance || 0)).toLocaleString('id-ID')})`}
-                                  </p>
-                                ) : (
-                                  <p className="text-[10px] text-gray-400">Proses Otomatis</p>
-                                )}
+                                <p className="text-[10px] text-gray-400">Proses Otomatis</p>
                               </div>
                             </div>
-                            {isChannelSelected && !isDisabled && <CheckCircle2 className="w-5 h-5 text-[#2B95FF] shrink-0" />}
+                            {isChannelSelected && <CheckCircle2 className="w-5 h-5 text-[#2B95FF] shrink-0" />}
                           </div>
                         );
                       })}

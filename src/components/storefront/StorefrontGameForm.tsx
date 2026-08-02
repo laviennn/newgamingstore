@@ -92,8 +92,12 @@ export function StorefrontGameForm({
     if (totalPrice < 0) totalPrice = 0;
   }
 
-  // Group payment channels by category
-  const groupedPayments = paymentChannels.reduce((acc: any, curr: any) => {
+  // Extract wallet channel and other channels
+  const walletChannel = paymentChannels.find((pc: any) => pc.id === '11111111-1111-1111-1111-111111111111' || pc.account_number === 'WALLET');
+  const otherChannels = paymentChannels.filter((pc: any) => pc.id !== '11111111-1111-1111-1111-111111111111' && pc.account_number !== 'WALLET');
+
+  // Group other payment channels by category
+  const groupedPayments = otherChannels.reduce((acc: any, curr: any) => {
     const cat = curr.category || 'Lainnya';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(curr);
@@ -274,6 +278,56 @@ export function StorefrontGameForm({
         <div className="p-4 space-y-4 bg-[#111111]">
           {/* Info Box */}
 
+          {/* Wallet Payment Channel (Khusus Member) */}
+          {walletChannel && (
+            <div className="mb-4">
+              {(() => {
+                const pc = walletChannel;
+                const isSelected = selectedPayment?.id === pc.id;
+                const isWalletInsufficient = walletBalance === null || walletBalance < totalPrice;
+                const isDisabled = isWalletInsufficient;
+
+                return (
+                  <div
+                    key={pc.id}
+                    onClick={() => {
+                      if (isDisabled) return;
+                      setSelectedPayment(pc);
+                    }}
+                    className={`relative rounded-xl border-2 transition-all overflow-hidden ${isDisabled ? 'opacity-50 cursor-not-allowed border-transparent bg-[#25262b]' : 'cursor-pointer'} ${isSelected && !isDisabled ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(37,99,235,0.15)]' : !isDisabled ? 'border-blue-500/30 bg-[#25262b] hover:border-blue-500/60 hover:bg-[#2a2b30]' : ''}`}
+                  >
+                    {/* Tooltip / Badge */}
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-blue-400 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-lg z-10 tracking-widest uppercase">
+                      Khusus Member
+                    </div>
+                    {/* Primary Row */}
+                    <div className="p-4 flex items-center gap-4">
+                      <div className="w-16 h-10 rounded-md bg-white relative shrink-0 p-1 shadow-sm flex items-center justify-center">
+                        {pc.logo_url ? (
+                          <Image src={pc.logo_url} alt={pc.name} fill sizes="64px" className="object-contain p-1" />
+                        ) : (
+                          <span className="text-xs text-black font-bold">LOGO</span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-sm md:text-base text-white/95">{pc.name}</p>
+                        {selectedProduct && (
+                          <p className="text-sm font-semibold text-blue-400 mt-1">Rp {totalPrice.toLocaleString('id-ID')}</p>
+                        )}
+                        <p className={`text-xs mt-1 font-bold ${isWalletInsufficient ? 'text-red-400' : 'text-green-400'}`}>
+                          Saldo Anda: Rp {(walletBalance || 0).toLocaleString('id-ID')}
+                          {isWalletInsufficient && ` (Kurang Rp ${(totalPrice - (walletBalance || 0)).toLocaleString('id-ID')})`}
+                        </p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-blue-500' : 'border-muted-foreground'}`}>
+                        {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
           {Object.keys(groupedPayments).length > 0 ? (
             <div className="space-y-4">
@@ -317,20 +371,12 @@ export function StorefrontGameForm({
                         <div className="p-3 space-y-3">
                         {items.map((pc: any) => {
                           const isSelected = selectedPayment?.id === pc.id;
-                          
-                          // Wallet Logic
-                          const isWallet = pc.id === '11111111-1111-1111-1111-111111111111' || pc.account_number === 'WALLET';
-                          const isWalletInsufficient = isWallet && (walletBalance === null || walletBalance < totalPrice);
-                          const isDisabled = isWalletInsufficient;
 
                           return (
                             <div
                               key={pc.id}
-                              onClick={() => {
-                                if (isDisabled) return;
-                                setSelectedPayment(pc);
-                              }}
-                              className={`rounded-xl border-2 transition-all overflow-hidden ${isDisabled ? 'opacity-50 cursor-not-allowed border-transparent bg-[#25262b]' : 'cursor-pointer'} ${isSelected && !isDisabled ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(37,99,235,0.15)]' : !isDisabled ? 'border-transparent bg-[#25262b] hover:border-blue-500/40 hover:bg-[#2a2b30]' : ''}`}
+                              onClick={() => setSelectedPayment(pc)}
+                              className={`rounded-xl border-2 transition-all overflow-hidden cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(37,99,235,0.15)]' : 'border-transparent bg-[#25262b] hover:border-blue-500/40 hover:bg-[#2a2b30]'}`}
                             >
                               {/* Primary Row */}
                               <div className="p-4 flex items-center gap-4">
@@ -345,12 +391,6 @@ export function StorefrontGameForm({
                                   <p className="font-bold text-sm md:text-base text-white/95">{pc.name}</p>
                                   {selectedProduct && (
                                     <p className="text-sm font-semibold text-blue-400 mt-1">Rp {totalPrice.toLocaleString('id-ID')}</p>
-                                  )}
-                                  {isWallet && (
-                                    <p className={`text-xs mt-1 font-bold ${isWalletInsufficient ? 'text-red-400' : 'text-green-400'}`}>
-                                      Saldo Anda: Rp {(walletBalance || 0).toLocaleString('id-ID')}
-                                      {isWalletInsufficient && ` (Kurang Rp ${(totalPrice - (walletBalance || 0)).toLocaleString('id-ID')})`}
-                                    </p>
                                   )}
                                 </div>
                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-blue-500' : 'border-muted-foreground'}`}>
