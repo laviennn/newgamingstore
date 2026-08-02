@@ -162,7 +162,7 @@ export function StorefrontGameForm({
   };
 
   return (
-    <form onSubmit={handleCheckout} className="space-y-6 lg:mt-6 w-full relative pb-24 lg:pb-0">
+    <form onSubmit={handleCheckout} className="space-y-6 lg:mt-6 w-full relative pb-36 md:pb-0">
       {NotificationComponent}
       {/* 1. Account Detail */}
       <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-[#111111]">
@@ -513,32 +513,32 @@ export function StorefrontGameForm({
       </div>
 
       {/* Floating Summary Order */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0f0f11] border-t border-border/30 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] md:hidden">
+      <div className="fixed bottom-16 left-0 right-0 z-40 bg-[#0f0f11]/95 backdrop-blur-md border-t border-border/40 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] md:hidden">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {selectedProduct ? (
               <>
-                <p className="text-[10px] text-muted-foreground mb-0.5 line-clamp-1">{selectedProduct.name}</p>
+                <p className="text-[11px] font-medium text-white/90 truncate mb-0.5">{selectedProduct.name}</p>
                 <div className="flex items-baseline gap-2">
                   {appliedPromo && (
                      <p className="text-[10px] font-bold text-muted-foreground line-through decoration-red-500">
                        Rp {selectedProduct.price.toLocaleString('id-ID')}
                      </p>
                   )}
-                  <p className="text-sm font-extrabold text-blue-400">Rp {totalPrice.toLocaleString('id-ID')}</p>
+                  <p className="text-sm font-black text-blue-400">Rp {totalPrice.toLocaleString('id-ID')}</p>
                 </div>
               </>
             ) : (
               <div className="flex items-center gap-2 text-muted-foreground">
-                <ShoppingCart className="w-4 h-4" />
-                <p className="text-xs font-medium">Belum ada produk</p>
+                <ShoppingCart className="w-4 h-4 text-blue-400 shrink-0" />
+                <p className="text-xs font-medium text-white/70">Pilih Nominal & Pembayaran</p>
               </div>
             )}
           </div>
           <Button
             type="submit"
             disabled={!selectedProduct || !selectedPayment}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 h-10 shadow-lg shadow-blue-600/20"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 h-10 text-xs rounded-xl shadow-lg shadow-blue-600/30 shrink-0 disabled:opacity-50"
           >
             Pesan Sekarang!
           </Button>
