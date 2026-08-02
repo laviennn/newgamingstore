@@ -7,6 +7,7 @@ import { Menu, Home, Search, List, Trophy, MessageCircle, LogOut } from "lucide-
 import { useState, useEffect, useTransition } from "react";
 import { logout } from "@/app/actions/auth";
 import { createClient } from "@/utils/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 interface MobileSidebarProps {
   user?: User | null;

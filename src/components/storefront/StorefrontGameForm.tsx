@@ -49,7 +49,7 @@ export function StorefrontGameForm({
         setPromoMessage(`Berhasil! Diskon diterapkan.`);
       } else {
         setAppliedPromo(null);
-        setPromoMessage(res.message);
+        setPromoMessage(res.message || "Kode promo tidak valid.");
       }
     } catch (e) {
       setPromoMessage("Terjadi kesalahan sistem.");

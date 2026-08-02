@@ -11,6 +11,7 @@ import { CategorySection } from "@/components/storefront/CategorySection";
 import { SnowfallEffect } from "@/components/storefront/SnowfallEffect";
 import { LatestArticlesSection } from "@/components/storefront/LatestArticlesSection";
 import { FaqSection } from "@/components/storefront/FaqSection";
+import { hexToHsl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 

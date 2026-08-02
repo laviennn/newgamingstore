@@ -82,7 +82,7 @@ export default async function StorefrontLayout({ children, params }: { children:
     if (hsl) {
       customStyle = `
         :root {
-          --primary: ${hsl.h} ${hsl.s}% ${hsl.l}%;
+          --primary: ${hsl};
         }
       `;
     }
