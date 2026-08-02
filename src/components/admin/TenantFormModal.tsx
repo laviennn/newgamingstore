@@ -1,0 +1,121 @@
+"use client";
+
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { X, Loader2 } from "lucide-react";
+import { saveTenant } from "@/app/admin/tenants/actions";
+import { useNotification } from "@/components/ui/notification";
+
+interface TenantFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tenant?: any;
+}
+
+export function TenantFormModal({ isOpen, onClose, tenant }: TenantFormModalProps) {
+  const { showNotification, NotificationComponent } = useNotification();
+  const [loading, setLoading] = React.useState(false);
+
+  // Prevent background scrolling when modal is open
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    const result = await saveTenant(formData, tenant?.id);
+    
+    setLoading(false);
+
+    if (result.error) {
+      showNotification("error", "Failed to Save", result.error);
+    } else {
+      showNotification("success", "Success", `Tenant successfully ${tenant ? 'updated' : 'added'}!`);
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+    }
+  };
+
+  return (
+    <>
+      {NotificationComponent}
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-xl bg-background p-6 shadow-2xl animate-in zoom-in-95 duration-200 border">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-bold">{tenant ? "Edit Tenant" : "Add New Tenant"}</h2>
+          <button 
+            onClick={onClose}
+            className="rounded-full p-2 hover:bg-muted transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium">Tenant Name</label>
+            <Input 
+              id="name" 
+              name="name" 
+              placeholder="e.g., Alpha Gaming" 
+              defaultValue={tenant?.name || ""}
+              required 
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="domain" className="text-sm font-medium">Storefront Domain</label>
+            <Input 
+              id="domain" 
+              name="domain" 
+              placeholder="e.g., alpha.localhost" 
+              defaultValue={tenant?.domain || ""}
+              required 
+            />
+            <p className="text-xs text-muted-foreground">This domain will be used to route users to this tenant&apos;s storefront.</p>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="admin_domain" className="text-sm font-medium">Admin Domain</label>
+            <Input 
+              id="admin_domain" 
+              name="admin_domain" 
+              placeholder="e.g., admin.alpha.localhost" 
+              defaultValue={tenant?.admin_domain || ""}
+              required 
+            />
+            <p className="text-xs text-muted-foreground">This domain will be used for the tenant&apos;s admin dashboard.</p>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading} className="min-w-[120px]">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Tenant"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </>
+  );
+}

@@ -1,0 +1,487 @@
+[
+  {
+    "game_name": "Genshin Impact",
+    "products": [
+      {
+        "name": "1.050 Genshin Impact Genesis Crystals ",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/1785651270310-27123511-0TuDiSMTRsDAAKu.webp"
+      },
+      {
+        "name": "2.350 Genshin Impact Genesis Crystals ",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/1785651270310-27123511-0TuDiSMTRsDAAKu.webp"
+      },
+      {
+        "name": "5.200 Genshin Impact Genesis Crystals ",
+        "price": 400000,
+        "image_url": "https://assets.newgamingstore.com/1785651270310-27123511-0TuDiSMTRsDAAKu.webp"
+      },
+      {
+        "name": "7.880 Genshin Impact Genesis Crystals ",
+        "price": 500000,
+        "image_url": "https://assets.newgamingstore.com/1785651270310-27123511-0TuDiSMTRsDAAKu.webp"
+      },
+      {
+        "name": "7.880 *2 Genshin Impact Genesis Crystals ",
+        "price": 850000,
+        "image_url": "https://assets.newgamingstore.com/1785651270310-27123511-0TuDiSMTRsDAAKu.webp"
+      },
+      {
+        "name": "7.880 *4 Genshin Impact Genesis Crystals ",
+        "price": 3150000,
+        "image_url": "https://assets.newgamingstore.com/1785651270310-27123511-0TuDiSMTRsDAAKu.webp"
+      },
+      {
+        "name": "7.880 *6 Genshin Impact Genesis Crystals ",
+        "price": 4700000,
+        "image_url": "https://assets.newgamingstore.com/1785651270310-27123511-0TuDiSMTRsDAAKu.webp"
+      }
+    ]
+  },
+  {
+    "game_name": "Call of Duty Mobile",
+    "products": [
+      {
+        "name": "1.700 CP",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      },
+      {
+        "name": "3.950 CP",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      },
+      {
+        "name": "5.300 CP",
+        "price": 300000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      },
+      {
+        "name": "8.400 CP",
+        "price": 400000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      },
+      {
+        "name": "13.500 CP",
+        "price": 500000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      },
+      {
+        "name": "17.400 CP",
+        "price": 600000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      },
+      {
+        "name": "22.000 CP",
+        "price": 700000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      },
+      {
+        "name": "28.000 CP",
+        "price": 800000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      },
+      {
+        "name": "33.700 CP",
+        "price": 900000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      },
+      {
+        "name": "40.000 CP",
+        "price": 1000000,
+        "image_url": "https://assets.newgamingstore.com/zFSU5cAxuY2fyVv.webp"
+      }
+    ]
+  },
+  {
+    "game_name": "Honor of Kings",
+    "products": [
+      {
+        "name": "2.500 Token",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      },
+      {
+        "name": "5.500 Token",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      },
+      {
+        "name": "9.500 Token",
+        "price": 300000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      },
+      {
+        "name": "15.200 Token",
+        "price": 400000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      },
+      {
+        "name": "18.500 Token",
+        "price": 500000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      },
+      {
+        "name": "21.500 Token",
+        "price": 600000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      },
+      {
+        "name": "24.300 Token",
+        "price": 700000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      },
+      {
+        "name": "29.700 Token",
+        "price": 800000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      },
+      {
+        "name": "48.500 Token",
+        "price": 1000000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      },
+      {
+        "name": "68.700 Token",
+        "price": 1500000,
+        "image_url": "https://assets.newgamingstore.com/gJIlsxO6UORU9zZ.png"
+      }
+    ]
+  },
+  {
+    "game_name": "Heartopia",
+    "products": [
+      {
+        "name": "1.000 Diamond",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/imgop.itemku.com.png"
+      },
+      {
+        "name": "2.000 Diamond",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/imgop.itemku.com.png"
+      },
+      {
+        "name": "3.000 Diamond",
+        "price": 300000,
+        "image_url": "https://assets.newgamingstore.com/imgop.itemku.com.png"
+      },
+      {
+        "name": "4.500 Diamond",
+        "price": 450000,
+        "image_url": "https://assets.newgamingstore.com/imgop.itemku.com.png"
+      },
+      {
+        "name": "5.300 Diamond",
+        "price": 550000,
+        "image_url": "https://assets.newgamingstore.com/imgop.itemku.com.png"
+      },
+      {
+        "name": "6.600 Diamond",
+        "price": 650000,
+        "image_url": "https://assets.newgamingstore.com/imgop.itemku.com.png"
+      },
+      {
+        "name": "10.000 Diamond",
+        "price": 800000,
+        "image_url": "https://assets.newgamingstore.com/imgop.itemku.com.png"
+      },
+      {
+        "name": "15.000 Diamond",
+        "price": 1000000,
+        "image_url": "https://assets.newgamingstore.com/imgop.itemku.com.png"
+      }
+    ]
+  },
+  {
+    "game_name": "Valorant",
+    "products": [
+      {
+        "name": "2.500 VP",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/EKUtaHaYdpoKgHo.webp"
+      },
+      {
+        "name": "5.000 VP",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/EKUtaHaYdpoKgHo.webp"
+      },
+      {
+        "name": "7.500 VP",
+        "price": 350000,
+        "image_url": "https://assets.newgamingstore.com/EKUtaHaYdpoKgHo.webp"
+      },
+      {
+        "name": "10.100 VP",
+        "price": 550000,
+        "image_url": "https://assets.newgamingstore.com/EKUtaHaYdpoKgHo.webp"
+      },
+      {
+        "name": "17.800 VP",
+        "price": 750000,
+        "image_url": "https://assets.newgamingstore.com/EKUtaHaYdpoKgHo.webp"
+      },
+      {
+        "name": "25.100 VP",
+        "price": 1000000,
+        "image_url": "https://assets.newgamingstore.com/EKUtaHaYdpoKgHo.webp"
+      },
+      {
+        "name": "33.980 VP",
+        "price": 1500000,
+        "image_url": "https://assets.newgamingstore.com/EKUtaHaYdpoKgHo.webp"
+      }
+    ]
+  },
+  {
+    "game_name": "PUBG Mobile",
+    "products": [
+      {
+        "name": "1.700 UC",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      },
+      {
+        "name": "3.950 UC",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      },
+      {
+        "name": "5.300 UC",
+        "price": 300000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      },
+      {
+        "name": "8.400 UC",
+        "price": 400000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      },
+      {
+        "name": "13.500 UC",
+        "price": 500000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      },
+      {
+        "name": "17.400 UC",
+        "price": 600000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      },
+      {
+        "name": "22.000 UC",
+        "price": 700000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      },
+      {
+        "name": "28.000 UC",
+        "price": 800000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      },
+      {
+        "name": "33.700 UC",
+        "price": 900000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      },
+      {
+        "name": "40.000 UC",
+        "price": 1000000,
+        "image_url": "https://assets.newgamingstore.com/vDZORckp1H6izkA.webp"
+      }
+    ]
+  },
+  {
+    "game_name": "FC Mobile",
+    "products": [
+      {
+        "name": "1.500 FC Points (Top Up Android)",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "3.850 FC Points (Top Up Android)",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "5.050 FC Points (Top Up Android)",
+        "price": 250000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "8.050 FC Points (Top Up Android)",
+        "price": 300000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "13.050 FC Points (Top Up Android)",
+        "price": 400000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "17.050 FC Points (Top Up Android)",
+        "price": 500000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "25.050 FC Points (Top Up Android)",
+        "price": 750000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "38.000 FC Points (Top Up Android)",
+        "price": 1000000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "1.600 FC Points (Top Up iOS)",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "3.900 FC Points (Top Up iOS)",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "5.100 FC Points (Top Up iOS)",
+        "price": 250000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "8.100 FC Points (Top Up iOS)",
+        "price": 300000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "13.150 FC Points (Top Up iOS)",
+        "price": 400000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "17.150 FC Points (Top Up iOS)",
+        "price": 500000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "25.200 FC Points (Top Up iOS)",
+        "price": 750000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      },
+      {
+        "name": "38.250 FC Points (Top Up iOS)",
+        "price": 1000000,
+        "image_url": "https://assets.newgamingstore.com/zJTfZ4UkUAvAj6E.png"
+      }
+    ]
+  },
+  {
+    "game_name": "Roblox",
+    "products": [
+      {
+        "name": "2.500 Robux",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      },
+      {
+        "name": "5.500 Robux",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      },
+      {
+        "name": "9.500 Robux",
+        "price": 300000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      },
+      {
+        "name": "15.200 Robux",
+        "price": 400000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      },
+      {
+        "name": "18.500 Robux",
+        "price": 500000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      },
+      {
+        "name": "21.500 Robux",
+        "price": 600000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      },
+      {
+        "name": "24.300 Robux",
+        "price": 700000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      },
+      {
+        "name": "29.700 Robux",
+        "price": 800000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      },
+      {
+        "name": "48.500 Robux",
+        "price": 1000000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      },
+      {
+        "name": "68.700 Robux",
+        "price": 1500000,
+        "image_url": "https://assets.newgamingstore.com/6sMiKF2sBFjQimM.webp"
+      }
+    ]
+  },
+  {
+    "game_name": "Mobile Legends",
+    "products": [
+      {
+        "name": "2.500 Diamond",
+        "price": 100000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      },
+      {
+        "name": "5.500 Diamond",
+        "price": 200000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      },
+      {
+        "name": "9.500 Diamond",
+        "price": 300000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      },
+      {
+        "name": "15.200 Diamond",
+        "price": 400000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      },
+      {
+        "name": "18.500 Diamond",
+        "price": 500000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      },
+      {
+        "name": "21.500 Diamond",
+        "price": 600000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      },
+      {
+        "name": "24.300 Diamond",
+        "price": 700000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      },
+      {
+        "name": "29.700 Diamond",
+        "price": 800000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      },
+      {
+        "name": "48.500 Diamond",
+        "price": 1000000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      },
+      {
+        "name": "68.700 Diamond",
+        "price": 1500000,
+        "image_url": "https://assets.newgamingstore.com/FydFVpjrOwp4jPl.webp"
+      }
+    ]
+  }
+]
