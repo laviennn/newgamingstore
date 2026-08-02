@@ -60,8 +60,15 @@ export function AdminDepositsClient({ initialDeposits }: { initialDeposits: any[
               deposits.map((dep) => (
                 <tr key={dep.id} className="hover:bg-muted/10 transition-colors group">
                   <td className="px-4 py-4 border-b border-muted/20">
-                    <div className="font-semibold text-primary">{dep.invoice_id}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="font-semibold text-primary flex items-center gap-2">
+                      {dep.invoice_id}
+                      {dep.metadata?.type === 'UPGRADE' && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                          UPGRADE {dep.metadata.package_name}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
                       {new Date(dep.created_at).toLocaleString('id-ID')}
                     </div>
                   </td>

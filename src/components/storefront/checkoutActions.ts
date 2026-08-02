@@ -35,6 +35,25 @@ export async function createOrder(orderData: any) {
     const { data: authData } = await supabase.auth.getUser();
     const currentUser = authData?.user;
 
+    const isWalletPayment = orderData.paymentMethodId === '11111111-1111-1111-1111-111111111111';
+
+    // If Payment Method is Wallet, deduct balance first
+    if (isWalletPayment) {
+      if (!currentUser?.email) {
+        return { success: false, message: "Harap login terlebih dahulu untuk menggunakan Saldo Akun." };
+      }
+      
+      const { error: rpcError } = await supabase.rpc('deduct_wallet_balance', {
+        p_email: currentUser.email.toLowerCase(),
+        p_amount: totalPrice
+      });
+      
+      if (rpcError) {
+        console.error("Wallet deduction error:", rpcError);
+        return { success: false, message: rpcError.message || "Gagal memotong saldo, pastikan saldo mencukupi." };
+      }
+    }
+
     const payload = {
        invoice_id: invoiceId,
        game_id: orderData.gameId,
@@ -48,8 +67,8 @@ export async function createOrder(orderData: any) {
        discount_amount: discountAmount,
        fee: fee,
        total_price: totalPrice,
-       status: 'Pending',
-       payment_status: 'UNPAID',
+       status: isWalletPayment ? 'Processed' : 'Pending',
+       payment_status: isWalletPayment ? 'PAID' : 'UNPAID',
        customer_email: currentUser?.email || orderData.waNumber || 'no-email@test.com', // use member email if logged in
        form_data: orderData.accountData // fallback for original schema
     };

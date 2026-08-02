@@ -130,6 +130,24 @@ export default async function MemberDashboardPage({
   // User metadata
   const name = user.user_metadata?.name || "Member";
   const phone = user.user_metadata?.phone || "-";
+  
+  let level = user.user_metadata?.level || "MEMBER";
+
+  // Override level based on the latest successful upgrade deposit
+  const { data: upgradeHistory } = await supabase
+    .from("deposits")
+    .select("metadata")
+    .eq("customer_email", userEmail)
+    .eq("status", "Success")
+    .order("created_at", { ascending: false });
+
+  if (upgradeHistory && upgradeHistory.length > 0) {
+    const latestUpgrade = upgradeHistory.find(d => d.metadata && d.metadata.type === "UPGRADE");
+    if (latestUpgrade && latestUpgrade.metadata.package_name) {
+      level = latestUpgrade.metadata.package_name;
+    }
+  }
+
   const createdAtFormatted = new Date(user.created_at).toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "short",
@@ -147,23 +165,43 @@ export default async function MemberDashboardPage({
     <div className="space-y-6">
       
       {/* 1. Banner Upgrade Level */}
-      <div className="bg-[#121212] border border-white/10 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-white mb-1">
-            Tingkatkan <span className="text-blue-500">Level Membership Anda</span>
-          </h2>
-          <p className="text-gray-400 text-sm">
-            Anda saat ini berada di Level <strong className="text-white uppercase">MEMBER</strong>. Upgrade sekarang!
-          </p>
+      {level.toUpperCase() !== "VIP" && level.toUpperCase() !== "PREMIUM" && level.toUpperCase() !== "GOLD" ? (
+        <div className="bg-[#121212] border border-white/10 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-white mb-1">
+              Tingkatkan <span className="text-blue-500">Level Membership Anda</span>
+            </h2>
+            <p className="text-gray-400 text-sm">
+              Anda saat ini berada di Level <strong className="text-white uppercase">{level}</strong>. Upgrade sekarang!
+            </p>
+          </div>
+          <Link
+            href="/member/upgrade"
+            className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-900/20 shrink-0"
+          >
+            <span>Upgrade Membership</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
-        <Link
-          href="/member/upgrade"
-          className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-900/20 shrink-0"
-        >
-          <span>Upgrade Membership</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+      ) : (
+        <div className="bg-gradient-to-r from-blue-900/40 to-[#121212] border border-blue-500/20 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-white mb-1">
+              Membership Anda <span className="text-blue-400 uppercase">{level}</span>
+            </h2>
+            <p className="text-gray-400 text-sm">
+              Nikmati berbagai benefit khusus untuk level Anda.
+            </p>
+          </div>
+          <Link
+            href="/member/upgrade"
+            className="bg-[#1a1a1a] border border-gray-800 hover:border-gray-600 text-white font-bold px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shrink-0"
+          >
+            <span>Lihat Paket Lain</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
 
       {/* 2. Banner WA Channel (Admin Configurable) */}
       {waChannelActive && (

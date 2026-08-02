@@ -38,6 +38,24 @@ export function StorefrontGameForm({
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [accountData, setAccountData] = useState<{label: string, value: string}[]>([]);
+  
+  // Wallet state
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchWallet = async () => {
+      const { createClient } = await import("@/utils/supabase/client");
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+        const { data } = await supabase.from('wallets').select('balance').eq('email', session.user.email.toLowerCase()).single();
+        if (data) setWalletBalance(data.balance);
+      }
+    };
+    fetchWallet();
+  }, []);
 
   const handleCheckPromo = async () => {
     setIsPromoChecking(true);
@@ -299,11 +317,20 @@ export function StorefrontGameForm({
                         <div className="p-3 space-y-3">
                         {items.map((pc: any) => {
                           const isSelected = selectedPayment?.id === pc.id;
+                          
+                          // Wallet Logic
+                          const isWallet = pc.id === '11111111-1111-1111-1111-111111111111' || pc.account_number === 'WALLET';
+                          const isWalletInsufficient = isWallet && (walletBalance === null || walletBalance < totalPrice);
+                          const isDisabled = isWalletInsufficient;
+
                           return (
                             <div
                               key={pc.id}
-                              onClick={() => setSelectedPayment(pc)}
-                              className={`rounded-xl border-2 transition-all overflow-hidden cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(37,99,235,0.15)]' : 'border-transparent bg-[#25262b] hover:border-blue-500/40 hover:bg-[#2a2b30]'}`}
+                              onClick={() => {
+                                if (isDisabled) return;
+                                setSelectedPayment(pc);
+                              }}
+                              className={`rounded-xl border-2 transition-all overflow-hidden ${isDisabled ? 'opacity-50 cursor-not-allowed border-transparent bg-[#25262b]' : 'cursor-pointer'} ${isSelected && !isDisabled ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(37,99,235,0.15)]' : !isDisabled ? 'border-transparent bg-[#25262b] hover:border-blue-500/40 hover:bg-[#2a2b30]' : ''}`}
                             >
                               {/* Primary Row */}
                               <div className="p-4 flex items-center gap-4">
@@ -317,7 +344,13 @@ export function StorefrontGameForm({
                                 <div className="flex-1">
                                   <p className="font-bold text-sm md:text-base text-white/95">{pc.name}</p>
                                   {selectedProduct && (
-                                    <p className="text-sm font-semibold text-blue-400 mt-1">Rp {selectedProduct.price.toLocaleString('id-ID')}</p>
+                                    <p className="text-sm font-semibold text-blue-400 mt-1">Rp {totalPrice.toLocaleString('id-ID')}</p>
+                                  )}
+                                  {isWallet && (
+                                    <p className={`text-xs mt-1 font-bold ${isWalletInsufficient ? 'text-red-400' : 'text-green-400'}`}>
+                                      Saldo Anda: Rp {(walletBalance || 0).toLocaleString('id-ID')}
+                                      {isWalletInsufficient && ` (Kurang Rp ${(totalPrice - (walletBalance || 0)).toLocaleString('id-ID')})`}
+                                    </p>
                                   )}
                                 </div>
                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-blue-500' : 'border-muted-foreground'}`}>

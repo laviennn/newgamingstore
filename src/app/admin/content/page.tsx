@@ -228,6 +228,7 @@ export default function ContentPage() {
                  value={logoUrl}
                  onChange={(e) => setLogoUrl(e.target.value)}
                />
+               <p className="text-[11px] text-muted-foreground mt-1">Logo ini juga akan otomatis dijadikan <strong>Favicon</strong>. Sangat disarankan rasio 1:1 (persegi) agar terlihat rapi di tab browser.</p>
                <p className="text-xs text-muted-foreground">URL to your transparent PNG logo.</p>
              </div>
              <div className="space-y-2">
@@ -313,6 +314,7 @@ export default function ContentPage() {
                       <Image src={ogImage} alt="OG Preview" fill sizes="400px" className="object-cover" />
                     </div>
                  )}
+                 <p className="text-[11px] text-muted-foreground mt-1">Sangat disarankan ukuran <strong>1200 x 630 pixels</strong> agar gambar pratinjau (OG Image) tidak terpotong saat dibagikan ke WhatsApp, Facebook, dsb. Jika dibiarkan kosong, sistem akan menggunakan Logo sebagai gantinya.</p>
                </div>
              </div>
           </CardContent>

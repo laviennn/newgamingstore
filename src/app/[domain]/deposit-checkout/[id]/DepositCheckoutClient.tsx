@@ -96,6 +96,9 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
     }
   };
 
+  const isUpgrade = deposit.metadata?.type === 'UPGRADE' || deposit.invoice_id?.startsWith('UPG-');
+  const packageName = deposit.metadata?.package_name || "Upgrade Membership";
+
   const handleWAConfirm = () => {
      if (!paymentProofUrl) {
         showNotification("warning", "Perhatian", "Harap unggah Bukti Transfer terlebih dahulu sebelum konfirmasi ke WA!");
@@ -104,7 +107,14 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
 
      const waNumber = tenantConfig?.whatsapp?.replace(/[^0-9]/g, "") || "6281234567890"; // fallback
      
-     const message = `Halo Admin, saya ingin konfirmasi deposit saldo:
+     const message = isUpgrade 
+       ? `Halo Admin, saya ingin konfirmasi upgrade membership (${packageName}):
+- No. Invoice: *${deposit.invoice_id}*
+- Total Biaya: *Rp ${Number(deposit.amount).toLocaleString('id-ID')}*
+- Bukti Transfer: ${fixUrl(paymentProofUrl)}
+
+Mohon segera diproses ya, terima kasih!`
+       : `Halo Admin, saya ingin konfirmasi deposit saldo:
 - No. Invoice: *${deposit.invoice_id}*
 - Nominal Deposit: *Rp ${Number(deposit.amount).toLocaleString('id-ID')}*
 - Bukti Transfer: ${fixUrl(paymentProofUrl)}
@@ -117,10 +127,10 @@ Mohon segera diproses ya, terima kasih!`;
 
   // Status mappings
   const stepperStates = [
-    { title: "Permohonan Dibuat", desc: "Permohonan deposit dibuat", icon: Wallet, active: true },
+    { title: "Permohonan Dibuat", desc: isUpgrade ? "Permohonan upgrade dibuat" : "Permohonan deposit dibuat", icon: Wallet, active: true },
     { title: "Pembayaran", desc: "Silakan melakukan pembayaran", icon: CreditCard, active: paymentStatus === 'UNPAID' },
     { title: "Sedang Di Proses", desc: "Verifikasi pembayaran.", icon: Cpu, active: paymentStatus === 'PAID' && status === 'Processed' },
-    { title: "Deposit Berhasil", desc: "Saldo telah ditambahkan.", icon: CheckCircle2, active: status === 'Success' },
+    { title: isUpgrade ? "Upgrade Berhasil" : "Deposit Berhasil", desc: isUpgrade ? `Akun telah diupgrade ke ${packageName}.` : "Saldo telah ditambahkan.", icon: CheckCircle2, active: status === 'Success' },
   ];
 
   return (
@@ -129,7 +139,7 @@ Mohon segera diproses ya, terima kasih!`;
         
         {/* Progress Stepper */}
         <div className="mb-12 print:hidden">
-          <h2 className="text-lg font-bold mb-6">Progress Deposit</h2>
+          <h2 className="text-lg font-bold mb-6">Progress {isUpgrade ? 'Upgrade' : 'Deposit'}</h2>
           <div className="relative flex items-center justify-between">
             <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-800 -z-10 transform -translate-y-1/2"></div>
             {/* Active progress line (dummy calc based on step) */}
@@ -174,7 +184,7 @@ Mohon segera diproses ya, terima kasih!`;
                 </div>
                 <div className="grid grid-cols-3 text-sm">
                   <div className="col-span-1 text-gray-400 font-medium">Layanan</div>
-                  <div className="col-span-2 text-white font-semibold print:text-black">: Deposit Saldo</div>
+                  <div className="col-span-2 text-white font-semibold print:text-black">: {isUpgrade ? `Upgrade Membership (${packageName})` : 'Deposit Saldo'}</div>
                 </div>
               </div>
             </div>
@@ -192,7 +202,7 @@ Mohon segera diproses ya, terima kasih!`;
                 <div className="overflow-hidden">
                   <div className="p-6 space-y-4 text-sm font-medium">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Nominal Deposit</span>
+                      <span className="text-gray-400">{isUpgrade ? 'Biaya Upgrade' : 'Nominal Deposit'}</span>
                       <span>Rp {Number(deposit.amount).toLocaleString('id-ID')}</span>
                     </div>
                     <div className="border-b border-gray-800/50 pt-2 print:border-gray-300"></div>
@@ -238,7 +248,7 @@ Mohon segera diproses ya, terima kasih!`;
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-400">Status Deposit</span>
+                  <span className="text-gray-400">{isUpgrade ? 'Status Upgrade' : 'Status Deposit'}</span>
                   <span className={`px-2 py-1 rounded text-xs font-bold ${status === 'Pending' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-blue-500/20 text-blue-500'}`}>
                     {status}
                   </span>
@@ -314,7 +324,7 @@ Mohon segera diproses ya, terima kasih!`;
                   <div className="bg-[#151515] p-5 rounded-2xl border border-gray-800 space-y-4">
                     <h3 className="font-bold text-white mb-2">Konfirmasi Pembayaran</h3>
                     <p className="text-sm text-gray-400">
-                      Silakan unggah bukti transfer Anda agar deposit dapat segera diverifikasi.
+                      Silakan unggah bukti transfer Anda agar {isUpgrade ? 'permohonan upgrade' : 'deposit'} dapat segera diverifikasi.
                     </p>
                     
                     {/* Upload Button */}

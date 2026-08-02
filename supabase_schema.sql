@@ -112,7 +112,9 @@ CREATE TABLE public.deposits (
   payment_channel_id uuid REFERENCES public.payment_channels(id) ON DELETE SET NULL,
   status text DEFAULT 'Pending' CHECK (status IN ('Pending', 'Processed', 'Success', 'Failed')),
   payment_proof_url text,
+  metadata jsonb DEFAULT '{}'::jsonb,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
 ALTER TABLE public.deposits DISABLE ROW LEVEL SECURITY;
 
 -- Wallets Table
@@ -126,14 +128,27 @@ ALTER TABLE public.wallets DISABLE ROW LEVEL SECURITY;
 -- Trigger to update wallet balance on successful deposit
 CREATE OR REPLACE FUNCTION update_wallet_balance()
 RETURNS TRIGGER AS $$
+DECLARE
+  pkg_name text;
 BEGIN
   -- Check if status changed to 'Success'
   IF NEW.status = 'Success' AND OLD.status != 'Success' THEN
-    -- Insert or update the wallet balance for this email
-    INSERT INTO public.wallets (email, balance, updated_at)
-    VALUES (NEW.customer_email, NEW.amount, now())
-    ON CONFLICT (email)
-    DO UPDATE SET balance = public.wallets.balance + EXCLUDED.balance, updated_at = now();
+    
+    -- If it's an UPGRADE, update the user metadata instead of wallet
+    IF NEW.metadata->>'type' = 'UPGRADE' THEN
+      pkg_name := NEW.metadata->>'package_name';
+      IF pkg_name IS NOT NULL THEN
+        UPDATE auth.users 
+        SET raw_user_meta_data = jsonb_set(COALESCE(raw_user_meta_data, '{}'::jsonb), '{level}', to_jsonb(pkg_name))
+        WHERE email = NEW.customer_email;
+      END IF;
+    ELSE
+      -- Normal Deposit: Insert or update the wallet balance for this email
+      INSERT INTO public.wallets (email, balance, updated_at)
+      VALUES (NEW.customer_email, NEW.amount, now())
+      ON CONFLICT (email)
+      DO UPDATE SET balance = public.wallets.balance + EXCLUDED.balance, updated_at = now();
+    END IF;
   END IF;
   RETURN NEW;
 END;
@@ -167,4 +182,35 @@ INSERT INTO public.membership_packages (name, price, period_label, benefits, is_
 SELECT 'Gold VIP', 1500000, '/Tahun', '["Harga Termurah (Reseller Price)", "Akses API Dokumentasi (Bisa jualan lagi)", "Dedicated Account Manager 24/7", "Limit Transaksi Harian Tanpa Batas", "Point Reward per Transaksi", "Early Access Promo Event Besar", "Menjadi reseller prioritas.", "Free Website Top Up Games"]'::jsonb, false, true
 WHERE NOT EXISTS (SELECT 1 FROM public.membership_packages WHERE name = 'Gold VIP');
 
+-- Deduct Wallet Balance Function
+CREATE OR REPLACE FUNCTION deduct_wallet_balance(p_email text, p_amount numeric)
+RETURNS void AS $$
+DECLARE
+  current_balance numeric;
+BEGIN
+  -- Lock the row to prevent race conditions
+  SELECT balance INTO current_balance 
+  FROM public.wallets 
+  WHERE email = p_email 
+  FOR UPDATE;
+  
+  -- If wallet not found or balance insufficient, throw error
+  IF current_balance IS NULL OR current_balance < p_amount THEN
+    RAISE EXCEPTION 'Saldo tidak mencukupi (Sisa saldo: %)', COALESCE(current_balance, 0);
+  END IF;
+  
+  -- Deduct balance
+  UPDATE public.wallets 
+  SET balance = balance - p_amount, 
+      updated_at = now() 
+  WHERE email = p_email;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Seed Wallet Payment Method
+INSERT INTO public.payment_channels (id, name, category, account_number, account_name, is_active)
+VALUES ('11111111-1111-1111-1111-111111111111', 'Saldo Akun (Wallet)', 'E-Wallet', 'WALLET', 'Auto Deduct', true)
+ON CONFLICT (id) DO UPDATE SET 
+  is_active = true,
+  name = 'Saldo Akun (Wallet)';
 

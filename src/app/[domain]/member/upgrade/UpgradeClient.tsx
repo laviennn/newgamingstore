@@ -44,11 +44,13 @@ function formatPriceDisplay(price: number, periodLabel: string) {
 
 export function UpgradeClient({
   user,
+  currentLevel,
   dynamicPackages,
   paymentChannels,
   tenantConfig,
 }: {
   user: User;
+  currentLevel: string;
   dynamicPackages: any[];
   paymentChannels: any[];
   tenantConfig: any;
@@ -57,18 +59,38 @@ export function UpgradeClient({
   const router = useRouter();
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [selectedPkgId, setSelectedPkgId] = useState<string | null>(
-    dynamicPackages.length > 0 ? dynamicPackages[0].id : null
-  );
+  
+  // Try to find the next package based on current level, or default to first dynamic package
+  const defaultPkgId = dynamicPackages.length > 0 
+    ? (dynamicPackages.find(p => p.name.toUpperCase() !== currentLevel.toUpperCase())?.id || dynamicPackages[0].id)
+    : null;
+
+  const [selectedPkgId, setSelectedPkgId] = useState<string | null>(defaultPkgId);
+  
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(
     paymentChannels.length > 0 ? paymentChannels[0].id : null
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Wallet state
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+
+  React.useEffect(() => {
+    const fetchWallet = async () => {
+      const { createClient } = await import("@/utils/supabase/client");
+      const supabase = createClient();
+      if (user?.email) {
+        const { data } = await supabase.from('wallets').select('balance').eq('email', user.email.toLowerCase()).single();
+        if (data) setWalletBalance(data.balance);
+      }
+    };
+    fetchWallet();
+  }, [user]);
 
   // Group payment channels by category
   const channelCategories = Array.from(new Set(paymentChannels.map(c => c.category || "Transfer Bank")));
 
-  const currentRole = (user.user_metadata?.role || "USER").toUpperCase();
+  const currentRole = currentLevel.toUpperCase();
 
   const allPackages = [
     STARTER_PACKAGE,
@@ -253,14 +275,25 @@ export function UpgradeClient({
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       {categoryChannels.map((channel) => {
                         const isChannelSelected = selectedPaymentId === channel.id;
+                        
+                        // Wallet Logic
+                        const isWallet = channel.id === '11111111-1111-1111-1111-111111111111' || channel.account_number === 'WALLET';
+                        const isWalletInsufficient = isWallet && (walletBalance === null || walletBalance < Number(activeSelectedPkg.price));
+                        const isDisabled = isWalletInsufficient;
+
                         return (
                           <div
                             key={channel.id}
-                            onClick={() => setSelectedPaymentId(channel.id)}
-                            className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-                              isChannelSelected
-                                ? "bg-blue-600/10 border-[#2B95FF] text-white shadow-md shadow-blue-900/20"
-                                : "bg-[#121316] border-white/10 hover:border-white/20 text-gray-300"
+                            onClick={() => {
+                              if (isDisabled) return;
+                              setSelectedPaymentId(channel.id);
+                            }}
+                            className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${
+                              isDisabled 
+                                ? "opacity-50 cursor-not-allowed bg-[#121316] border-transparent" 
+                                : isChannelSelected
+                                  ? "bg-blue-600/10 border-[#2B95FF] text-white shadow-md shadow-blue-900/20 cursor-pointer"
+                                  : "bg-[#121316] border-white/10 hover:border-white/20 text-gray-300 cursor-pointer"
                             }`}
                           >
                             <div className="flex items-center gap-3">
@@ -273,10 +306,17 @@ export function UpgradeClient({
                               </div>
                               <div>
                                 <p className="font-bold text-sm text-white">{channel.name}</p>
-                                <p className="text-[10px] text-gray-400">Proses Otomatis</p>
+                                {isWallet ? (
+                                  <p className={`text-[10px] font-bold mt-0.5 ${isWalletInsufficient ? 'text-red-400' : 'text-green-400'}`}>
+                                    Saldo: Rp {(walletBalance || 0).toLocaleString('id-ID')}
+                                    {isWalletInsufficient && ` (Kurang Rp ${(Number(activeSelectedPkg.price) - (walletBalance || 0)).toLocaleString('id-ID')})`}
+                                  </p>
+                                ) : (
+                                  <p className="text-[10px] text-gray-400">Proses Otomatis</p>
+                                )}
                               </div>
                             </div>
-                            {isChannelSelected && <CheckCircle2 className="w-5 h-5 text-[#2B95FF] shrink-0" />}
+                            {isChannelSelected && !isDisabled && <CheckCircle2 className="w-5 h-5 text-[#2B95FF] shrink-0" />}
                           </div>
                         );
                       })}

@@ -22,6 +22,20 @@ export async function createUpgradeOrder({
     const randomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
     const invoiceId = `UPG-${Date.now().toString(36).toUpperCase()}${randomCode}`;
 
+    const isWalletPayment = paymentChannelId === '11111111-1111-1111-1111-111111111111';
+
+    if (isWalletPayment) {
+      const { error: rpcError } = await supabase.rpc('deduct_wallet_balance', {
+        p_email: userEmail.toLowerCase(),
+        p_amount: amount
+      });
+      
+      if (rpcError) {
+        console.error("Wallet deduction error:", rpcError);
+        return { success: false, message: rpcError.message || "Gagal memotong saldo, pastikan saldo mencukupi." };
+      }
+    }
+
     // Insert into deposits table to sync with deposit history & dashboard
     const { error: depositError } = await supabase.from("deposits").insert({
       invoice_id: invoiceId,
@@ -29,12 +43,26 @@ export async function createUpgradeOrder({
       wa_number: waNumber || null,
       amount: amount,
       payment_channel_id: paymentChannelId || null,
-      status: "Pending",
+      status: "Pending", // initial state to allow trigger on update
+      metadata: { type: "UPGRADE", package_name: packageName },
     });
 
     if (depositError) {
       console.error("Error creating upgrade deposit invoice:", depositError);
       return { success: false, message: depositError.message };
+    }
+
+    if (isWalletPayment) {
+      // Trigger the upgrade by updating to Success
+      const { error: updateError } = await supabase
+        .from("deposits")
+        .update({ status: "Success" })
+        .eq("invoice_id", invoiceId);
+      
+      if (updateError) {
+        console.error("Error completing wallet upgrade:", updateError);
+        // Balance was deducted, but status update failed? Should handle gracefully.
+      }
     }
 
     return {

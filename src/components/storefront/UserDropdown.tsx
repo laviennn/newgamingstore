@@ -67,6 +67,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
 
   const name = user.user_metadata?.name || "User";
   const phone = user.user_metadata?.phone || "-";
+  const level = user.user_metadata?.level || "Member";
   
   // Get 2 Initials
   const initials = name
@@ -97,7 +98,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
               <span className="text-xs font-bold text-gray-400 tracking-wider">AKUN ANDA</span>
               <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
                 <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                <span className="text-xs text-gray-300">Member</span>
+                <span className="text-xs text-gray-300 uppercase">{level}</span>
               </div>
             </div>
 
