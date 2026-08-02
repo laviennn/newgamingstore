@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic';
 export default async function DepositCheckoutPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ domain: string, id: string }>;
 }) {
-  const { id } = await params;
+  const { domain, id } = await params;
   const supabase = await createClient();
   
   const { data: deposit, error } = await supabase
@@ -27,11 +27,16 @@ export default async function DepositCheckoutPage({
   }
 
   // Fetch tenant config for WA number
-  const { data: tenantData } = await supabase
+  let { data: tenantData } = await supabase
     .from('tenants')
     .select('theme_config')
-    .limit(1)
-    .single();
+    .eq('domain', domain)
+    .maybeSingle();
+
+  if (!tenantData) {
+    const res = await supabase.from('tenants').select('theme_config').limit(1).maybeSingle();
+    tenantData = res.data;
+  }
 
   const tenantConfig = tenantData?.theme_config || { siteName: "NewGamingStore" };
 

@@ -7,10 +7,24 @@ export const dynamic = 'force-dynamic';
 export default async function CheckoutPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ domain: string, id: string }>;
 }) {
-  const { id } = await params;
+  const { domain, id } = await params;
   const supabase = await createClient();
+  
+  // Fetch tenant config for WA number
+  let { data: tenantData } = await supabase
+    .from('tenants')
+    .select('theme_config')
+    .eq('domain', domain)
+    .maybeSingle();
+
+  if (!tenantData) {
+    const res = await supabase.from('tenants').select('theme_config').limit(1).maybeSingle();
+    tenantData = res.data;
+  }
+
+  const tenantConfig = tenantData?.theme_config || { siteName: "NewGamingStore" };
   
   const { data: order, error } = await supabase
     .from('orders')
@@ -40,12 +54,12 @@ export default async function CheckoutPage({
          games: { name: "Genshin Impact", image_url: "https://placehold.co/150x200/2563eb/white?text=Genshin" },
          products: { name: "Genshin Impact 1980+260 Genesis Crystals (ID)" },
          payment_channels: { name: "QRIS (All Payment Method)" }
-       }} tenantConfig={{ siteName: "NewGamingStore" }} />;
+       }} tenantConfig={tenantConfig} />;
     }
     return notFound();
   }
 
   return (
-    <CheckoutClient order={order} tenantConfig={{ siteName: "NewGamingStore" }} />
+    <CheckoutClient order={order} tenantConfig={tenantConfig} />
   );
 }

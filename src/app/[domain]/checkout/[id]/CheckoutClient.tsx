@@ -301,6 +301,12 @@ Mohon segera diproses ya, terima kasih!`;
                        </a>
                      )}
                    </div>
+                ) : order.payment_channels?.account_number === 'WALLET' ? (
+                   <div className="bg-[#1c1c1c] p-6 rounded-xl border border-blue-500/30 text-center">
+                     <p className="text-sm font-bold text-blue-400 mb-2">PEMBAYARAN SALDO AKUN</p>
+                     <p className="text-sm text-gray-400 mb-2">Tagihan akan dipotong dari Saldo Akun secara otomatis.</p>
+                     <p className="text-xs text-yellow-500">Mohon tunggu sistem memproses transaksi Anda.</p>
+                   </div>
                 ) : order.payment_channels?.account_number ? (
                    <div className="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800 text-center print:border-gray-300 print:bg-gray-50">
                      <p className="text-sm text-gray-400 mb-2 print:text-gray-600">Silakan transfer pembayaran ke rekening berikut:</p>
@@ -328,50 +334,52 @@ Mohon segera diproses ya, terima kasih!`;
               </div>
 
               {/* Konfirmasi Manual Section */}
-              <div className="pt-6 pb-2 print:hidden">
-                <div className="bg-[#151515] p-5 rounded-2xl border border-gray-800 space-y-4">
-                  <h3 className="font-bold text-white mb-2">Konfirmasi Pembayaran</h3>
-                  <p className="text-sm text-gray-400">
-                    Silakan unggah bukti transfer Anda agar pesanan dapat segera kami proses.
-                  </p>
-                  
-                  {/* Upload Button */}
-                  <label className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-all overflow-hidden ${paymentProofUrl ? 'border-green-500/50' : 'border-gray-700 hover:bg-gray-800/50 bg-[#1c1c1c]'}`}>
-                    {paymentProofUrl ? (
-                      <div className="relative w-full h-full group">
-                        <img src={paymentProofUrl} alt="Bukti Transfer" className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity" />
-                        <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <CheckCircle2 className="w-8 h-8 mb-2 text-green-500" />
-                          <span className="text-sm font-bold text-white bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Ganti Gambar</span>
+              {order.payment_channels?.account_number !== 'WALLET' && (
+                <div className="pt-6 pb-2 print:hidden">
+                  <div className="bg-[#151515] p-5 rounded-2xl border border-gray-800 space-y-4">
+                    <h3 className="font-bold text-white mb-2">Konfirmasi Pembayaran</h3>
+                    <p className="text-sm text-gray-400">
+                      Silakan unggah bukti transfer Anda agar pesanan dapat segera kami proses.
+                    </p>
+                    
+                    {/* Upload Button */}
+                    <label className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-all overflow-hidden ${paymentProofUrl ? 'border-green-500/50' : 'border-gray-700 hover:bg-gray-800/50 bg-[#1c1c1c]'}`}>
+                      {paymentProofUrl ? (
+                        <div className="relative w-full h-full group">
+                          <img src={paymentProofUrl} alt="Bukti Transfer" className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity" />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <CheckCircle2 className="w-8 h-8 mb-2 text-green-500" />
+                            <span className="text-sm font-bold text-white bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Ganti Gambar</span>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        {uploading ? (
-                          <Loader2 className="w-8 h-8 mb-3 text-blue-500 animate-spin" />
-                        ) : (
-                          <UploadCloud className="w-8 h-8 mb-3 text-gray-400" />
-                        )}
-                        <p className="mb-2 text-sm text-gray-400">
-                          <span className="font-semibold text-white">
-                            {uploading ? 'Mengunggah...' : 'Klik untuk upload bukti'}
-                          </span>
-                        </p>
-                      </div>
-                    )}
-                    <input type="file" className="hidden" accept="image/*" onChange={handleUploadProof} disabled={uploading} />
-                  </label>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          {uploading ? (
+                            <Loader2 className="w-8 h-8 mb-3 text-blue-500 animate-spin" />
+                          ) : (
+                            <UploadCloud className="w-8 h-8 mb-3 text-gray-400" />
+                          )}
+                          <p className="mb-2 text-sm text-gray-400">
+                            <span className="font-semibold text-white">
+                              {uploading ? 'Mengunggah...' : 'Klik untuk upload bukti'}
+                            </span>
+                          </p>
+                        </div>
+                      )}
+                      <input type="file" className="hidden" accept="image/*" onChange={handleUploadProof} disabled={uploading} />
+                    </label>
 
-                  {/* WA Button */}
-                  <Button 
-                    onClick={handleWAConfirm}
-                    disabled={!paymentProofUrl}
-                    className={`w-full h-14 rounded-xl font-bold text-base shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${paymentProofUrl ? 'bg-[#25D366] hover:bg-[#128C7E] text-white' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}
-                  >
-                    <MessageCircle className="w-5 h-5" /> Konfirmasi via WhatsApp
-                  </Button>
+                    {/* WA Button */}
+                    <Button 
+                      onClick={handleWAConfirm}
+                      disabled={!paymentProofUrl}
+                      className={`w-full h-14 rounded-xl font-bold text-base shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${paymentProofUrl ? 'bg-[#25D366] hover:bg-[#128C7E] text-white' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}
+                    >
+                      <MessageCircle className="w-5 h-5" /> Konfirmasi via WhatsApp
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="pt-2 pb-4 print:hidden">
                 <Button className="w-full bg-[#111111] hover:bg-[#1a1a1a] text-white border border-gray-800 h-14 rounded-xl font-bold text-base shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">

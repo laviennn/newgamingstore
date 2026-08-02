@@ -33,11 +33,16 @@ export default async function MemberUpgradePage({
     .order("created_at", { ascending: false });
 
   // 4. Fetch Tenant Config for CS WhatsApp
-  const { data: tenantData } = await supabase
+  let { data: tenantData } = await supabase
     .from("tenants")
     .select("theme_config")
     .eq("domain", domain)
     .maybeSingle();
+
+  if (!tenantData) {
+    const res = await supabase.from("tenants").select("theme_config").limit(1).maybeSingle();
+    tenantData = res.data;
+  }
 
   const tenantConfig = tenantData?.theme_config || {};
 
