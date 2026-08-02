@@ -31,7 +31,7 @@ export function FloatingWhatsapp({
   const finalAvatarUrl = avatarUrl ? fixUrl(avatarUrl) : null;
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex items-center gap-3 group">
+    <div className="fixed bottom-36 md:bottom-6 right-4 md:right-6 z-30 flex items-center gap-3 group">
       {/* Speech Bubble */}
       <a
         href={waUrl}

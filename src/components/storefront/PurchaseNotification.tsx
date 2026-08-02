@@ -107,7 +107,7 @@ export function PurchaseNotification({ tenantName }: PurchaseNotificationProps) 
   return (
     <div
       className={cn(
-        "fixed bottom-20 md:bottom-6 left-4 md:left-6 z-50 transition-all duration-500 ease-in-out w-[90%] md:w-auto max-w-[340px]",
+        "fixed bottom-36 md:bottom-6 left-4 md:left-6 z-30 transition-all duration-500 ease-in-out w-[90%] md:w-auto max-w-[340px]",
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
       )}
     >
