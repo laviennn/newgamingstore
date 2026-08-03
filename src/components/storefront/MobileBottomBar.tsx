@@ -20,9 +20,9 @@ export function MobileBottomBar({ waChannelActive, waChannelUrl }: MobileBottomB
       href: "/",
     },
     {
-      label: "CEK TRANSAKSI",
-      icon: ReceiptText,
-      href: "/track",
+      label: "TOP UP",
+      icon: Wallet,
+      href: "/prices",
     }
   ];
 
