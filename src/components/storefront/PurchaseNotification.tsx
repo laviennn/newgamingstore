@@ -107,13 +107,17 @@ export function PurchaseNotification({ tenantName }: PurchaseNotificationProps) 
   return (
     <div
       className={cn(
-        "fixed bottom-36 md:bottom-6 left-4 md:left-6 z-30 transition-all duration-500 ease-in-out w-[90%] md:w-auto max-w-[340px]",
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+        "fixed z-40 transition-all duration-500 ease-in-out",
+        "top-20 left-4 right-4 max-w-[340px] mx-auto",
+        "md:top-auto md:bottom-6 md:left-6 md:right-auto md:w-auto md:mx-0",
+        isVisible 
+          ? "opacity-100 translate-y-0" 
+          : "opacity-0 -translate-y-6 md:translate-y-10 pointer-events-none"
       )}
     >
-      <div className="bg-[#111] border border-gray-800 rounded-2xl p-3 shadow-2xl flex items-center gap-4">
+      <div className="bg-[#111]/95 backdrop-blur-md border border-white/10 rounded-2xl p-3 shadow-2xl flex items-center gap-3.5">
         {/* Game Image */}
-        <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-gray-800">
+        <div className="relative w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
           <Image
             src={activeItem.gameImage}
             alt={activeItem.gameName}
@@ -124,16 +128,16 @@ export function PurchaseNotification({ tenantName }: PurchaseNotificationProps) 
         </div>
 
         {/* Content */}
-        <div className="flex flex-col gap-1 overflow-hidden">
-          <p className="text-sm font-medium text-gray-200 truncate">
+        <div className="flex flex-col gap-0.5 overflow-hidden">
+          <p className="text-xs md:text-sm font-medium text-gray-300 truncate">
             {phoneNumber} Telah Membeli
           </p>
-          <p className="text-sm font-bold text-white truncate">
+          <p className="text-xs md:text-sm font-bold text-white truncate">
             {activeItem.itemName}
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500/20" />
-            <p className="text-xs text-gray-400 truncate">
+            <BadgeCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-500/20 shrink-0" />
+            <p className="text-[11px] md:text-xs text-gray-400 truncate">
               Verified by {tenantName || "Yowanastore"}
             </p>
           </div>
