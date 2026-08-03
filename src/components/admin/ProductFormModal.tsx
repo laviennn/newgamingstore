@@ -101,7 +101,7 @@ export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: 
             <div className="flex items-center gap-4">
                {imageUrl && (
                  <div className="relative w-12 h-12 rounded bg-background border border-border shrink-0 overflow-hidden">
-                    <Image src={imageUrl} alt="Icon Preview" fill className="object-cover" />
+                    <Image src={imageUrl} alt="Icon Preview" fill sizes="48px" className="object-cover" />
                  </div>
                )}
                <div className="flex-1 space-y-2">

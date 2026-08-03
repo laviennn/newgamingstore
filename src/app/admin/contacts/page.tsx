@@ -262,7 +262,7 @@ export default function ContactsPage() {
              {waFloatingAvatarUrl && (
                 <div className="mt-4 p-4 border rounded-xl bg-muted/30 flex items-center gap-4">
                   <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-primary bg-background shadow-md">
-                    <Image src={waFloatingAvatarUrl.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com')} alt="WA Character Avatar" fill className="object-cover" />
+                    <Image src={waFloatingAvatarUrl.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com')} alt="WA Character Avatar" fill sizes="64px" className="object-cover" />
                   </div>
                   <div>
                     <h4 className="text-sm font-bold">Preview Character Avatar</h4>
@@ -337,7 +337,7 @@ export default function ContactsPage() {
              </div>
              {footerBannerUrl && (
                 <div className="mt-4 relative w-full h-[200px] md:h-[300px] rounded-xl overflow-hidden border bg-muted">
-                  <Image src={footerBannerUrl.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com')} alt="Footer Banner" fill className="object-cover" />
+                  <Image src={footerBannerUrl.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com')} alt="Footer Banner" fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover" />
                 </div>
              )}
           </CardContent>

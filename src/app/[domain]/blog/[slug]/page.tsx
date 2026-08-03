@@ -60,7 +60,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
       {/* Hero Background */}
       {article.image_url && (
         <div className="absolute top-0 inset-x-0 h-[60vh] w-full -z-10 overflow-hidden opacity-30 blur-2xl pointer-events-none">
-          <Image src={fixUrl(article.image_url)} alt="Background" fill className="object-cover" />
+          <Image src={fixUrl(article.image_url)} alt="Background" fill sizes="100vw" className="object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050810]/80 to-[#050810]" />
         </div>
       )}
@@ -78,6 +78,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
                 src={fixUrl(article.image_url)} 
                 alt={article.title} 
                 fill 
+                sizes="(max-width: 1024px) 100vw, 896px"
                 className="object-cover"
                 priority
               />

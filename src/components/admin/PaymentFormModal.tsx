@@ -129,7 +129,7 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
               <div className="flex gap-4 items-center">
                  <div className="relative w-16 h-10 bg-white rounded border overflow-hidden flex items-center justify-center shrink-0">
                    {logoPreview ? (
-                      <Image src={fixUrl(logoPreview)} alt="Logo" fill className="object-contain p-1" />
+                      <Image src={fixUrl(logoPreview)} alt="Logo" fill sizes="64px" className="object-contain p-1" />
                    ) : (
                       <span className="text-[10px] text-muted-foreground">No Logo</span>
                    )}
@@ -148,7 +148,7 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
                 <div className="flex gap-4 items-center">
                    <div className="relative w-16 h-16 bg-white rounded border overflow-hidden flex items-center justify-center shrink-0">
                      {qrPreview ? (
-                        <Image src={fixUrl(qrPreview)} alt="QR Code" fill className="object-contain p-1" />
+                        <Image src={fixUrl(qrPreview)} alt="QR Code" fill sizes="64px" className="object-contain p-1" />
                      ) : (
                         <span className="text-[10px] text-muted-foreground">No QR</span>
                      )}

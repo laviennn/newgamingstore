@@ -118,6 +118,7 @@ export function PurchaseNotification({ tenantName }: PurchaseNotificationProps) 
             src={activeItem.gameImage}
             alt={activeItem.gameName}
             fill
+            sizes="56px"
             className="object-cover"
           />
         </div>

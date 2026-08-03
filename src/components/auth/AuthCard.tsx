@@ -68,6 +68,7 @@ export function AuthCard({ mode }: AuthCardProps) {
             src="https://assets.newgamingstore.com/login_bg_1778139696.webp"
             alt="NewGamingStore Banner"
             fill
+            sizes="(max-width: 768px) 0vw, 500px"
             className="object-cover"
             priority
           />
