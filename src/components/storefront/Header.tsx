@@ -68,6 +68,9 @@ export function Header({ logoUrl, domain, user }: HeaderProps) {
           <div className="block md:hidden">
              <GlobalSearch />
           </div>
+          {user && (
+            <UserDropdown user={user} />
+          )}
           <MobileSidebar user={user} />
         </div>
       </div>

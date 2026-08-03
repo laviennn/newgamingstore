@@ -39,8 +39,8 @@ export function DepositForm({
   }, {});
 
   const NumberBadge = ({ num }: { num: number }) => (
-    <div className="relative flex items-center justify-center w-10 h-10 overflow-hidden rounded-l-md rounded-br-2xl bg-gradient-to-br from-blue-700 to-blue-900 shrink-0 transform -skew-x-12 ml-2 border border-blue-500/50 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-      <span className="text-white font-black italic text-lg transform skew-x-12">{num}</span>
+    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+      <span className="text-blue-400 font-bold text-sm">{num}</span>
     </div>
   );
 
@@ -81,10 +81,9 @@ export function DepositForm({
       {NotificationComponent}
       
       {/* 1. Pilih Nominal */}
-      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-[#111111]">
-        <div className="border-b border-border/30 bg-[#0a0a0a] p-4 relative">
-          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-blue-600 rounded-l-xl"></div>
-          <div className="flex items-center gap-4 pl-3">
+      <div className="bg-[#121212] border border-white/5 rounded-2xl overflow-hidden">
+        <div className="border-b border-white/5 bg-[#161616] p-5">
+          <div className="flex items-center gap-3">
             <NumberBadge num={1} />
             <h2 className="text-lg font-bold text-white tracking-wide">Pilih Nominal Deposit</h2>
           </div>
@@ -98,10 +97,10 @@ export function DepositForm({
                 <div
                   key={nom}
                   onClick={() => { setSelectedNominal(nom); setCustomNominal(""); }}
-                  className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 group
+                  className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 group
                     ${isSelected 
-                      ? 'border-blue-500 bg-blue-900/20 shadow-[0_0_15px_rgba(37,99,235,0.15)]' 
-                      : 'border-white/10 bg-white/5 hover:border-blue-500/50 hover:bg-white/10'}`}
+                      ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
+                      : 'border-white/10 bg-[#151515] hover:border-white/30 hover:bg-[#1a1a1a]'}`}
                 >
                   {isSelected && (
                     <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full p-0.5 shadow-lg shadow-blue-500/50 z-10 animate-scale-in">
@@ -133,7 +132,7 @@ export function DepositForm({
                   setCustomNominal(val ? parseInt(val).toLocaleString('id-ID') : "");
                   setSelectedNominal(null);
                 }}
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
               />
             </div>
           </div>
@@ -141,10 +140,9 @@ export function DepositForm({
       </div>
 
       {/* 2. Pilih Pembayaran */}
-      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-[#111111]">
-        <div className="border-b border-border/30 bg-[#0a0a0a] p-4 relative">
-          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-blue-600 rounded-l-xl"></div>
-          <div className="flex items-center gap-4 pl-3">
+      <div className="bg-[#121212] border border-white/5 rounded-2xl overflow-hidden">
+        <div className="border-b border-white/5 bg-[#161616] p-5">
+          <div className="flex items-center gap-3">
             <NumberBadge num={2} />
             <h2 className="text-lg font-bold text-white tracking-wide">Pilih Pembayaran</h2>
           </div>
@@ -154,11 +152,11 @@ export function DepositForm({
           {Object.keys(groupedPayments).map((category, idx) => {
             const isOpen = openCategory === category || (idx === 0 && openCategory === null);
             return (
-              <div key={category} className="border border-white/10 rounded-xl overflow-hidden bg-white/5">
+              <div key={category} className="border border-white/10 rounded-2xl overflow-hidden bg-[#151515]">
                 <button
                   type="button"
                   onClick={() => setOpenCategory(isOpen ? null : category)}
-                  className="w-full p-4 flex items-center justify-between bg-white/5 hover:bg-white/10 transition-colors"
+                  className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-white uppercase tracking-wide text-sm">{category}</h3>
@@ -176,17 +174,17 @@ export function DepositForm({
                 </button>
                 
                 <div className={`transition-all duration-300 overflow-hidden ${isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#111111]">
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#121212]">
                     {groupedPayments[category].map((payment: any) => {
                       const isSelected = selectedPayment?.id === payment.id;
                       return (
                         <div
                           key={payment.id}
                           onClick={() => setSelectedPayment(payment)}
-                          className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-center gap-4
+                          className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex items-center gap-4
                             ${isSelected 
-                              ? 'border-blue-500 bg-blue-900/20' 
-                              : 'border-white/10 bg-white/5 hover:border-blue-500/30'}`}
+                              ? 'border-blue-500 bg-blue-500/10' 
+                              : 'border-white/5 bg-[#151515] hover:border-white/20'}`}
                         >
                           {isSelected && (
                             <div className="absolute top-2 right-2 text-blue-500">
@@ -222,7 +220,7 @@ export function DepositForm({
         <button
           type="submit"
           disabled={amount < 10000 || !selectedPayment || isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-400 text-white font-bold text-lg py-4 rounded-xl shadow-xl shadow-blue-900/20 transition-all flex items-center justify-center gap-3"
+          className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-[#1a1a1a] disabled:text-gray-500 text-white font-bold text-lg py-4 rounded-full shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3"
         >
           {isSubmitting ? (
             <>
@@ -232,7 +230,7 @@ export function DepositForm({
           ) : (
             <>
               Lanjutkan Pembayaran
-              <span className="bg-white/20 px-3 py-1 rounded-lg text-sm font-black">
+              <span className="bg-black/20 px-3 py-1 rounded-full text-sm font-black">
                 Rp {amount.toLocaleString('id-ID')}
               </span>
             </>

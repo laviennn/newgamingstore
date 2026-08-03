@@ -161,7 +161,7 @@ export function UpgradeClient({
           </div>
 
           <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">
-            Upgrade <span className="text-[#2B95FF]">Membership</span>
+            Upgrade <span className="text-blue-500">Membership</span>
           </h1>
 
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#151515] border border-white/10 text-xs text-gray-300 font-medium">
@@ -181,14 +181,14 @@ export function UpgradeClient({
             <div className="flex items-center bg-[#151515] border border-white/10 p-1 rounded-xl gap-1">
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-lg transition-colors ${viewMode === "grid" ? "bg-[#2B95FF] text-white" : "text-gray-400 hover:text-white"}`}
+                className={`p-2 rounded-lg transition-colors ${viewMode === "grid" ? "bg-blue-500 text-white" : "text-gray-400 hover:text-white"}`}
                 title="Tampilan Grid"
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded-lg transition-colors ${viewMode === "list" ? "bg-[#2B95FF] text-white" : "text-gray-400 hover:text-white"}`}
+                className={`p-2 rounded-lg transition-colors ${viewMode === "list" ? "bg-blue-500 text-white" : "text-gray-400 hover:text-white"}`}
                 title="Tampilan List"
               >
                 <List className="w-4 h-4" />
@@ -208,13 +208,13 @@ export function UpgradeClient({
                   onClick={() => setSelectedPkgId(pkg.id)}
                   className={`relative rounded-3xl p-6 sm:p-8 cursor-pointer transition-all duration-300 flex flex-col justify-between ${
                     isSelected
-                      ? "bg-[#0d1527]/90 border-2 border-[#2B95FF] shadow-[0_0_30px_rgba(43,149,255,0.2)]"
-                      : "bg-[#121316] border border-white/10 hover:border-white/20"
+                      ? "bg-blue-900/10 border-2 border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.15)]"
+                      : "bg-[#121212] border border-white/5 hover:border-white/20"
                   }`}
                 >
                   {/* Selected Indicator */}
                   {isSelected && (
-                    <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-[#2B95FF] text-white flex items-center justify-center shadow-lg">
+                    <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg">
                       <Check className="w-4 h-4 stroke-[3]" />
                     </div>
                   )}
@@ -222,7 +222,7 @@ export function UpgradeClient({
                   <div>
                     {/* Package Icon */}
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${
-                      isStarter ? "bg-white/5 border border-white/10 text-gray-300" : "bg-blue-600/20 border border-blue-500/30 text-[#2B95FF]"
+                      isStarter ? "bg-white/5 border border-white/10 text-gray-300" : "bg-blue-500/10 border border-blue-500/30 text-blue-400"
                     }`}>
                       {isStarter ? <Rocket className="w-6 h-6" /> : (pkg.name.toLowerCase().includes("gold") ? <Crown className="w-6 h-6" /> : <Shield className="w-6 h-6" />)}
                     </div>
@@ -237,7 +237,7 @@ export function UpgradeClient({
                     <ul className="space-y-3 text-sm text-gray-300">
                       {pkg.benefits.map((benefit: string, idx: number) => (
                         <li key={idx} className="flex items-start gap-3">
-                          <Check className={`w-4 h-4 mt-0.5 shrink-0 ${isStarter ? "text-gray-500" : "text-[#2B95FF]"}`} />
+                          <Check className={`w-4 h-4 mt-0.5 shrink-0 ${isStarter ? "text-gray-500" : "text-blue-500"}`} />
                           <span className="text-xs sm:text-sm font-medium">{benefit}</span>
                         </li>
                       ))}
@@ -246,7 +246,7 @@ export function UpgradeClient({
 
                   <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-gray-400">
                     <span>{isStarter ? "Bawaan Akun" : "Perpanjangan Otomatis"}</span>
-                    <span className={isSelected ? "text-[#2B95FF]" : "text-gray-500"}>
+                    <span className={isSelected ? "text-blue-400" : "text-gray-500"}>
                       {isSelected ? "Terpilih" : "Pilih Paket"}
                     </span>
                   </div>
@@ -279,10 +279,10 @@ export function UpgradeClient({
                       }}
                       className={`relative p-4 rounded-2xl border transition-all flex items-center justify-between overflow-hidden ${
                         isDisabled 
-                          ? "opacity-50 cursor-not-allowed bg-[#121316] border-transparent" 
+                          ? "opacity-50 cursor-not-allowed bg-[#121212] border-transparent" 
                           : isChannelSelected
-                            ? "bg-blue-600/10 border-[#2B95FF] text-white shadow-md shadow-blue-900/20 cursor-pointer"
-                            : "bg-[#121316] border-[#2B95FF]/30 hover:border-[#2B95FF]/60 text-gray-300 cursor-pointer"
+                            ? "bg-blue-500/10 border-blue-500 text-white shadow-md shadow-blue-500/20 cursor-pointer"
+                            : "bg-[#121212] border-blue-500/30 hover:border-blue-500/60 text-gray-300 cursor-pointer"
                       }`}
                     >
                       {/* Badge Khusus Member */}
@@ -305,7 +305,7 @@ export function UpgradeClient({
                           </p>
                         </div>
                       </div>
-                      {isChannelSelected && !isDisabled && <CheckCircle2 className="w-5 h-5 text-[#2B95FF] shrink-0" />}
+                      {isChannelSelected && !isDisabled && <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />}
                     </div>
                   );
                 })()}
@@ -337,8 +337,8 @@ export function UpgradeClient({
                             onClick={() => setSelectedPaymentId(channel.id)}
                             className={`p-4 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
                               isChannelSelected
-                                ? "bg-blue-600/10 border-[#2B95FF] text-white shadow-md shadow-blue-900/20"
-                                : "bg-[#121316] border-white/10 hover:border-white/20 text-gray-300"
+                                ? "bg-blue-500/10 border-blue-500 text-white shadow-md shadow-blue-500/20"
+                                : "bg-[#121212] border-white/5 hover:border-white/20 text-gray-300"
                             }`}
                           >
                             <div className="flex items-center gap-3">
@@ -354,7 +354,7 @@ export function UpgradeClient({
                                 <p className="text-[10px] text-gray-400">Proses Otomatis</p>
                               </div>
                             </div>
-                            {isChannelSelected && <CheckCircle2 className="w-5 h-5 text-[#2B95FF] shrink-0" />}
+                            {isChannelSelected && <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />}
                           </div>
                         );
                       })}
@@ -372,7 +372,7 @@ export function UpgradeClient({
             <button
               onClick={handleProcessUpgrade}
               disabled={isSubmitting}
-              className="w-full sm:w-auto min-w-[280px] bg-[#2B95FF] hover:bg-[#1E74D4] text-white font-bold text-base px-8 py-4 rounded-2xl transition-all shadow-[0_0_25px_rgba(43,149,255,0.4)] disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+              className="w-full sm:w-auto min-w-[280px] bg-blue-500 hover:bg-blue-400 text-white font-bold text-base px-8 py-4 rounded-full transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
             >
               {isSubmitting ? (
                 <>
@@ -394,7 +394,7 @@ export function UpgradeClient({
       {/* Floating Chat CS Button */}
       <button
         onClick={handleCSChat}
-        className="fixed bottom-6 right-6 z-40 bg-[#2B95FF] hover:bg-[#1E74D4] text-white font-bold px-5 py-3 rounded-full shadow-2xl flex items-center gap-2.5 transition-transform active:scale-95 border border-white/20 text-xs tracking-wider"
+        className="fixed bottom-6 right-6 z-40 bg-blue-500 hover:bg-blue-400 text-white font-bold px-5 py-3 rounded-full shadow-2xl flex items-center gap-2.5 transition-transform active:scale-95 border border-white/20 text-xs tracking-wider"
       >
         <MessageCircle className="w-4 h-4 fill-current" />
         <span>CHAT CS</span>

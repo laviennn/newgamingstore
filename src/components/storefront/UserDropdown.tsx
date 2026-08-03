@@ -90,7 +90,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-[320px] bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute right-0 md:right-0 -mr-10 md:mr-0 mt-3 w-[300px] sm:w-[320px] bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
           
           {/* Header Info */}
           <div className="px-5 py-4">

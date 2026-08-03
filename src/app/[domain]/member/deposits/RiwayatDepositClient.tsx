@@ -2,13 +2,14 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any[] }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [limit, setLimit] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Actually applied filters (on 'Filter Data' click)
   const [activeFilters, setActiveFilters] = useState({
@@ -19,6 +20,7 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
   });
 
   const handleFilter = () => {
+    setCurrentPage(1);
     setActiveFilters({
       status: statusFilter,
       dateFrom: dateFrom,
@@ -32,6 +34,7 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
     setDateFrom("");
     setDateTo("");
     setLimit(10);
+    setCurrentPage(1);
     setActiveFilters({
       status: "",
       dateFrom: "",
@@ -57,14 +60,20 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
       result = result.filter(d => new Date(d.created_at) <= toDate);
     }
 
-    return result.slice(0, activeFilters.limit);
+    return result;
   }, [initialDeposits, activeFilters]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / activeFilters.limit));
+  const currentData = filteredData.slice((currentPage - 1) * activeFilters.limit, currentPage * activeFilters.limit);
+  
+  const startIndex = (currentPage - 1) * activeFilters.limit + 1;
+  const endIndex = Math.min(currentPage * activeFilters.limit, filteredData.length);
 
   return (
     <div className="space-y-6">
       
       {/* Filters Section */}
-      <div className="bg-[#151515] border border-white/5 rounded-2xl p-6">
+      <div className="bg-[#121212] border border-white/5 rounded-2xl p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           
           <div className="space-y-2">
@@ -72,13 +81,13 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
             <select 
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 appearance-none transition-colors"
+              className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 appearance-none transition-colors"
             >
-              <option value="" className="bg-[#151515]">Success, Pending...</option>
-              <option value="Success" className="bg-[#151515]">Success</option>
-              <option value="Pending" className="bg-[#151515]">Pending</option>
-              <option value="Processed" className="bg-[#151515]">Processed</option>
-              <option value="Failed" className="bg-[#151515]">Failed</option>
+              <option value="" className="bg-[#121212]">Success, Pending...</option>
+              <option value="Success" className="bg-[#121212]">Success</option>
+              <option value="Pending" className="bg-[#121212]">Pending</option>
+              <option value="Processed" className="bg-[#121212]">Processed</option>
+              <option value="Failed" className="bg-[#121212]">Failed</option>
             </select>
           </div>
 
@@ -88,7 +97,7 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
               type="date" 
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
+              className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
             />
           </div>
 
@@ -98,7 +107,7 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
               type="date" 
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
+              className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
             />
           </div>
 
@@ -107,12 +116,16 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
             <div className="relative">
               <select 
                 value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 appearance-none transition-colors pr-10"
+                onChange={(e) => {
+                  setLimit(Number(e.target.value));
+                  setCurrentPage(1);
+                  setActiveFilters(prev => ({ ...prev, limit: Number(e.target.value) }));
+                }}
+                className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 appearance-none transition-colors pr-10"
               >
-                <option value={10} className="bg-[#151515]">10 Baris</option>
-                <option value={20} className="bg-[#151515]">20 Baris</option>
-                <option value={50} className="bg-[#151515]">50 Baris</option>
+                <option value={5} className="bg-[#121212]">5 Baris</option>
+                <option value={10} className="bg-[#121212]">10 Baris</option>
+                <option value={50} className="bg-[#121212]">50 Baris</option>
               </select>
               <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
@@ -122,13 +135,13 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
         <div className="flex gap-3">
           <button 
             onClick={handleFilter}
-            className="bg-[#2B95FF] hover:bg-[#1E74D4] text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(43,149,255,0.4)]"
+            className="bg-blue-500 hover:bg-blue-400 text-white font-semibold text-sm px-6 py-2.5 rounded-full transition-all shadow-lg shadow-blue-500/20"
           >
             Filter Data
           </button>
           <button 
             onClick={handleReset}
-            className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold text-sm px-6 py-2.5 rounded-xl transition-colors"
+            className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold text-sm px-6 py-2.5 rounded-full transition-colors"
           >
             Reset
           </button>
@@ -136,7 +149,7 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
       </div>
 
       {/* Table Section */}
-      <div className="bg-[#1F2023] rounded-2xl overflow-hidden">
+      <div className="bg-[#121212] border border-white/5 rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
@@ -148,14 +161,14 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filteredData.length === 0 ? (
+              {currentData.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-8 px-6 text-center text-gray-500 text-sm">
-                    Tidak ada data mutasi yang ditemukan.
+                    Tidak ada riwayat deposit yang ditemukan.
                   </td>
                 </tr>
               ) : (
-                filteredData.map((dep) => {
+                currentData.map((dep) => {
                   const depositDate = new Date(dep.created_at);
                   const formattedDate = `${depositDate.getFullYear()}-${String(depositDate.getMonth() + 1).padStart(2, '0')}-${String(depositDate.getDate()).padStart(2, '0')} ${String(depositDate.getHours()).padStart(2, '0')}:${String(depositDate.getMinutes()).padStart(2, '0')}:${String(depositDate.getSeconds()).padStart(2, '0')}`;
 
@@ -196,9 +209,34 @@ export function RiwayatDepositClient({ initialDeposits }: { initialDeposits: any
         </div>
       </div>
       
-      <div className="text-xs text-gray-500 mt-2 px-2">
-        Menampilkan {filteredData.length > 0 ? 1 : 0} sampai {filteredData.length} dari {initialDeposits.length} data
-      </div>
+      {/* Pagination Controls */}
+      {filteredData.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#121212] border border-white/5 rounded-2xl p-4">
+          <div className="text-xs text-gray-400 font-medium">
+            Menampilkan <span className="text-white font-bold">{startIndex}</span> - <span className="text-white font-bold">{endIndex}</span> dari <span className="text-white font-bold">{filteredData.length}</span> data
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="text-xs font-bold text-gray-300 bg-white/5 border border-white/10 rounded-xl px-4 py-2">
+              Halaman {currentPage} dari {totalPages}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
       
     </div>
   );
