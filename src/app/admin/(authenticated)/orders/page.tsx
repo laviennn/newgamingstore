@@ -1,4 +1,4 @@
-import { checkPermission } from "@/app/admin/actions";
+import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,7 @@ export default async function OrdersPage() {
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const supabase = await createClient();
-      const cookieStore = await cookies();
-      const currentTenantId = cookieStore.get('admin_tenant_id')?.value;
+      const currentTenantId = await getActiveAdminTenantId();
       
       if (currentTenantId) {
         const { data, error } = await supabase

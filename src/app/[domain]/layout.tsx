@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
 import React from "react";
@@ -45,10 +46,7 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
           description: config.seoDescription || `Top up game murah dan cepat di ${tenantData.name}`,
           images: config.ogImage ? [config.ogImage] : (config.logoUrl ? [config.logoUrl] : []),
         },
-        verification: {
-          google: config.gscVerification || undefined,
-        }
-      }
+      };
     }
   }
 
@@ -60,6 +58,8 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
 
 export default async function StorefrontLayout({ children, params }: { children: React.ReactNode, params: Promise<{ domain: string }> }) {
   const { domain } = await params;
+  const cookieStore = await cookies();
+  const isMaintenanceBypassed = cookieStore.get('bypass_maintenance')?.value === 'true';
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let config: any = {};
@@ -68,6 +68,7 @@ export default async function StorefrontLayout({ children, params }: { children:
   
   let user = null;
   let currentTenantName = "Yowanastore";
+  let isMaintenanceActive = false;
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = await createClient();
@@ -95,15 +96,18 @@ export default async function StorefrontLayout({ children, params }: { children:
       }
     }
 
-    let { data: tenantData } = await supabase.from('tenants').select('theme_config, name, is_maintenance').eq('domain', domain).maybeSingle();
+    let { data: tenantData } = await supabase.from('tenants').select('id, theme_config, name, is_maintenance').eq('domain', domain).maybeSingle();
 
     if (!tenantData) {
-      const res = await supabase.from('tenants').select('theme_config, name, is_maintenance').limit(1).maybeSingle();
+      const res = await supabase.from('tenants').select('id, theme_config, name, is_maintenance').limit(1).maybeSingle();
       if (res.data) tenantData = res.data;
     }
 
     if (tenantData) {
-      if (tenantData.is_maintenance) {
+      isMaintenanceActive = !!tenantData.is_maintenance;
+      const isAdminUser = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin';
+
+      if (isMaintenanceActive && !isMaintenanceBypassed && !isAdminUser) {
         return <MaintenanceView tenantName={tenantData.name || "Yowanastore"} />;
       }
       
@@ -113,8 +117,10 @@ export default async function StorefrontLayout({ children, params }: { children:
       currentTenantName = tenantData.name || "Yowanastore";
     }
 
-    const { data: channels } = await supabase.from('payment_channels').select('*').eq('is_active', true);
-    paymentChannels = channels || [];
+    if (tenantData?.id) {
+      const { data: channels } = await supabase.from('payment_channels').select('*').eq('tenant_id', tenantData.id).eq('is_active', true);
+      paymentChannels = channels || [];
+    }
   }
 
   let customStyle = "";
@@ -135,13 +141,24 @@ export default async function StorefrontLayout({ children, params }: { children:
         <style dangerouslySetInnerHTML={{ __html: customStyle }} />
         <SnowfallEffect />
         
+        {isMaintenanceActive && (
+          <div className="bg-amber-500/20 border-b border-amber-500/40 text-amber-300 text-xs md:text-sm py-2 px-4 text-center font-semibold flex items-center justify-center gap-2 z-50 relative backdrop-blur-md">
+            <span>⚠️ <strong>Mode Maintenance Aktif</strong> — Anda sedang mengakses versi pratinjau (Developer/Admin Bypass).</span>
+            <a href="?bypass_maintenance=false" className="underline hover:text-white ml-2 text-[11px] bg-amber-500/30 px-2 py-0.5 rounded transition-colors">Matikan Pratinjau</a>
+          </div>
+        )}
+        
         <Header logoUrl={config.logoUrl || ""} domain={domain} user={user} />
         
         <main className="flex-1">
           {children}
         </main>
         
-        <Footer domain={domain} themeConfig={config} paymentChannels={paymentChannels} />
+        <Footer 
+          domain={domain}
+          themeConfig={config}
+          paymentChannels={paymentChannels}
+        />
         
         <FloatingWhatsapp 
           whatsapp={config.whatsapp} 
@@ -154,7 +171,7 @@ export default async function StorefrontLayout({ children, params }: { children:
           waChannelActive={config.waChannelActive ?? false}
           waChannelUrl={config.waChannelUrl || "#"}
         />
-        
+
         <PurchaseNotification tenantName={currentTenantName} />
       </div>
 

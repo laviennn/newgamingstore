@@ -16,7 +16,7 @@ import {
   Loader2,
   Wallet
 } from "lucide-react";
-import { uploadFile } from "@/app/actions/upload";
+import { uploadFile, logUploadError } from "@/app/actions/upload";
 import { updateDepositProof } from "@/components/storefront/depositActions";
 import { useNotification } from "@/components/ui/notification";
 import Link from "next/link";
@@ -28,29 +28,36 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState(deposit.payment_proof_url || null);
-  const [paymentStatus, setPaymentStatus] = useState(deposit.status === 'Pending' ? 'UNPAID' : 'PAID');
-  const [status, setStatus] = useState(deposit.status);
+  const [paymentStatus, setPaymentStatus] = useState(deposit.payment_status || 'UNPAID');
+  const [status, setStatus] = useState(deposit.status || 'Pending');
 
   useEffect(() => {
-    const expiredAt = new Date(deposit.created_at).getTime() + (24 * 60 * 60 * 1000);
-    const timer = setInterval(() => {
+    // 2 Hour Countdown based on created_at
+    const createdAt = new Date(deposit.created_at).getTime();
+    const expiryTime = createdAt + 2 * 60 * 60 * 1000; // + 2 hours
+
+    const updateTimer = () => {
       const now = new Date().getTime();
-      const distance = expiredAt - now;
+      const distance = expiryTime - now;
+
       if (distance < 0) {
-        clearInterval(timer);
         setTimeLeft({ h: 0, m: 0, s: 0 });
-      } else {
-        setTimeLeft({
-          h: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          m: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          s: Math.floor((distance % (1000 * 60)) / 1000)
-        });
+        return;
       }
-    }, 1000);
-    return () => clearInterval(timer);
+
+      const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+      setTimeLeft({ h, m, s });
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
   }, [deposit.created_at]);
 
-  // Fix image URL from R2
   const fixUrl = (url: string | null) => {
     if (!url) return '';
     return url.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com');
@@ -58,6 +65,12 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
 
   const handleCopy = async () => {
     navigator.clipboard.writeText(deposit.invoice_id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -70,6 +83,24 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check size (max 10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const errorMsg = "Ukuran file terlalu besar. Maksimal 10MB.";
+      showNotification("error", "Gagal Upload", errorMsg);
+      await logUploadError({
+        context: "Deposit Payment Proof Upload",
+        invoiceId: deposit.invoice_id,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        errorMessage: errorMsg,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
+        url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
+      });
+      return;
+    }
+
     setUploading(true);
     try {
        const uploadFormData = new FormData();
@@ -78,6 +109,16 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
        
        if (res.error) {
           showNotification("error", "Gagal Upload", res.error);
+          await logUploadError({
+             context: "Deposit Payment Proof Upload (R2)",
+             invoiceId: deposit.invoice_id,
+             fileName: file.name,
+             fileSize: file.size,
+             fileType: file.type,
+             errorMessage: res.error,
+             userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
+             url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
+          });
        } else if (res.url) {
           const updateRes = await updateDepositProof(deposit.invoice_id, res.url);
           if (updateRes.success) {
@@ -86,11 +127,34 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
              setStatus('Processed');
              showNotification("success", "Berhasil", "Bukti transfer berhasil diunggah!");
           } else {
-             showNotification("error", "Gagal Disimpan", updateRes.message || "Gagal menyimpan URL bukti transfer.");
+             const errorMsg = updateRes.message || "Gagal menyimpan URL bukti transfer.";
+             showNotification("error", "Gagal Disimpan", errorMsg);
+             await logUploadError({
+                context: "Deposit Payment Proof DB Update",
+                invoiceId: deposit.invoice_id,
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+                errorMessage: errorMsg,
+                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
+                url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
+             });
           }
        }
-    } catch (err) {
-       showNotification("error", "Kesalahan Sistem", "Terjadi kesalahan sistem saat upload.");
+    } catch (err: any) {
+       const errorMsg = err?.message || "Terjadi kesalahan sistem saat upload.";
+       showNotification("error", "Kesalahan Sistem", errorMsg);
+       await logUploadError({
+          context: "Deposit Payment Proof Exception",
+          invoiceId: deposit.invoice_id,
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          errorMessage: errorMsg,
+          errorStack: err?.stack || String(err),
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
+          url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
+       });
     } finally {
        setUploading(false);
     }
@@ -171,20 +235,20 @@ Mohon segera diproses ya, terima kasih!`;
             </div>
 
             {/* Account Info Card */}
-            <div className="bg-[#151515] rounded-2xl border border-gray-800 p-6 flex gap-6 print:border-gray-300 print:text-black">
-              <div className="flex-1 space-y-3">
-                <h3 className="font-bold text-lg mb-2">Informasi Akun</h3>
-                <div className="grid grid-cols-3 text-sm">
-                  <div className="col-span-1 text-gray-400 font-medium">Email</div>
-                  <div className="col-span-2 text-white font-semibold print:text-black">: {deposit.customer_email}</div>
+            <div className="bg-[#151515] rounded-2xl border border-gray-800 p-4 sm:p-6 flex flex-row items-start gap-4 sm:gap-6 print:border-gray-300 print:text-black">
+              <div className="flex-1 min-w-0 space-y-2.5">
+                <h3 className="font-bold text-base sm:text-lg border-b border-gray-800/80 pb-2 mb-3">Informasi Akun</h3>
+                <div className="flex items-start text-xs sm:text-sm gap-2">
+                  <span className="text-gray-400 font-medium w-24 sm:w-28 shrink-0">Email :</span>
+                  <span className="text-white font-semibold print:text-black break-all min-w-0 flex-1">{deposit.customer_email}</span>
                 </div>
-                <div className="grid grid-cols-3 text-sm">
-                  <div className="col-span-1 text-gray-400 font-medium">No. WhatsApp</div>
-                  <div className="col-span-2 text-white font-semibold print:text-black">: {deposit.wa_number || "-"}</div>
+                <div className="flex items-start text-xs sm:text-sm gap-2">
+                  <span className="text-gray-400 font-medium w-24 sm:w-28 shrink-0">No. WhatsApp :</span>
+                  <span className="text-white font-semibold print:text-black break-all min-w-0 flex-1">{deposit.wa_number || "-"}</span>
                 </div>
-                <div className="grid grid-cols-3 text-sm">
-                  <div className="col-span-1 text-gray-400 font-medium">Layanan</div>
-                  <div className="col-span-2 text-white font-semibold print:text-black">: {isUpgrade ? `Upgrade Membership (${packageName})` : 'Deposit Saldo'}</div>
+                <div className="flex items-start text-xs sm:text-sm gap-2">
+                  <span className="text-gray-400 font-medium w-24 sm:w-28 shrink-0">Layanan :</span>
+                  <span className="text-white font-semibold print:text-black break-words min-w-0 flex-1">{isUpgrade ? `Upgrade Membership (${packageName})` : 'Deposit Saldo'}</span>
                 </div>
               </div>
             </div>
@@ -328,17 +392,17 @@ Mohon segera diproses ya, terima kasih!`;
                     </p>
                     
                     {/* Upload Button */}
-                    <label className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-all overflow-hidden ${paymentProofUrl ? 'border-green-500/50' : 'border-gray-700 hover:bg-gray-800/50 bg-[#1c1c1c]'}`}>
+                    <div className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all overflow-hidden ${paymentProofUrl ? 'border-green-500/50' : 'border-gray-700 hover:bg-gray-800/50 bg-[#1c1c1c]'}`}>
                       {paymentProofUrl ? (
                         <div className="relative w-full h-full group">
                           <img src={paymentProofUrl} alt="Bukti Transfer" className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity" />
-                          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                             <CheckCircle2 className="w-8 h-8 mb-2 text-green-500" />
                             <span className="text-sm font-bold text-white bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Ganti Gambar</span>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                           {uploading ? (
                             <Loader2 className="w-8 h-8 mb-3 text-blue-500 animate-spin" />
                           ) : (
@@ -351,8 +415,15 @@ Mohon segera diproses ya, terima kasih!`;
                           </p>
                         </div>
                       )}
-                      <input type="file" className="hidden" accept="image/*" onChange={handleUploadProof} disabled={uploading} />
-                    </label>
+                      <input 
+                        type="file" 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 block" 
+                        accept="image/*,image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif" 
+                        onClick={(e) => { (e.target as HTMLInputElement).value = ''; }}
+                        onChange={handleUploadProof} 
+                        disabled={uploading} 
+                      />
+                    </div>
 
                     {/* WA Button */}
                     <Button 

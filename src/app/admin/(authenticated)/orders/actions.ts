@@ -2,13 +2,12 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { getActiveAdminTenantId } from "@/app/admin/actions";
 
 export async function adminUpdateOrderStatus(invoiceId: string, status: string, paymentStatus: string) {
   try {
     const supabase = await createClient();
-    const cookieStore = await cookies();
-    const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+    const tenant_id = await getActiveAdminTenantId();
     
     if (!tenant_id) return { success: false, message: "No active tenant selected." };
 

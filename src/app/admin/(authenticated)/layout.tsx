@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { TenantSelector } from "@/components/admin/TenantSelector";
 import { LayoutDashboard, Users, Gamepad2, ShoppingCart, FileText, Settings, Menu, Layers, BookOpen, HelpCircle, Contact, CreditCard, Palette, Tag, ChevronDown, Folder, Globe, Shield, Crown, UserCheck } from "lucide-react";
-import { getAdminSession, setAdminTenantCookie } from "@/app/admin/actions";
+import { getAdminSession, setAdminTenantCookie, getActiveAdminTenantId } from "@/app/admin/actions";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const adminSession = await getAdminSession();
@@ -17,18 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const supabase = await createClient();
   const { data: tenants } = await supabase.from('tenants').select('id, name').order('created_at', { ascending: true });
   
-  const cookieStore = await cookies();
-  let currentTenantId = cookieStore.get('admin_tenant_id')?.value;
-  
-  // Enforce operator tenant_id
-  if (!isSuperAdmin && adminSession.tenant_id) {
-    currentTenantId = adminSession.tenant_id;
-  }
-  
-  // Default to first tenant if no cookie and is superadmin
-  if (!currentTenantId && tenants && tenants.length > 0) {
-    currentTenantId = tenants[0].id;
-  }
+  const currentTenantId = await getActiveAdminTenantId();
 
   return (
     <div className="flex min-h-screen w-full bg-muted/40">

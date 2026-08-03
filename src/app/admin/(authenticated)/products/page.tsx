@@ -1,4 +1,4 @@
-import { checkPermission } from "@/app/admin/actions";
+import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
@@ -17,8 +17,7 @@ export default async function ProductsPage() {
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const supabase = await createClient();
-      const cookieStore = await cookies();
-      const currentTenantId = cookieStore.get('admin_tenant_id')?.value;
+      const currentTenantId = await getActiveAdminTenantId();
       
       if (currentTenantId) {
         // Fetch Products with joined Game info

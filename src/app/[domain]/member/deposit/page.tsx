@@ -20,10 +20,18 @@ export default async function MemberDepositPage({
     redirect("/login");
   }
 
+  // Fetch tenant
+  let { data: tenant } = await supabase.from('tenants').select('id').eq('domain', domain).maybeSingle();
+  if (!tenant) {
+    const res = await supabase.from('tenants').select('id').limit(1).maybeSingle();
+    if (res.data) tenant = res.data;
+  }
+
   // Fetch active payment channels
   const { data: paymentChannels } = await supabase
     .from("payment_channels")
     .select("*")
+    .eq("tenant_id", tenant?.id)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 

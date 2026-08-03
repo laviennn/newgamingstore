@@ -12,7 +12,7 @@ import Image from "next/image";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: boolean; onClose: () => void; product?: any; games: any[] }) {
-  const { showNotification } = useNotification();
+  const { showNotification, NotificationComponent } = useNotification();
   const [loading, setLoading] = React.useState(false);
   const [isFlashSale, setIsFlashSale] = React.useState(product?.is_flash_sale || false);
   const [imageUrl, setImageUrl] = React.useState(product?.image_url || "");
@@ -34,10 +34,10 @@ export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: 
     const result = await uploadFile(formData);
     
     if (result.error) {
-      showNotification("error", "Upload Failed", result.error);
+      showNotification("error", "Gagal Unggah", result.error);
     } else if (result.url) {
       setImageUrl(result.url);
-      showNotification("success", "Upload Success", "Image uploaded successfully.");
+      showNotification("success", "Unggah Berhasil", "Gambar produk berhasil diunggah.");
     }
     setUploadingImage(false);
   };
@@ -53,15 +53,17 @@ export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: 
     setLoading(false);
     
     if (result.error) {
-      showNotification("error", "Error", result.error);
+      showNotification("error", "Gagal Menyimpan", result.error);
     } else {
-      showNotification("success", "Success", `Product successfully ${product ? 'updated' : 'added'}!`);
+      showNotification("success", "Berhasil", `Produk berhasil ${product ? 'diperbarui' : 'ditambahkan'}!`);
       onClose();
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      {NotificationComponent}
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{product ? "Edit Product" : "Add New Product"}</DialogTitle>
@@ -119,6 +121,21 @@ export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: 
                  </label>
                </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="variant_type" className="text-sm font-medium">Variant Type (Optional)</label>
+            <select 
+              id="variant_type" 
+              name="variant_type" 
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+              defaultValue={product?.variant_type || ""}
+            >
+              <option value="">None (Default)</option>
+              <option value="iOS">Via iOS</option>
+              <option value="Android">Via Android</option>
+            </select>
+            <p className="text-xs text-muted-foreground">Used for dynamic top up models (e.g. FC Mobile).</p>
           </div>
 
           <div className="space-y-2">
@@ -209,5 +226,6 @@ export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: 
         </form>
       </DialogContent>
     </Dialog>
+  </>
   );
 }

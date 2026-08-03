@@ -109,10 +109,10 @@ export function PurchaseNotification({ tenantName }: PurchaseNotificationProps) 
       className={cn(
         "fixed z-40 transition-all duration-500 ease-in-out",
         "top-20 left-4 right-4 max-w-[340px] mx-auto",
-        "md:top-auto md:bottom-6 md:left-6 md:right-auto md:w-auto md:mx-0",
+        "md:top-24 md:left-6 md:right-auto md:w-auto md:mx-0",
         isVisible 
           ? "opacity-100 translate-y-0" 
-          : "opacity-0 -translate-y-6 md:translate-y-10 pointer-events-none"
+          : "opacity-0 -translate-y-6 md:-translate-y-10 pointer-events-none"
       )}
     >
       <div className="bg-[#111]/95 backdrop-blur-md border border-white/10 rounded-2xl p-3 shadow-2xl flex items-center gap-3.5">

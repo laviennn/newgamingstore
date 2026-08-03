@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { getActiveAdminTenantId } from "@/app/admin/actions";
 
 export async function saveGame(formData: FormData, id?: string) {
   const name = formData.get("name") as string;
@@ -33,8 +33,7 @@ export async function saveGame(formData: FormData, id?: string) {
   }
 
   const supabase = await createClient();
-  const cookieStore = await cookies();
-  const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+  const tenant_id = await getActiveAdminTenantId();
 
   if (!tenant_id) {
     return { error: "No active tenant selected." };
@@ -65,8 +64,7 @@ export async function saveGame(formData: FormData, id?: string) {
 
 export async function toggleGamePopular(id: string, is_popular: boolean) {
   const supabase = await createClient();
-  const cookieStore = await cookies();
-  const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+  const tenant_id = await getActiveAdminTenantId();
   if (!tenant_id) return { error: "No active tenant selected." };
 
   try {
@@ -86,8 +84,7 @@ export async function toggleGamePopular(id: string, is_popular: boolean) {
 
 export async function deleteGame(id: string) {
   const supabase = await createClient();
-  const cookieStore = await cookies();
-  const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+  const tenant_id = await getActiveAdminTenantId();
   if (!tenant_id) return { error: "No active tenant selected." };
 
   try {

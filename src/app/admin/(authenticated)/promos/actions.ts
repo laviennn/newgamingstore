@@ -2,12 +2,11 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { getActiveAdminTenantId } from "@/app/admin/actions";
 
 export async function getPromoCodes() {
   const supabase = await createClient();
-  const cookieStore = await cookies();
-  const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+  const tenant_id = await getActiveAdminTenantId();
   if (!tenant_id) return [];
 
   const { data, error } = await supabase
@@ -25,8 +24,7 @@ export async function getPromoCodes() {
 
 export async function savePromoCode(promo: any) {
   const supabase = await createClient();
-  const cookieStore = await cookies();
-  const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+  const tenant_id = await getActiveAdminTenantId();
   if (!tenant_id) throw new Error("No active tenant selected.");
 
   if (promo.id) {
@@ -64,8 +62,7 @@ export async function savePromoCode(promo: any) {
 
 export async function deletePromoCode(id: string) {
   const supabase = await createClient();
-  const cookieStore = await cookies();
-  const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+  const tenant_id = await getActiveAdminTenantId();
   if (!tenant_id) throw new Error("No active tenant selected.");
 
   const { error } = await supabase.from("promo_codes").delete().eq("id", id).eq("tenant_id", tenant_id);

@@ -44,3 +44,32 @@ export async function uploadFile(formData: FormData) {
     return { error: (error as Error).message || "Failed to upload file." };
   }
 }
+
+export interface UploadErrorLogParams {
+  context: string;
+  invoiceId?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
+  errorMessage: string;
+  errorStack?: string;
+  userAgent?: string;
+  url?: string;
+}
+
+export async function logUploadError(params: UploadErrorLogParams) {
+  try {
+    const timestamp = new Date().toISOString();
+    console.error(
+      `[PAYMENT_UPLOAD_ERROR] [${timestamp}] Context: "${params.context}" | Invoice: "${params.invoiceId || 'N/A'}" | File: "${params.fileName || 'N/A'}" (${params.fileSize || 0} bytes, ${params.fileType || 'N/A'}) | UserAgent: "${params.userAgent || 'N/A'}" | Error: ${params.errorMessage}`,
+      {
+        ...params,
+        timestamp,
+      }
+    );
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to execute logUploadError:", err);
+    return { error: "Failed to log upload error" };
+  }
+}

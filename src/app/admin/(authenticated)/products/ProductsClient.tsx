@@ -4,7 +4,7 @@ import { SkeuoStatusBadge } from "@/components/ui/skeuo-switch";
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { deleteProduct, duplicateProduct } from "@/app/admin/(authenticated)/products/actions";
+import { deleteProduct, duplicateProduct, toggleProductStatus } from "@/app/admin/(authenticated)/products/actions";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { useNotification } from "@/components/ui/notification";
 import { Trash2, Edit, Copy } from "lucide-react";
@@ -45,10 +45,10 @@ export function ProductsClient({ initialProducts, games }: { initialProducts: an
     setDeleteState(prev => ({ ...prev, loading: true }));
     const result = await deleteProduct(deleteState.id);
     if (result.error) {
-      showNotification("error", "Failed to Delete", result.error);
+      showNotification("error", "Gagal Menghapus", result.error);
       setDeleteState(prev => ({ ...prev, loading: false }));
     } else {
-      showNotification("success", "Deleted", "Product has been removed successfully.");
+      showNotification("success", "Berhasil Dihapus", `Produk "${deleteState.name}" telah berhasil dihapus.`);
       setDeleteState({ isOpen: false, id: "", name: "", loading: false });
     }
   };
@@ -56,9 +56,23 @@ export function ProductsClient({ initialProducts, games }: { initialProducts: an
   const handleDuplicate = async (id: string) => {
     const result = await duplicateProduct(id);
     if (result.error) {
-      showNotification("error", "Failed to Duplicate", result.error);
+      showNotification("error", "Gagal Menduplikasi", result.error);
     } else {
-      showNotification("success", "Duplicated", "Product has been duplicated successfully.");
+      showNotification("success", "Berhasil Diduplikasi", "Produk telah berhasil diduplikasi.");
+    }
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: boolean, name: string) => {
+    const nextStatus = !currentStatus;
+    const result = await toggleProductStatus(id, nextStatus);
+    if (result.error) {
+      showNotification("error", "Gagal Mengubah Status", result.error);
+    } else {
+      showNotification(
+        "success",
+        "Status Diperbarui",
+        `Produk "${name}" sekarang ${nextStatus ? "Aktif" : "Nonaktif"}.`
+      );
     }
   };
 
@@ -112,7 +126,7 @@ export function ProductsClient({ initialProducts, games }: { initialProducts: an
                 <td className="p-4">
                   <SkeuoStatusBadge
                     checked={p.active ?? true}
-                    onToggle={() => {}}
+                    onToggle={() => handleToggleStatus(p.id, p.active ?? true, p.name)}
                     activeText="Active"
                     inactiveText="Inactive"
                   />

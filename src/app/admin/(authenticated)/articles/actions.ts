@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { getActiveAdminTenantId } from "@/app/admin/actions";
 
 export async function saveArticle(formData: FormData, id?: string) {
   const title = formData.get("title") as string;
@@ -18,8 +18,7 @@ export async function saveArticle(formData: FormData, id?: string) {
   }
 
   const supabase = await createClient();
-  const cookieStore = await cookies();
-  const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+  const tenant_id = await getActiveAdminTenantId();
   if (!tenant_id) return { error: "No active tenant selected." };
 
   try {
@@ -48,8 +47,7 @@ export async function saveArticle(formData: FormData, id?: string) {
 
 export async function toggleArticleStatus(id: string, currentStatus: boolean) {
   const supabase = await createClient();
-  const cookieStore = await cookies();
-  const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+  const tenant_id = await getActiveAdminTenantId();
   if (!tenant_id) return { error: "No active tenant selected." };
 
   try {
@@ -71,8 +69,7 @@ export async function toggleArticleStatus(id: string, currentStatus: boolean) {
 
 export async function deleteArticle(id: string) {
   const supabase = await createClient();
-  const cookieStore = await cookies();
-  const tenant_id = cookieStore.get("admin_tenant_id")?.value;
+  const tenant_id = await getActiveAdminTenantId();
   if (!tenant_id) return { error: "No active tenant selected." };
 
   try {

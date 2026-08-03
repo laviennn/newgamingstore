@@ -65,7 +65,7 @@ export default async function GameTopUpPage({
   const displayProducts = products || [];
 
   // 4. Fetch Payment Channels
-  const { data: channels } = await supabase.from('payment_channels').select('*').eq('is_active', true);
+  const { data: channels } = await supabase.from('payment_channels').select('*').eq('tenant_id', tenant.id).eq('is_active', true);
   const paymentChannels = channels || [];
 
   return (

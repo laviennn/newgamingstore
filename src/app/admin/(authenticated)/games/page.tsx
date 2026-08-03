@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { GamesClient } from "./GamesClient";
-import { checkPermission } from "@/app/admin/actions";
+import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
 import { redirect } from "next/navigation";
 
 export default async function GamesPage() {
@@ -17,8 +17,7 @@ export default async function GamesPage() {
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const supabase = await createClient();
-      const cookieStore = await cookies();
-      const currentTenantId = cookieStore.get('admin_tenant_id')?.value;
+      const currentTenantId = await getActiveAdminTenantId();
       
       if (currentTenantId) {
         const { data, error } = await supabase.from('games').select('*, categories(name)').eq('tenant_id', currentTenantId).order('created_at', { ascending: false });

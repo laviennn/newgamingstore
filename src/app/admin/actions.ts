@@ -1,6 +1,6 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 
 export async function setAdminTenantCookie(tenantId: string) {
@@ -71,4 +71,69 @@ export async function checkPermission(permissionName: string) {
 
   const permissions = adminSession.admin_roles?.permissions || [];
   return permissions.includes(permissionName);
+}
+
+export async function getActiveAdminTenantId() {
+  const adminSession = await getAdminSession();
+  if (!adminSession) return null;
+
+  // 1. If Operator (not superadmin) and has assigned tenant, force their assigned tenant
+  if (!adminSession.is_superadmin && adminSession.tenant_id) {
+    return adminSession.tenant_id;
+  }
+
+  const cookieStore = await cookies();
+  const cookieTenantId = cookieStore.get('admin_tenant_id')?.value;
+
+  // 2. If SuperAdmin explicitly selected a tenant via TenantSelector cookie, use it
+  if (cookieTenantId) {
+    return cookieTenantId;
+  }
+
+  // 3. Automatically detect tenant based on the Request Host / Domain
+  const supabase = await createClient();
+  try {
+    const headerList = await headers();
+    const rawHost = headerList.get('host') || headerList.get('x-forwarded-host') || '';
+    const domainWithoutPort = rawHost.split(':')[0]; // e.g. "admin.localhost" or "admin.newgamingstore.com"
+
+    if (domainWithoutPort) {
+      // Try matching admin_domain or domain
+      const { data: matchedTenant } = await supabase
+        .from('tenants')
+        .select('id')
+        .or(`admin_domain.eq.${domainWithoutPort},domain.eq.${domainWithoutPort}`)
+        .maybeSingle();
+
+      if (matchedTenant?.id) {
+        return matchedTenant.id;
+      }
+
+      // Try matching storefront domain if host starts with "admin."
+      if (domainWithoutPort.startsWith('admin.')) {
+        const sfDomain = domainWithoutPort.replace('admin.', '');
+        const { data: matchedSf } = await supabase
+          .from('tenants')
+          .select('id')
+          .eq('domain', sfDomain)
+          .maybeSingle();
+
+        if (matchedSf?.id) {
+          return matchedSf.id;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to detect tenant from headers:", err);
+  }
+
+  // 4. Fallback: First tenant in the database
+  const { data: firstTenant } = await supabase
+    .from('tenants')
+    .select('id')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  return firstTenant?.id || null;
 }

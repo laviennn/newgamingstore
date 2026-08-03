@@ -10,6 +10,13 @@ import { validatePromoCode, getAvailablePromos } from "@/components/storefront/p
 import { createOrder } from "@/components/storefront/checkoutActions";
 import { useNotification } from "@/components/ui/notification";
 
+// Helper for angled number badge
+const NumberBadge = ({ num }: { num: number }) => (
+  <div className="relative flex items-center justify-center w-10 h-10 overflow-hidden rounded-l-md rounded-br-2xl bg-gradient-to-br from-blue-700 to-blue-900 shrink-0 transform -skew-x-12 ml-2 border border-blue-500/50 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
+    <span className="text-white font-black italic text-lg transform skew-x-12">{num}</span>
+  </div>
+);
+
 export function StorefrontGameForm({
   game,
   products,
@@ -25,6 +32,11 @@ export function StorefrontGameForm({
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+
+  // Variant State
+  const variants = Array.from(new Set(products.map(p => p.variant_type).filter(Boolean))) as string[];
+  const hasVariants = variants.length > 0;
+  const [selectedVariant, setSelectedVariant] = useState<string | null>(variants.length > 0 ? variants[0] : null);
 
   const [waNumber, setWaNumber] = useState("");
   const [promoCodeInput, setPromoCodeInput] = useState("");
@@ -104,12 +116,7 @@ export function StorefrontGameForm({
     return acc;
   }, {});
 
-  // Helper for angled number badge
-  const NumberBadge = ({ num }: { num: number }) => (
-    <div className="relative flex items-center justify-center w-10 h-10 overflow-hidden rounded-l-md rounded-br-2xl bg-gradient-to-br from-blue-700 to-blue-900 shrink-0 transform -skew-x-12 ml-2 border border-blue-500/50 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-      <span className="text-white font-black italic text-lg transform skew-x-12">{num}</span>
-    </div>
-  );
+  // Helper removed from here
 
   const handleCheckout = (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,11 +221,34 @@ export function StorefrontGameForm({
         </div>
 
         <div className="p-6">
-          {products.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {products.map((p: any) => {
-                const isSelected = selectedProduct?.id === p.id;
-                return (
+          {hasVariants && (
+            <div className="flex flex-wrap items-center gap-2 mb-6 bg-[#0a0a0a] p-1.5 rounded-xl border border-border/20 w-fit">
+              {variants.map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => {
+                    setSelectedVariant(v);
+                    setSelectedProduct(null); // Reset product selection on tab change
+                  }}
+                  className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${selectedVariant === v ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {(() => {
+            const displayProducts = hasVariants && selectedVariant 
+              ? products.filter((p: any) => p.variant_type === selectedVariant)
+              : products;
+            
+            return displayProducts.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {displayProducts.map((p: any) => {
+                  const isSelected = selectedProduct?.id === p.id;
+                  return (
                   <div
                     key={p.id}
                     onClick={() => setSelectedProduct(p)}
@@ -261,7 +291,8 @@ export function StorefrontGameForm({
             <div className="py-12 text-center text-muted-foreground border-2 border-dashed rounded-xl border-border/20 bg-black/20">
               <p>Belum ada produk top-up yang tersedia.</p>
             </div>
-          )}
+          );
+          })()}
         </div>
       </div>
 

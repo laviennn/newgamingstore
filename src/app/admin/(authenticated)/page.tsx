@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Gamepad2, ShoppingCart, DollarSign } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 
-import { cookies } from "next/headers";
+import { getActiveAdminTenantId } from "@/app/admin/actions";
 
 export default async function AdminDashboardPage() {
   let stats = { tenants: 0, games: 0, products: 0, orders: 0 };
@@ -13,8 +13,7 @@ export default async function AdminDashboardPage() {
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const supabase = await createClient();
-      const cookieStore = await cookies();
-      const currentTenantId = cookieStore.get('admin_tenant_id')?.value;
+      const currentTenantId = await getActiveAdminTenantId();
       
       // We need a tenant id to filter
       if (currentTenantId) {
