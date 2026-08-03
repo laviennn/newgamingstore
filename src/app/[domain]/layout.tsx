@@ -145,8 +145,10 @@ export default async function StorefrontLayout({ children, params }: { children:
           text={config.waFloatingText} 
           customMessage={config.waDefaultMessage}
         />
-        
-        <MobileBottomBar />
+        <MobileBottomBar 
+          waChannelActive={config.waChannelActive ?? false}
+          waChannelUrl={config.waChannelUrl || "#"}
+        />
         
         <PurchaseNotification tenantName={currentTenantName} />
       </div>

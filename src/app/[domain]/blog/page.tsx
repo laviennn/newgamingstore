@@ -85,8 +85,10 @@ export default async function BlogPage({ params }: { params: Promise<{ domain: s
         text={tenantConfig.waFloatingText} 
         customMessage={tenantConfig.waDefaultMessage}
       />
-
-      <MobileBottomBar />
+      <MobileBottomBar 
+          waChannelActive={tenantConfig.waChannelActive ?? false}
+          waChannelUrl={tenantConfig.waChannelUrl || "#"}
+      />
     </div>
   );
 }

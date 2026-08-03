@@ -119,8 +119,10 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
         text={tenantConfig.waFloatingText} 
         customMessage={tenantConfig.waDefaultMessage}
       />
-
-      <MobileBottomBar />
+      <MobileBottomBar 
+          waChannelActive={tenantConfig.waChannelActive ?? false}
+          waChannelUrl={tenantConfig.waChannelUrl || "#"}
+      />
     </div>
   );
 }

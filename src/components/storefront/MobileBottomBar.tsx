@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Wallet, Megaphone } from "lucide-react";
+import { Home, Wallet, Megaphone, ReceiptText, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function MobileBottomBar() {
+interface MobileBottomBarProps {
+  waChannelActive?: boolean;
+  waChannelUrl?: string;
+}
+
+export function MobileBottomBar({ waChannelActive, waChannelUrl }: MobileBottomBarProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -15,16 +20,25 @@ export function MobileBottomBar() {
       href: "/",
     },
     {
-      label: "TOP UP",
-      icon: Wallet,
-      href: "/prices",
-    },
-    {
+      label: "CEK TRANSAKSI",
+      icon: ReceiptText,
+      href: "/track",
+    }
+  ];
+
+  if (waChannelActive && waChannelUrl) {
+    navItems.push({
       label: "KOMUNITAS",
       icon: Megaphone,
-      href: "#",
-    },
-  ];
+      href: waChannelUrl,
+    });
+  } else {
+    navItems.push({
+      label: "DAFTAR HARGA",
+      icon: Tag,
+      href: "/prices",
+    });
+  }
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t border-border/40 pb-safe">
