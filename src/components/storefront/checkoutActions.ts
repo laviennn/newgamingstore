@@ -45,7 +45,8 @@ export async function createOrder(orderData: any) {
       
       const { error: rpcError } = await supabase.rpc('deduct_wallet_balance', {
         p_email: currentUser.email.toLowerCase(),
-        p_amount: totalPrice
+        p_amount: totalPrice,
+        p_tenant_id: orderData.tenantId
       });
       
       if (rpcError) {

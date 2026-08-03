@@ -6,7 +6,7 @@ import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { savePayment } from "@/app/admin/payments/actions";
+import { savePayment } from "@/app/admin/(authenticated)/payments/actions";
 import { uploadFile } from "@/app/actions/upload";
 import { useNotification } from "@/components/ui/notification";
 import { Loader2, UploadCloud } from "lucide-react";

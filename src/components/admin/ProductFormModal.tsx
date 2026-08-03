@@ -4,7 +4,7 @@ import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { saveProduct } from "@/app/admin/products/actions";
+import { saveProduct } from "@/app/admin/(authenticated)/products/actions";
 import { useNotification } from "@/components/ui/notification";
 import { Loader2, UploadCloud } from "lucide-react";
 import { uploadFile } from "@/app/actions/upload";

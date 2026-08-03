@@ -18,33 +18,40 @@ export default async function MemberUpgradePage({
     redirect("/login");
   }
 
-  // 2. Fetch Active Membership Packages
-  const { data: dynamicPackages } = await supabase
-    .from("membership_packages")
-    .select("*")
-    .eq("is_active", true)
-    .order("price", { ascending: true });
-
-  // 3. Fetch Active Payment Channels
-  const { data: paymentChannels } = await supabase
-    .from("payment_channels")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-
-  // 4. Fetch Tenant Config for CS WhatsApp
+  // 2. Fetch Tenant Config and ID for filtering
   let { data: tenantData } = await supabase
     .from("tenants")
-    .select("theme_config")
+    .select("id, theme_config")
     .eq("domain", domain)
     .maybeSingle();
 
   if (!tenantData) {
-    const res = await supabase.from("tenants").select("theme_config").limit(1).maybeSingle();
+    const res = await supabase.from("tenants").select("id, theme_config").limit(1).maybeSingle();
     tenantData = res.data;
+  }
+  
+  if (!tenantData) {
+     redirect("/");
   }
 
   const tenantConfig = tenantData?.theme_config || {};
+  const tenantId = tenantData.id;
+
+  // 3. Fetch Active Membership Packages
+  const { data: dynamicPackages } = await supabase
+    .from("membership_packages")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .eq("is_active", true)
+    .order("price", { ascending: true });
+
+  // 4. Fetch Active Payment Channels
+  const { data: paymentChannels } = await supabase
+    .from("payment_channels")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
 
   // 5. Determine current level from metadata overrides
   let currentLevel = user.user_metadata?.level || "MEMBER";
@@ -71,6 +78,7 @@ export default async function MemberUpgradePage({
       dynamicPackages={dynamicPackages || []}
       paymentChannels={paymentChannels || []}
       tenantConfig={tenantConfig}
+      tenantId={tenantId}
     />
   );
 }

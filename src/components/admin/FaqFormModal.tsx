@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { saveFaq } from "@/app/admin/faqs/actions";
+import { saveFaq } from "@/app/admin/(authenticated)/faqs/actions";
 import { useNotification } from "@/components/ui/notification";
 import { Loader2 } from "lucide-react";
 

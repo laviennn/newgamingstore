@@ -48,12 +48,14 @@ export function UpgradeClient({
   dynamicPackages,
   paymentChannels,
   tenantConfig,
+  tenantId,
 }: {
   user: User;
   currentLevel: string;
   dynamicPackages: any[];
   paymentChannels: any[];
   tenantConfig: any;
+  tenantId: string;
 }) {
   const { showNotification, NotificationComponent } = useNotification();
   const router = useRouter();
@@ -126,6 +128,7 @@ export function UpgradeClient({
         paymentChannelId: selectedPaymentId,
         userEmail: user.email || "",
         waNumber: user.user_metadata?.phone || null,
+        tenantId: tenantId,
       });
 
       if (res.success && res.invoiceId) {

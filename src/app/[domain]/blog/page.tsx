@@ -26,29 +26,36 @@ export default async function BlogPage({ params }: { params: Promise<{ domain: s
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
       const supabase = await createClient();
-      const { data, error } = await supabase
-        .from("articles")
-        .select("*")
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
-        
-      if (!error && data) articles = data;
 
       // Fetch Tenant Config based on domain
-      let { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('domain', domain).maybeSingle();
+      let { data: tenantData } = await supabase.from('tenants').select('id, theme_config').eq('domain', domain).maybeSingle();
       if (!tenantData) {
-        const res = await supabase.from('tenants').select('theme_config').limit(1).maybeSingle();
+        const res = await supabase.from('tenants').select('id, theme_config').limit(1).maybeSingle();
         if (res.data) tenantData = res.data;
       }
       if (tenantData && tenantData.theme_config) tenantConfig = tenantData.theme_config;
 
-      // Fetch Payment Channels
-      const { data: paymentsData } = await supabase
-        .from('payment_channels')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: true });
-      if (paymentsData) paymentChannels = paymentsData;
+      const tenantId = tenantData?.id;
+
+      if (tenantId) {
+        const { data, error } = await supabase
+          .from("articles")
+          .select("*")
+          .eq("tenant_id", tenantId)
+          .eq("is_published", true)
+          .order("created_at", { ascending: false });
+          
+        if (!error && data) articles = data;
+
+        // Fetch Payment Channels
+        const { data: paymentsData } = await supabase
+          .from('payment_channels')
+          .select('*')
+          .eq("tenant_id", tenantId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: true });
+        if (paymentsData) paymentChannels = paymentsData;
+      }
     }
   } catch (err) {
     console.error("Gagal mengambil data artikel", err);

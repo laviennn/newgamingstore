@@ -48,90 +48,99 @@ export default async function StorefrontPage({
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       const supabase = await createClient();
 
-      // Fetch Popular Games (Filter by is_popular = true, fallback to limit 6 if none tagged)
-      let { data: gamesData } = await supabase.from('games').select('*').eq('is_popular', true);
-      if (!gamesData || gamesData.length === 0) {
-        const fallback = await supabase.from('games').select('*').limit(6);
-        gamesData = fallback.data;
-      }
-
-      if (gamesData) {
-        popularGames = gamesData.map(g => ({
-          ...g,
-          image_url: fixUrl(g.image_url)
-        }));
-      }
-
-      // Fetch Flash Sale Products
-      const { data: flashSaleData } = await supabase
-        .from('products')
-        .select('*, games(name, slug, image_url)')
-        .eq('is_flash_sale', true)
-        .eq('active', true)
-        .limit(10);
-
-      if (flashSaleData) {
-        flashSaleProducts = flashSaleData.map(p => ({
-          id: p.id,
-          gameSlug: p.games?.slug || '',
-          gameName: p.games?.name || 'GAME',
-          productName: p.name,
-          image: fixUrl(p.games?.image_url) || '/placeholder.webp',
-          originalPrice: p.original_price || p.price,
-          discountPrice: p.price,
-          stockRemaining: p.flash_sale_stock || 0,
-        }));
-      }
-
-      // Fetch Categories (Only Active Ones)
-      const { data: catData } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-      if (catData) categories = catData;
-
-      // Fetch All Games for Category Section
-      const { data: allGamesData } = await supabase.from('games').select('*').order('created_at', { ascending: false });
-      if (allGamesData) allGames = allGamesData;
-
-      // Fetch Latest Articles
-      const { data: articlesData } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('is_published', true)
-        .order('created_at', { ascending: false })
-        .limit(3);
-      if (articlesData) articles = articlesData;
-
-      // Fetch FAQs
-      const { data: faqsData } = await supabase
-        .from('faqs')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true })
-        .order('created_at', { ascending: false });
-      if (faqsData) faqs = faqsData;
-
-      // Fetch Payment Channels
-      const { data: paymentsData } = await supabase
-        .from('payment_channels')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: true });
-      if (paymentsData) paymentChannels = paymentsData;
-
       // Fetch Tenant Config based on domain
-      let { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('domain', domain).maybeSingle();
+      let { data: tenantData } = await supabase.from('tenants').select('id, theme_config').eq('domain', domain).maybeSingle();
 
       // Fallback: If no exact domain match (e.g. testing on localhost:3000), fetch the first tenant's theme_config
       if (!tenantData) {
-        const res = await supabase.from('tenants').select('theme_config').limit(1).maybeSingle();
+        const res = await supabase.from('tenants').select('id, theme_config').limit(1).maybeSingle();
         if (res.data) tenantData = res.data;
       }
 
       if (tenantData && tenantData.theme_config) {
         tenantConfig = tenantData.theme_config;
+      }
+      
+      const tenantId = tenantData?.id;
+
+      if (tenantId) {
+        // Fetch Popular Games
+        let { data: gamesData } = await supabase.from('games').select('*').eq('tenant_id', tenantId).eq('is_popular', true);
+        if (!gamesData || gamesData.length === 0) {
+          const fallback = await supabase.from('games').select('*').eq('tenant_id', tenantId).limit(6);
+          gamesData = fallback.data;
+        }
+
+        if (gamesData) {
+          popularGames = gamesData.map(g => ({
+            ...g,
+            image_url: fixUrl(g.image_url)
+          }));
+        }
+
+        // Fetch Flash Sale Products
+        const { data: flashSaleData } = await supabase
+          .from('products')
+          .select('*, games(name, slug, image_url)')
+          .eq('tenant_id', tenantId)
+          .eq('is_flash_sale', true)
+          .eq('active', true)
+          .limit(10);
+
+        if (flashSaleData) {
+          flashSaleProducts = flashSaleData.map(p => ({
+            id: p.id,
+            gameSlug: p.games?.slug || '',
+            gameName: p.games?.name || 'GAME',
+            productName: p.name,
+            image: fixUrl(p.games?.image_url) || '/placeholder.webp',
+            originalPrice: p.original_price || p.price,
+            discountPrice: p.price,
+            stockRemaining: p.flash_sale_stock || 0,
+          }));
+        }
+
+        // Fetch Categories
+        const { data: catData } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+        if (catData) categories = catData;
+
+        // Fetch All Games for Category Section
+        const { data: allGamesData } = await supabase.from('games').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false });
+        if (allGamesData) allGames = allGamesData;
+
+        // Fetch Latest Articles
+        const { data: articlesData } = await supabase
+          .from('articles')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(3);
+        if (articlesData) articles = articlesData;
+
+        // Fetch FAQs
+        const { data: faqsData } = await supabase
+          .from('faqs')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: false });
+        if (faqsData) faqs = faqsData;
+
+        // Fetch Payment Channels
+        const { data: paymentsData } = await supabase
+          .from('payment_channels')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: true });
+        if (paymentsData) paymentChannels = paymentsData;
       }
     }
   } catch (err) {

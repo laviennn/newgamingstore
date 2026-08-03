@@ -21,10 +21,30 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return notFound();
   
   const supabase = await createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let tenantConfig: any = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let paymentChannels: any[] = [];
+
+  let { data: tenantData } = await supabase.from('tenants').select('id, theme_config').eq('domain', domain).maybeSingle();
+  if (!tenantData) {
+    const res = await supabase.from('tenants').select('id, theme_config').limit(1).maybeSingle();
+    if (res.data) tenantData = res.data;
+  }
+  
+  if (!tenantData) {
+     return notFound();
+  }
+
+  if (tenantData && tenantData.theme_config) tenantConfig = tenantData.theme_config;
+  const tenantId = tenantData.id;
+
   const { data: article, error } = await supabase
     .from("articles")
     .select("*")
     .eq("slug", slug)
+    .eq("tenant_id", tenantId)
     .eq("is_published", true)
     .maybeSingle();
 
@@ -32,21 +52,10 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
     return notFound();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let tenantConfig: any = {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let paymentChannels: any[] = [];
-
-  let { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('domain', domain).maybeSingle();
-  if (!tenantData) {
-    const res = await supabase.from('tenants').select('theme_config').limit(1).maybeSingle();
-    if (res.data) tenantData = res.data;
-  }
-  if (tenantData && tenantData.theme_config) tenantConfig = tenantData.theme_config;
-
   const { data: paymentsData } = await supabase
     .from('payment_channels')
     .select('*')
+    .eq("tenant_id", tenantId)
     .eq('is_active', true)
     .order('created_at', { ascending: true });
   if (paymentsData) paymentChannels = paymentsData;

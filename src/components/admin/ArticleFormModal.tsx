@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { saveArticle } from "@/app/admin/articles/actions";
+import { saveArticle } from "@/app/admin/(authenticated)/articles/actions";
 import { uploadFile } from "@/app/actions/upload";
 import { useNotification } from "@/components/ui/notification";
 import { Loader2, UploadCloud } from "lucide-react";

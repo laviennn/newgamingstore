@@ -8,12 +8,14 @@ export async function createUpgradeOrder({
   paymentChannelId,
   userEmail,
   waNumber,
+  tenantId,
 }: {
   packageName: string;
   amount: number;
   paymentChannelId?: string | null;
   userEmail: string;
   waNumber?: string | null;
+  tenantId: string;
 }) {
   try {
     const supabase = await createClient();
@@ -27,7 +29,8 @@ export async function createUpgradeOrder({
     if (isWalletPayment) {
       const { error: rpcError } = await supabase.rpc('deduct_wallet_balance', {
         p_email: userEmail.toLowerCase(),
-        p_amount: amount
+        p_amount: amount,
+        p_tenant_id: tenantId
       });
       
       if (rpcError) {
@@ -45,6 +48,7 @@ export async function createUpgradeOrder({
       payment_channel_id: paymentChannelId || null,
       status: "Pending", // initial state to allow trigger on update
       metadata: { type: "UPGRADE", package_name: packageName },
+      tenant_id: tenantId
     });
 
     if (depositError) {

@@ -18,35 +18,40 @@ export default async function GameTopUpPage({
   const { slug, domain } = await params;
   const supabase = await createClient();
 
-  // 1. Fetch Game
-  const { data: game, error: gameError } = await supabase
-    .from("games")
-    .select("*, categories(name)")
-    .eq("slug", slug)
-    .single();
-
-  if (gameError || !game) {
-    return notFound();
-  }
-
-  // 2. Fetch Global Banner from Tenant
+  // 1. Fetch Global Banner from Tenant First
   const hostname = decodeURIComponent(domain).split(':')[0]; // remove port if exists
-  const { data: tenant } = await supabase
+  let { data: tenant } = await supabase
     .from('tenants')
-    .select('theme_config')
+    .select('id, theme_config')
     .eq('domain', hostname)
     .maybeSingle();
+
+  if (!tenant) {
+    // fallback if no domain exact match
+    const { data: fallbackTenant } = await supabase.from('tenants').select('id, theme_config').limit(1).maybeSingle();
+    tenant = fallbackTenant;
+  }
+  
+  if (!tenant) {
+     return notFound();
+  }
 
   let gameDetailBanner = "";
 
   if (tenant?.theme_config?.gameDetailBanner) {
     gameDetailBanner = tenant.theme_config.gameDetailBanner;
-  } else {
-    // fallback if no domain exact match
-    const { data: fallbackTenant } = await supabase.from('tenants').select('theme_config').limit(1).maybeSingle();
-    if (fallbackTenant?.theme_config?.gameDetailBanner) {
-      gameDetailBanner = fallbackTenant.theme_config.gameDetailBanner;
-    }
+  }
+
+  // 2. Fetch Game
+  const { data: game, error: gameError } = await supabase
+    .from("games")
+    .select("*, categories(name)")
+    .eq("slug", slug)
+    .eq("tenant_id", tenant.id)
+    .single();
+
+  if (gameError || !game) {
+    return notFound();
   }
 
   // 3. Fetch Products from Database
@@ -54,6 +59,7 @@ export default async function GameTopUpPage({
     .from("products")
     .select("*")
     .eq("game_id", game.id)
+    .eq("tenant_id", tenant.id)
     .order("price", { ascending: true });
 
   const displayProducts = products || [];

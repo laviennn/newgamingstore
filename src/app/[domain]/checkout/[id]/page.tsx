@@ -15,13 +15,17 @@ export default async function CheckoutPage({
   // Fetch tenant config for WA number
   let { data: tenantData } = await supabase
     .from('tenants')
-    .select('theme_config')
+    .select('id, theme_config')
     .eq('domain', domain)
     .maybeSingle();
 
   if (!tenantData) {
-    const res = await supabase.from('tenants').select('theme_config').limit(1).maybeSingle();
+    const res = await supabase.from('tenants').select('id, theme_config').limit(1).maybeSingle();
     tenantData = res.data;
+  }
+  
+  if (!tenantData) {
+    return notFound();
   }
 
   const tenantConfig = tenantData?.theme_config || { siteName: "NewGamingStore" };
@@ -35,6 +39,7 @@ export default async function CheckoutPage({
       payment_channels (name, category, account_number, account_name, qr_image_url)
     `)
     .eq('invoice_id', id)
+    .eq('tenant_id', tenantData.id)
     .single();
 
   if (error || !order) {

@@ -8,6 +8,7 @@ import { SnowfallEffect } from "@/components/storefront/SnowfallEffect";
 import { FloatingWhatsapp } from "@/components/storefront/FloatingWhatsapp";
 import { MobileBottomBar } from "@/components/storefront/MobileBottomBar";
 import { PurchaseNotification } from "@/components/storefront/PurchaseNotification";
+import { MaintenanceView } from "@/components/storefront/MaintenanceView";
 import { hexToHsl } from "@/lib/utils";
 
 export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }): Promise<Metadata> {
@@ -94,14 +95,18 @@ export default async function StorefrontLayout({ children, params }: { children:
       }
     }
 
-    let { data: tenantData } = await supabase.from('tenants').select('theme_config, name').eq('domain', domain).maybeSingle();
+    let { data: tenantData } = await supabase.from('tenants').select('theme_config, name, is_maintenance').eq('domain', domain).maybeSingle();
 
     if (!tenantData) {
-      const res = await supabase.from('tenants').select('theme_config, name').limit(1).maybeSingle();
+      const res = await supabase.from('tenants').select('theme_config, name, is_maintenance').limit(1).maybeSingle();
       if (res.data) tenantData = res.data;
     }
 
     if (tenantData) {
+      if (tenantData.is_maintenance) {
+        return <MaintenanceView tenantName={tenantData.name || "Yowanastore"} />;
+      }
+      
       if (tenantData.theme_config) {
         config = tenantData.theme_config;
       }

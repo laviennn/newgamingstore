@@ -20,6 +20,7 @@ export async function createDepositOrder(depositData: any) {
        amount: depositData.amount,
        status: 'Pending',
        customer_email: currentUser?.email || depositData.waNumber || 'no-email@test.com',
+       tenant_id: depositData.tenantId
     };
 
     const { data, error } = await supabase
