@@ -549,7 +549,7 @@ export function StorefrontGameForm({
                 pattern="^(08|62|\+62)\d{8,13}$"
                 value={waNumber}
                 onChange={(e) => setWaNumber(e.target.value)}
-                placeholder="62"
+                placeholder="628"
                 className="flex h-12 flex-1 border-none bg-transparent px-4 py-2 text-sm text-black placeholder:text-gray-600 font-medium focus-visible:outline-none"
               />
             </div>
