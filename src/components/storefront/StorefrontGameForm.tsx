@@ -135,19 +135,40 @@ export function StorefrontGameForm({
     let serverId = "";
 
     if (game.form_fields && Array.isArray(game.form_fields)) {
-      game.form_fields.forEach((field: any) => {
+      game.form_fields.forEach((field: any, idx: number) => {
         const val = formData.get(field.name);
         if (val) {
-          data.push({ label: field.label, value: val.toString() });
-          // Standarisasi userId dan serverId (atau zoneId)
-          if (field.name.toLowerCase().includes('user') || field.name.toLowerCase() === 'id' || field.name === 'userId') {
-            userId = val.toString();
-          }
-          if (field.name.toLowerCase().includes('server') || field.name.toLowerCase() === 'zone' || field.name === 'zoneId' || field.name === 'serverId') {
-            serverId = val.toString();
+          const valStr = val.toString().trim();
+          data.push({ label: field.label, value: valStr });
+
+          const nameLower = (field.name || "").toLowerCase();
+          const labelLower = (field.label || "").toLowerCase();
+
+          // Deteksi Server / Zone
+          if (
+            nameLower.includes('server') || nameLower.includes('zone') || nameLower === 'zoneid' || nameLower === 'serverid' ||
+            labelLower.includes('server') || labelLower.includes('zone')
+          ) {
+            serverId = valStr;
+          } 
+          // Deteksi User ID / Open ID / Target ID
+          else if (
+            nameLower.includes('user') || nameLower.includes('id') || nameLower.includes('target') || nameLower.includes('account') || nameLower.includes('open') ||
+            labelLower.includes('id') || labelLower.includes('user') || labelLower.includes('open')
+          ) {
+            if (!userId) userId = valStr;
+          } 
+          // Fallback: Jika field pertama, dan userId belum terisi
+          else if (idx === 0 && !userId) {
+            userId = valStr;
           }
         }
       });
+
+      // Fallback 2: Jika userId masih belum terisi, pakai field pertama
+      if (!userId && data.length > 0) {
+        userId = data[0].value;
+      }
     }
 
     setAccountData(data);

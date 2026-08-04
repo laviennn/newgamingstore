@@ -15,12 +15,16 @@ const GAME_CODE_MAP: Record<string, { vipReseller?: string; rapidApi?: string }>
   "mobile-legends": { vipReseller: "mobile-legends", rapidApi: "mobile-legends" },
   "mobile-legend": { vipReseller: "mobile-legends", rapidApi: "mobile-legends" },
   "free-fire": { vipReseller: "free-fire", rapidApi: "free-fire" },
+  "free-fire-max": { vipReseller: "free-fire", rapidApi: "free-fire" },
   "pubg-mobile": { vipReseller: "pubgm", rapidApi: "pubg-mobile" },
   "pubgm": { vipReseller: "pubgm", rapidApi: "pubg-mobile" },
   "valorant": { vipReseller: "valorant", rapidApi: "valorant" },
   "point-blank": { vipReseller: "pointblank", rapidApi: "point-blank" },
   "pointblank": { vipReseller: "pointblank", rapidApi: "point-blank" },
   "cod-mobile": { vipReseller: "codm", rapidApi: "cod-mobile" },
+  "call-of-duty-mobile": { vipReseller: "codm", rapidApi: "cod-mobile" },
+  "call-of-duty": { vipReseller: "codm", rapidApi: "cod-mobile" },
+  "codm": { vipReseller: "codm", rapidApi: "cod-mobile" },
   "honkai-star-rail": { vipReseller: "honkai-star-rail", rapidApi: "honkai-star-rail" },
 };
 
