@@ -32,3 +32,29 @@ export async function adminUpdateOrderStatus(invoiceId: string, status: string, 
     return { success: false, message: err.message || "Gagal memperbarui status" };
   }
 }
+
+export async function deleteOrder(invoiceId: string) {
+  try {
+    const supabase = await createClient();
+    const tenant_id = await getActiveAdminTenantId();
+    
+    if (!tenant_id) return { success: false, message: "No active tenant selected." };
+
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('invoice_id', invoiceId)
+      .eq('tenant_id', tenant_id);
+      
+    if (error) {
+       console.error("Failed to delete order:", error);
+       return { success: false, message: error.message };
+    }
+    
+    revalidatePath('/admin/orders');
+    return { success: true };
+  } catch (err: any) {
+    console.error("deleteOrder exception:", err);
+    return { success: false, message: err.message || "Gagal menghapus order" };
+  }
+}

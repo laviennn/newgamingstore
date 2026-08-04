@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { adminUpdateOrderStatus } from "./actions";
-import { Loader2, Eye, ExternalLink } from "lucide-react";
+import { adminUpdateOrderStatus, deleteOrder } from "./actions";
+import { Loader2, Eye, ExternalLink, Trash2 } from "lucide-react";
 import { useNotification } from "@/components/ui/notification";
 import Image from "next/image";
 
@@ -23,8 +23,27 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
         if (selectedOrder && selectedOrder.invoice_id === invoiceId) {
             setSelectedOrder({ ...selectedOrder, status: 'Success', payment_status: 'PAID' });
         }
+        showNotification("success", "Berhasil Memproses", "Status order berhasil diubah menjadi Success.");
      } else {
         showNotification("error", "Gagal Memproses", res.message);
+     }
+     setLoadingId(null);
+  };
+
+  const handleDeleteOrder = async (invoiceId: string) => {
+     if (!confirm(`Apakah Anda yakin ingin menghapus pesanan dengan Invoice ${invoiceId}?`)) return;
+     
+     setLoadingId(invoiceId);
+     const res = await deleteOrder(invoiceId);
+     if (res.success) {
+        setOrders(prev => prev.filter(o => (o.invoice_id || o.id) !== invoiceId));
+        if (selectedOrder && (selectedOrder.invoice_id || selectedOrder.id) === invoiceId) {
+            setIsModalOpen(false);
+            setSelectedOrder(null);
+        }
+        showNotification("success", "Berhasil Dihapus", `Pesanan ${invoiceId} telah berhasil dihapus dari database.`);
+     } else {
+        showNotification("error", "Gagal Menghapus", res.message);
      }
      setLoadingId(null);
   };
@@ -86,9 +105,19 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
                     </span>
                   </td>
                   <td className="p-4 text-muted-foreground text-xs">{new Date(o.created_at).toLocaleString()}</td>
-                  <td className="p-4 text-right space-x-2">
+                  <td className="p-4 text-right space-x-1 flex items-center justify-end">
                     <Button variant="outline" size="sm" onClick={() => openDetails(o)}>
                        <Eye className="w-4 h-4 mr-1" /> Detail
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                      disabled={loadingId === (o.invoice_id || o.id)}
+                      onClick={() => handleDeleteOrder(o.invoice_id || o.id)}
+                      title="Hapus Order"
+                    >
+                      {loadingId === (o.invoice_id || o.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                     </Button>
                   </td>
                 </tr>
@@ -174,14 +203,23 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
                   )}
                 </div>
 
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t flex items-center gap-3">
                   <Button 
-                    className="w-full h-12 text-base font-bold" 
+                    className="flex-1 h-12 text-base font-bold" 
                     onClick={() => handleProcess(selectedOrder.invoice_id)}
                     disabled={loadingId === selectedOrder.invoice_id || selectedOrder.status === 'Success'}
                   >
                     {loadingId === selectedOrder.invoice_id ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
                     {selectedOrder.status === 'Success' ? 'Pesanan Selesai' : 'Terima Pembayaran & Proses'}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="h-12 px-4 font-bold"
+                    disabled={loadingId === selectedOrder.invoice_id}
+                    onClick={() => handleDeleteOrder(selectedOrder.invoice_id)}
+                    title="Hapus Pesanan"
+                  >
+                    <Trash2 className="w-5 h-5" />
                   </Button>
                 </div>
               </div>

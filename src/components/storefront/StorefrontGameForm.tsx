@@ -53,8 +53,8 @@ export function StorefrontGameForm({
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [validatedUsername, setValidatedUsername] = useState<string | null>(null);
   const [usernameWarning, setUsernameWarning] = useState<string | null>(null);
-  const [accountData, setAccountData] = useState<{label: string, value: string}[]>([]);
-  
+  const [accountData, setAccountData] = useState<{ label: string, value: string }[]>([]);
+
   // Wallet state
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -125,12 +125,12 @@ export function StorefrontGameForm({
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProduct || !selectedPayment) return;
-    
+
     // Extract form data to show in modal
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-    
-    const data: {label: string, value: string}[] = [];
+
+    const data: { label: string, value: string }[] = [];
     let userId = "";
     let serverId = "";
 
@@ -150,14 +150,14 @@ export function StorefrontGameForm({
             labelLower.includes('server') || labelLower.includes('zone')
           ) {
             serverId = valStr;
-          } 
+          }
           // Deteksi User ID / Open ID / Target ID
           else if (
             nameLower.includes('user') || nameLower.includes('id') || nameLower.includes('target') || nameLower.includes('account') || nameLower.includes('open') ||
             labelLower.includes('id') || labelLower.includes('user') || labelLower.includes('open')
           ) {
             if (!userId) userId = valStr;
-          } 
+          }
           // Fallback: Jika field pertama, dan userId belum terisi
           else if (idx === 0 && !userId) {
             userId = valStr;
@@ -181,9 +181,9 @@ export function StorefrontGameForm({
         const gameCode = game.validator_game_code || game.slug || "";
         const res = await checkUsername(userId, serverId, gameCode, game.validator_provider);
         if (res.success && res.username) {
-           setValidatedUsername(res.username);
+          setValidatedUsername(res.username);
         } else {
-           setUsernameWarning(res.message || "Username tidak ditemukan atau gagal memvalidasi data ID & Server.");
+          setUsernameWarning(res.message || "Username tidak ditemukan atau gagal memvalidasi data ID & Server.");
         }
       } catch (err) {
         setUsernameWarning("Terjadi kesalahan sistem saat memvalidasi username. Pastikan ID & Server benar.");
@@ -197,7 +197,7 @@ export function StorefrontGameForm({
 
   const confirmCheckout = async () => {
     setIsSubmitting(true);
-    
+
     // Construct order data
     const orderData = {
       tenantName: themeConfig?.siteName || "NewGamingStore",
@@ -222,10 +222,10 @@ export function StorefrontGameForm({
 
     const res = await createOrder(orderData);
     if (res.success) {
-       window.location.href = `/checkout/${res.invoiceId}`;
+      window.location.href = `/checkout/${res.invoiceId}`;
     } else {
-       showNotification("error", "Gagal Membuat Pesanan", res.message);
-       setIsSubmitting(false);
+      showNotification("error", "Gagal Membuat Pesanan", res.message);
+      setIsSubmitting(false);
     }
   };
 
@@ -301,58 +301,58 @@ export function StorefrontGameForm({
           )}
 
           {(() => {
-            const displayProducts = hasVariants && selectedVariant 
+            const displayProducts = hasVariants && selectedVariant
               ? products.filter((p: any) => p.variant_type === selectedVariant)
               : products;
-            
+
             return displayProducts.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {displayProducts.map((p: any) => {
                   const isSelected = selectedProduct?.id === p.id;
                   return (
-                  <div
-                    key={p.id}
-                    onClick={() => setSelectedProduct(p)}
-                    className={`rounded-xl overflow-hidden cursor-pointer transition-all border-2 flex flex-col justify-between group ${isSelected ? 'border-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)] bg-blue-500/10' : 'border-border/30 bg-[#1c1d21] hover:border-blue-500/50 hover:bg-[#25262b]'}`}
-                  >
-                    {/* Top Grey Area */}
-                    <div className={`p-4 flex flex-col items-center justify-center flex-1 transition-colors ${isSelected ? 'bg-transparent' : 'bg-[#313338]/50 group-hover:bg-transparent'}`}>
-                      <p className="font-bold text-sm text-center line-clamp-2 text-white/90 mb-3 leading-snug">{p.name}</p>
+                    <div
+                      key={p.id}
+                      onClick={() => setSelectedProduct(p)}
+                      className={`rounded-xl overflow-hidden cursor-pointer transition-all border-2 flex flex-col justify-between group ${isSelected ? 'border-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)] bg-blue-500/10' : 'border-border/30 bg-[#1c1d21] hover:border-blue-500/50 hover:bg-[#25262b]'}`}
+                    >
+                      {/* Top Grey Area */}
+                      <div className={`p-4 flex flex-col items-center justify-center flex-1 transition-colors ${isSelected ? 'bg-transparent' : 'bg-[#313338]/50 group-hover:bg-transparent'}`}>
+                        <p className="font-bold text-sm text-center line-clamp-2 text-white/90 mb-3 leading-snug">{p.name}</p>
 
-                      {/* 3D Product Image */}
-                      {p.image_url ? (
-                        <div className="relative w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mt-auto" style={{ perspective: '800px' }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={p.image_url}
-                            alt={p.name}
-                            className="w-full h-full object-contain filter drop-shadow-xl"
-                            style={{ transform: 'rotateY(20deg) rotateX(-4deg)', transformOrigin: 'left center' }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30 mt-auto">
-                          <ShoppingCart className="w-6 h-6 text-blue-400" />
-                        </div>
-                      )}
-                    </div>
+                        {/* 3D Product Image */}
+                        {p.image_url ? (
+                          <div className="relative w-16 h-16 md:w-20 md:h-20 flex items-center justify-center mt-auto" style={{ perspective: '800px' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={p.image_url}
+                              alt={p.name}
+                              className="w-full h-full object-contain filter drop-shadow-xl"
+                              style={{ transform: 'rotateY(20deg) rotateX(-4deg)', transformOrigin: 'left center' }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30 mt-auto">
+                            <ShoppingCart className="w-6 h-6 text-blue-400" />
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Bottom Dark Area */}
-                    <div className={`p-3 text-center border-t border-border/20 ${isSelected ? 'bg-blue-600' : 'bg-[#151618] group-hover:bg-[#1a1b1e]'}`}>
-                      <p className="text-xs text-white/50 mb-0.5">Harga</p>
-                      <p className={`font-extrabold text-sm md:text-base ${isSelected ? 'text-white' : 'text-white'}`}>
-                        Rp {p.price.toLocaleString('id-ID')}
-                      </p>
+                      {/* Bottom Dark Area */}
+                      <div className={`p-3 text-center border-t border-border/20 ${isSelected ? 'bg-blue-600' : 'bg-[#151618] group-hover:bg-[#1a1b1e]'}`}>
+                        <p className="text-xs text-white/50 mb-0.5">Harga</p>
+                        <p className={`font-extrabold text-sm md:text-base ${isSelected ? 'text-white' : 'text-white'}`}>
+                          Rp {p.price.toLocaleString('id-ID')}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="py-12 text-center text-muted-foreground border-2 border-dashed rounded-xl border-border/20 bg-black/20">
-              <p>Belum ada produk top-up yang tersedia.</p>
-            </div>
-          );
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-muted-foreground border-2 border-dashed rounded-xl border-border/20 bg-black/20">
+                <p>Belum ada produk top-up yang tersedia.</p>
+              </div>
+            );
           })()}
         </div>
       </div>
@@ -461,63 +461,63 @@ export function StorefrontGameForm({
                     <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                       <div className="overflow-hidden">
                         <div className="p-3 space-y-3">
-                        {items.map((pc: any) => {
-                          const isSelected = selectedPayment?.id === pc.id;
+                          {items.map((pc: any) => {
+                            const isSelected = selectedPayment?.id === pc.id;
 
-                          return (
-                            <div
-                              key={pc.id}
-                              onClick={() => setSelectedPayment(pc)}
-                              className={`rounded-xl border-2 transition-all overflow-hidden cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(37,99,235,0.15)]' : 'border-transparent bg-[#25262b] hover:border-blue-500/40 hover:bg-[#2a2b30]'}`}
-                            >
-                              {/* Primary Row */}
-                              <div className="p-4 flex items-center gap-4">
-                                <div className="w-16 h-10 rounded-md bg-white relative shrink-0 p-1 shadow-sm flex items-center justify-center">
-                                  {pc.logo_url ? (
-                                    <Image src={pc.logo_url} alt={pc.name} fill sizes="64px" className="object-contain p-1" />
-                                  ) : (
-                                    <span className="text-xs text-black font-bold">LOGO</span>
-                                  )}
-                                </div>
-                                <div className="flex-1">
-                                  <p className="font-bold text-sm md:text-base text-white/95">{pc.name}</p>
-                                  {selectedProduct && (
-                                    <p className="text-sm font-semibold text-blue-400 mt-1">Rp {totalPrice.toLocaleString('id-ID')}</p>
-                                  )}
-                                </div>
-                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-blue-500' : 'border-muted-foreground'}`}>
-                                  {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
-                                </div>
-                              </div>
-
-                              {/* Details Info (Shown only when selected) */}
-                              {isSelected && (pc.account_name || pc.account_number) && (
-                                <div className="bg-[#1a1b1e] p-4 border-t border-border/10">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    {pc.account_name && (
-                                      <div>
-                                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">A.N (Atas Nama)</p>
-                                        <p className="font-bold text-white/90 text-sm">{pc.account_name}</p>
-                                      </div>
-                                    )}
-                                    {pc.account_number && (
-                                      <div>
-                                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Nomor Rekening</p>
-                                        <p className="font-mono font-bold text-blue-400 text-sm bg-blue-500/10 w-fit px-2 py-0.5 rounded">{pc.account_number}</p>
-                                      </div>
+                            return (
+                              <div
+                                key={pc.id}
+                                onClick={() => setSelectedPayment(pc)}
+                                className={`rounded-xl border-2 transition-all overflow-hidden cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(37,99,235,0.15)]' : 'border-transparent bg-[#25262b] hover:border-blue-500/40 hover:bg-[#2a2b30]'}`}
+                              >
+                                {/* Primary Row */}
+                                <div className="p-4 flex items-center gap-4">
+                                  <div className="w-16 h-10 rounded-md bg-white relative shrink-0 p-1 shadow-sm flex items-center justify-center">
+                                    {pc.logo_url ? (
+                                      <Image src={pc.logo_url} alt={pc.name} fill sizes="64px" className="object-contain p-1" />
+                                    ) : (
+                                      <span className="text-xs text-black font-bold">LOGO</span>
                                     )}
                                   </div>
+                                  <div className="flex-1">
+                                    <p className="font-bold text-sm md:text-base text-white/95">{pc.name}</p>
+                                    {selectedProduct && (
+                                      <p className="text-sm font-semibold text-blue-400 mt-1">Rp {totalPrice.toLocaleString('id-ID')}</p>
+                                    )}
+                                  </div>
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-blue-500' : 'border-muted-foreground'}`}>
+                                    {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                          )
-                        })}
+
+                                {/* Details Info (Shown only when selected) */}
+                                {isSelected && (pc.account_name || pc.account_number) && (
+                                  <div className="bg-[#1a1b1e] p-4 border-t border-border/10">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                      {pc.account_name && (
+                                        <div>
+                                          <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">A.N (Atas Nama)</p>
+                                          <p className="font-bold text-white/90 text-sm">{pc.account_name}</p>
+                                        </div>
+                                      )}
+                                      {pc.account_number && (
+                                        <div>
+                                          <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Nomor Rekening</p>
+                                          <p className="font-mono font-bold text-blue-400 text-sm bg-blue-500/10 w-fit px-2 py-0.5 rounded">{pc.account_number}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
             </div>
           ) : (
             <div className="py-8 text-center text-muted-foreground border-2 border-dashed rounded-xl border-border/20 bg-black/20">
@@ -541,15 +541,15 @@ export function StorefrontGameForm({
             <label className="text-sm font-medium text-white">No. WhatsApp</label>
             <div className="flex items-center rounded-xl bg-[#d1d5db] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
               <div className="flex items-center justify-center px-4 border-r border-gray-400 bg-[#d1d5db]">
-                 <span className="text-xl">🇮🇩</span>
+                <span className="text-xl">🇮🇩</span>
               </div>
-              <input 
+              <input
                 type="tel"
                 required
                 pattern="^(08|62|\+62)\d{8,13}$"
                 value={waNumber}
                 onChange={(e) => setWaNumber(e.target.value)}
-                placeholder="6286767676"
+                placeholder="62"
                 className="flex h-12 flex-1 border-none bg-transparent px-4 py-2 text-sm text-black placeholder:text-gray-600 font-medium focus-visible:outline-none"
               />
             </div>
@@ -576,31 +576,31 @@ export function StorefrontGameForm({
           </div>
         </div>
         <div className="p-4 bg-[#111111]">
-           <div className="space-y-4">
-             <div className="space-y-2">
-               <label className="text-sm font-medium text-white">Kode Promo</label>
-               <div className="flex items-center gap-3">
-                 <input 
-                   type="text"
-                   value={promoCodeInput}
-                   onChange={(e) => setPromoCodeInput(e.target.value)}
-                   placeholder="Masukkan Kode Promo Anda"
-                   className="flex h-12 flex-1 rounded-xl border-none bg-[#d1d5db] px-4 py-2 text-sm text-black placeholder:text-gray-600 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 uppercase"
-                 />
-                 <Button type="button" onClick={handleCheckPromo} disabled={!promoCodeInput || isPromoChecking} className="bg-blue-700 hover:bg-blue-800 text-white font-bold h-12 px-6 rounded-xl shrink-0 transition-colors">
-                   {isPromoChecking ? 'Cek...' : 'Gunakan'}
-                 </Button>
-               </div>
-             </div>
-             {promoMessage && (
-               <p className={`text-sm font-medium ${appliedPromo ? 'text-green-500' : 'text-red-500'}`}>
-                 {promoMessage}
-               </p>
-             )}
-             <Button type="button" onClick={handleOpenPromoModal} className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold h-11 px-5 rounded-xl flex items-center gap-2 w-fit transition-colors shadow-lg">
-               <Ticket className="w-5 h-5" /> Cek Promo Yang Tersedia
-             </Button>
-           </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white">Kode Promo</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={promoCodeInput}
+                  onChange={(e) => setPromoCodeInput(e.target.value)}
+                  placeholder="Masukkan Kode Promo Anda"
+                  className="flex h-12 flex-1 rounded-xl border-none bg-[#d1d5db] px-4 py-2 text-sm text-black placeholder:text-gray-600 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 uppercase"
+                />
+                <Button type="button" onClick={handleCheckPromo} disabled={!promoCodeInput || isPromoChecking} className="bg-blue-700 hover:bg-blue-800 text-white font-bold h-12 px-6 rounded-xl shrink-0 transition-colors">
+                  {isPromoChecking ? 'Cek...' : 'Gunakan'}
+                </Button>
+              </div>
+            </div>
+            {promoMessage && (
+              <p className={`text-sm font-medium ${appliedPromo ? 'text-green-500' : 'text-red-500'}`}>
+                {promoMessage}
+              </p>
+            )}
+            <Button type="button" onClick={handleOpenPromoModal} className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold h-11 px-5 rounded-xl flex items-center gap-2 w-fit transition-colors shadow-lg">
+              <Ticket className="w-5 h-5" /> Cek Promo Yang Tersedia
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -613,9 +613,9 @@ export function StorefrontGameForm({
                 <p className="text-[11px] font-medium text-white/90 truncate mb-0.5">{selectedProduct.name}</p>
                 <div className="flex items-baseline gap-2">
                   {appliedPromo && (
-                     <p className="text-[10px] font-bold text-muted-foreground line-through decoration-red-500">
-                       Rp {selectedProduct.price.toLocaleString('id-ID')}
-                     </p>
+                    <p className="text-[10px] font-bold text-muted-foreground line-through decoration-red-500">
+                      Rp {selectedProduct.price.toLocaleString('id-ID')}
+                    </p>
                   )}
                   <p className="text-sm font-black text-blue-400">Rp {totalPrice.toLocaleString('id-ID')}</p>
                 </div>
@@ -667,15 +667,15 @@ export function StorefrontGameForm({
               disabled={!selectedProduct || !selectedPayment || isCheckingUsername}
               className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold h-12 text-base rounded-xl transition-all shadow-lg"
             >
-              {isCheckingUsername ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShoppingCart className="w-5 h-5 mr-2" />} 
+              {isCheckingUsername ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShoppingCart className="w-5 h-5 mr-2" />}
               {isCheckingUsername ? "Mengecek..." : "Pesan Sekarang!"}
             </Button>
           </>
         ) : (
-           <div className="bg-[#0a0a0a] border border-dashed border-border/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 shadow-xl">
-             <ShoppingCart className="w-8 h-8 text-muted-foreground opacity-50" />
-             <p className="text-sm font-medium text-muted-foreground">Silakan pilih nominal Top Up dan Pembayaran terlebih dahulu.</p>
-           </div>
+          <div className="bg-[#0a0a0a] border border-dashed border-border/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 shadow-xl">
+            <ShoppingCart className="w-8 h-8 text-muted-foreground opacity-50" />
+            <p className="text-sm font-medium text-muted-foreground">Silakan pilih nominal Top Up dan Pembayaran terlebih dahulu.</p>
+          </div>
         )}
       </div>
 
@@ -685,24 +685,24 @@ export function StorefrontGameForm({
             <DialogTitle>Promo Tersedia</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-             {availablePromos.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">Tidak ada promo yang tersedia saat ini.</p>
-             ) : (
-                availablePromos.map(p => (
-                  <div key={p.code} className="border border-border/40 rounded-xl p-4 bg-[#1a1b1e] flex items-center justify-between">
-                     <div>
-                       <p className="font-bold text-blue-400 text-lg">{p.code}</p>
-                       <p className="text-sm text-white/80">
-                         Diskon {p.discount_type === 'percentage' ? `${p.discount_value}%` : `Rp ${p.discount_value.toLocaleString('id-ID')}`}
-                       </p>
-                     </div>
-                     <Button type="button" size="sm" onClick={() => {
-                        setPromoCodeInput(p.code);
-                        setIsPromoModalOpen(false);
-                     }} className="bg-blue-600 hover:bg-blue-700 text-xs">Pilih</Button>
+            {availablePromos.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">Tidak ada promo yang tersedia saat ini.</p>
+            ) : (
+              availablePromos.map(p => (
+                <div key={p.code} className="border border-border/40 rounded-xl p-4 bg-[#1a1b1e] flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-blue-400 text-lg">{p.code}</p>
+                    <p className="text-sm text-white/80">
+                      Diskon {p.discount_type === 'percentage' ? `${p.discount_value}%` : `Rp ${p.discount_value.toLocaleString('id-ID')}`}
+                    </p>
                   </div>
-                ))
-             )}
+                  <Button type="button" size="sm" onClick={() => {
+                    setPromoCodeInput(p.code);
+                    setIsPromoModalOpen(false);
+                  }} className="bg-blue-600 hover:bg-blue-700 text-xs">Pilih</Button>
+                </div>
+              ))
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -719,7 +719,7 @@ export function StorefrontGameForm({
               Pastikan data akun Anda dan produk yang Anda pilih valid dan sesuai.
             </p>
           </div>
-          
+
           <div className="px-6 pb-6">
             <div className="bg-[#4d4d4d]/30 rounded-2xl p-5 space-y-6">
               {/* Data Player */}
@@ -785,16 +785,16 @@ export function StorefrontGameForm({
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-6">
-              <Button 
-                type="button" 
+              <Button
+                type="button"
                 onClick={confirmCheckout}
                 disabled={isSubmitting}
                 className="bg-[#4caf50] hover:bg-[#43a047] text-white font-bold h-12 rounded-xl text-base"
               >
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Pesan Sekarang'}
               </Button>
-              <Button 
-                type="button" 
+              <Button
+                type="button"
                 onClick={() => setIsConfirmModalOpen(false)}
                 disabled={isSubmitting}
                 className="bg-[#f44336] hover:bg-[#e53935] text-white font-bold h-12 rounded-xl text-base"
