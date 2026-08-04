@@ -136,7 +136,10 @@ export default async function StorefrontLayout({ children, params }: { children:
         const gameMap = new Map<string, { gameName: string; gameImage: string; products: string[] }>();
 
         for (const product of productsData) {
-          const game = product.games as { name: string; image_url: string } | null;
+          const gameRaw = product.games as unknown;
+          const game = Array.isArray(gameRaw)
+            ? (gameRaw[0] as { name: string; image_url: string } | undefined)
+            : (gameRaw as { name: string; image_url: string } | null);
           if (!game || !game.image_url) continue;
 
           const key = game.name;
