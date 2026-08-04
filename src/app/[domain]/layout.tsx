@@ -8,7 +8,7 @@ import { Footer } from "@/components/storefront/Footer";
 import { SnowfallEffect } from "@/components/storefront/SnowfallEffect";
 import { FloatingWhatsapp } from "@/components/storefront/FloatingWhatsapp";
 import { MobileBottomBar } from "@/components/storefront/MobileBottomBar";
-import { PurchaseNotification } from "@/components/storefront/PurchaseNotification";
+import { PurchaseNotification, type NotificationItem } from "@/components/storefront/PurchaseNotification";
 import { MaintenanceView } from "@/components/storefront/MaintenanceView";
 import { hexToHsl } from "@/lib/utils";
 
@@ -65,7 +65,8 @@ export default async function StorefrontLayout({ children, params }: { children:
   let config: any = {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let paymentChannels: any[] = [];
-  
+  let purchaseNotifications: NotificationItem[] = [];
+
   let user = null;
   let currentTenantName = "Yowanastore";
   let isMaintenanceActive = false;
@@ -118,8 +119,47 @@ export default async function StorefrontLayout({ children, params }: { children:
     }
 
     if (tenantData?.id) {
-      const { data: channels } = await supabase.from('payment_channels').select('*').eq('tenant_id', tenantData.id).eq('is_active', true);
+      const [{ data: channels }, { data: productsData }] = await Promise.all([
+        supabase.from('payment_channels').select('*').eq('tenant_id', tenantData.id).eq('is_active', true),
+        supabase
+          .from('products')
+          .select('name, games(name, image_url)')
+          .eq('tenant_id', tenantData.id)
+          .eq('active', true)
+      ]);
+
       paymentChannels = channels || [];
+
+      // Build real purchase notifications: max 4 products per game
+      if (productsData) {
+        // Group products by game name
+        const gameMap = new Map<string, { gameName: string; gameImage: string; products: string[] }>();
+
+        for (const product of productsData) {
+          const game = product.games as { name: string; image_url: string } | null;
+          if (!game || !game.image_url) continue;
+
+          const key = game.name;
+          if (!gameMap.has(key)) {
+            gameMap.set(key, { gameName: game.name, gameImage: game.image_url, products: [] });
+          }
+          gameMap.get(key)!.products.push(product.name);
+        }
+
+        // For each game, shuffle and take max 4 products
+        for (const entry of gameMap.values()) {
+          const selected = entry.products
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 4);
+          for (const itemName of selected) {
+            purchaseNotifications.push({
+              gameName: entry.gameName,
+              gameImage: entry.gameImage,
+              itemName,
+            });
+          }
+        }
+      }
     }
   }
 
@@ -172,7 +212,7 @@ export default async function StorefrontLayout({ children, params }: { children:
           waChannelUrl={config.waChannelUrl || "#"}
         />
 
-        <PurchaseNotification tenantName={currentTenantName} />
+        <PurchaseNotification tenantName={currentTenantName} notifications={purchaseNotifications} />
       </div>
 
       {config.gtmId && <GoogleTagManager gtmId={config.gtmId} />}

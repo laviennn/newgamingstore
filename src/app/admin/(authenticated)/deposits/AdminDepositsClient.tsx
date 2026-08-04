@@ -5,7 +5,8 @@ import { createClient } from "@/utils/supabase/client";
 import { useNotification } from "@/components/ui/notification";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check, X, Eye, Loader2, MoreVertical, CheckCircle2, XCircle } from "lucide-react";
+import { Eye, Loader2, CheckCircle2, XCircle, Trash2 } from "lucide-react";
+import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 
 export function AdminDepositsClient({ initialDeposits }: { initialDeposits: any[] }) {
   const { showNotification, NotificationComponent } = useNotification();
@@ -13,6 +14,7 @@ export function AdminDepositsClient({ initialDeposits }: { initialDeposits: any[
   const [deposits, setDeposits] = useState(initialDeposits);
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; invoice_id: string } | null>(null);
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     setIsLoading(id);
@@ -34,9 +36,37 @@ export function AdminDepositsClient({ initialDeposits }: { initialDeposits: any[
     }
   };
 
+  const handleDeleteDeposit = async () => {
+    if (!deleteTarget) return;
+    setIsLoading(deleteTarget.id);
+    try {
+      const { error } = await supabase.from('deposits').delete().eq('id', deleteTarget.id);
+      if (error) throw error;
+      setDeposits(prev => prev.filter(d => d.id !== deleteTarget.id));
+      showNotification("success", "Berhasil Dihapus", `Deposit ${deleteTarget.invoice_id} telah dihapus.`);
+    } catch (err) {
+      console.error(err);
+      showNotification("error", "Gagal", "Terjadi kesalahan saat menghapus data.");
+    } finally {
+      setIsLoading(null);
+      setDeleteTarget(null);
+    }
+  };
+
   return (
     <div className="bg-background rounded-lg border shadow-sm">
       {NotificationComponent}
+
+      <ConfirmDeleteDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteDeposit}
+        title="Hapus Data Deposit"
+        description="Apakah Anda yakin ingin menghapus data deposit ini? Tindakan ini tidak dapat dibatalkan."
+        itemName={deleteTarget?.invoice_id}
+        loading={isLoading === deleteTarget?.id}
+      />
+
       <div className="overflow-x-auto rounded-lg border-t border-muted/20">
         <table className="w-full text-sm text-left">
           <thead className="text-[10px] text-muted-foreground uppercase bg-muted/30 tracking-widest">
@@ -132,6 +162,16 @@ export function AdminDepositsClient({ initialDeposits }: { initialDeposits: any[
                       {(dep.status === 'Success' || dep.status === 'Failed') && (
                         <span className="text-xs text-muted-foreground italic px-2">Selesai</span>
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-500/10"
+                        disabled={isLoading === dep.id}
+                        onClick={() => setDeleteTarget({ id: dep.id, invoice_id: dep.invoice_id })}
+                        title="Hapus Deposit"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </Button>
                     </div>
                   </td>
                 </tr>

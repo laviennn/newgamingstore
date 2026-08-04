@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { adminUpdateOrderStatus, deleteOrder } from "./actions";
 import { Loader2, Eye, ExternalLink, Trash2 } from "lucide-react";
 import { useNotification } from "@/components/ui/notification";
+import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import Image from "next/image";
 
 export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
@@ -14,6 +15,7 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
 
   const handleProcess = async (invoiceId: string) => {
      setLoadingId(invoiceId);
@@ -30,22 +32,22 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
      setLoadingId(null);
   };
 
-  const handleDeleteOrder = async (invoiceId: string) => {
-     if (!confirm(`Apakah Anda yakin ingin menghapus pesanan dengan Invoice ${invoiceId}?`)) return;
-     
-     setLoadingId(invoiceId);
-     const res = await deleteOrder(invoiceId);
+  const handleDeleteOrder = async () => {
+     if (!deleteTarget) return;
+     setLoadingId(deleteTarget.id);
+     const res = await deleteOrder(deleteTarget.id);
      if (res.success) {
-        setOrders(prev => prev.filter(o => (o.invoice_id || o.id) !== invoiceId));
-        if (selectedOrder && (selectedOrder.invoice_id || selectedOrder.id) === invoiceId) {
+        setOrders(prev => prev.filter(o => (o.invoice_id || o.id) !== deleteTarget.id));
+        if (selectedOrder && (selectedOrder.invoice_id || selectedOrder.id) === deleteTarget.id) {
             setIsModalOpen(false);
             setSelectedOrder(null);
         }
-        showNotification("success", "Berhasil Dihapus", `Pesanan ${invoiceId} telah berhasil dihapus dari database.`);
+        showNotification("success", "Berhasil Dihapus", `Pesanan ${deleteTarget.label} telah berhasil dihapus dari database.`);
      } else {
         showNotification("error", "Gagal Menghapus", res.message);
      }
      setLoadingId(null);
+     setDeleteTarget(null);
   };
 
   const openDetails = (order: any) => {
@@ -55,6 +57,18 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
 
   return (
     <>
+      {NotificationComponent}
+
+      <ConfirmDeleteDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteOrder}
+        title="Hapus Pesanan"
+        description="Apakah Anda yakin ingin menghapus pesanan ini? Tindakan ini tidak dapat dibatalkan."
+        itemName={deleteTarget?.label}
+        loading={loadingId === deleteTarget?.id}
+      />
+
       <div className="relative w-full overflow-auto">
         <table className="w-full caption-bottom text-sm text-left">
           <thead className="[&_tr]:border-b">
@@ -74,6 +88,7 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
               const created = new Date(o.created_at).getTime();
               const isExpired = (now - created > 24 * 60 * 60 * 1000) && o.payment_status === 'UNPAID';
               const displayPaymentStatus = isExpired ? 'EXPIRED' : o.payment_status;
+              const orderId = o.invoice_id || o.id;
 
               return (
                 <tr key={o.id || o.invoice_id} className={`border-b transition-colors hover:bg-muted/50 ${isExpired ? 'opacity-70' : ''}`}>
@@ -113,11 +128,11 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
                       variant="ghost"
                       size="sm"
                       className="h-8 px-2 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                      disabled={loadingId === (o.invoice_id || o.id)}
-                      onClick={() => handleDeleteOrder(o.invoice_id || o.id)}
+                      disabled={loadingId === orderId}
+                      onClick={() => setDeleteTarget({ id: orderId, label: o.invoice_id || orderId })}
                       title="Hapus Order"
                     >
-                      {loadingId === (o.invoice_id || o.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      {loadingId === orderId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                     </Button>
                   </td>
                 </tr>
@@ -216,7 +231,10 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
                     variant="destructive"
                     className="h-12 px-4 font-bold"
                     disabled={loadingId === selectedOrder.invoice_id}
-                    onClick={() => handleDeleteOrder(selectedOrder.invoice_id)}
+                    onClick={() => setDeleteTarget({ 
+                      id: selectedOrder.invoice_id || selectedOrder.id, 
+                      label: selectedOrder.invoice_id 
+                    })}
                     title="Hapus Pesanan"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -227,7 +245,6 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
           )}
         </DialogContent>
       </Dialog>
-      {NotificationComponent}
     </>
   );
 }
