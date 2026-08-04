@@ -18,6 +18,10 @@ export async function saveGame(formData: FormData, id?: string) {
   const topup_instructions = formData.get("topup_instructions") as string;
   const guide_image_url = formData.get("guide_image_url") as string;
   const guide_text = formData.get("guide_text") as string;
+  
+  const has_username_validator = formData.get("has_username_validator") === "true";
+  const validator_provider = formData.get("validator_provider") as string || null;
+  const validator_game_code = formData.get("validator_game_code") as string || null;
 
   if (!name || !slug) {
     return { error: "Name and Slug are required." };
@@ -33,7 +37,18 @@ export async function saveGame(formData: FormData, id?: string) {
   }
 
   const supabase = await createClient();
-  const tenant_id = await getActiveAdminTenantId();
+  let tenant_id = await getActiveAdminTenantId();
+
+  if (!tenant_id && id) {
+    const { data: existingGame } = await supabase
+      .from("games")
+      .select("tenant_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (existingGame?.tenant_id) {
+      tenant_id = existingGame.tenant_id;
+    }
+  }
 
   if (!tenant_id) {
     return { error: "No active tenant selected." };
@@ -43,14 +58,14 @@ export async function saveGame(formData: FormData, id?: string) {
     if (id) {
       const { error } = await supabase
         .from("games")
-        .update({ name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text })
+        .update({ name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text, has_username_validator, validator_provider, validator_game_code })
         .eq("id", id)
         .eq("tenant_id", tenant_id);
       if (error) throw error;
     } else {
       const { error } = await supabase
         .from("games")
-        .insert([{ tenant_id, name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text }]);
+        .insert([{ tenant_id, name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text, has_username_validator, validator_provider, validator_game_code }]);
       if (error) throw error;
     }
 

@@ -60,7 +60,7 @@ export function FloatingWhatsapp({
               src={finalAvatarUrl}
               alt="CS Character"
               fill
-              sizes="(max-width: 768px) 144px, 200px"
+              sizes="(max-width: 768px) 96px, 144px"
               className="object-contain object-bottom transition-transform duration-500 group-hover:scale-105"
             />
             {/* Small WA icon badge attached to character */}

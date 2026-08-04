@@ -75,10 +75,9 @@ export async function checkPermission(permissionName: string) {
 
 export async function getActiveAdminTenantId() {
   const adminSession = await getAdminSession();
-  if (!adminSession) return null;
 
   // 1. If Operator (not superadmin) and has assigned tenant, force their assigned tenant
-  if (!adminSession.is_superadmin && adminSession.tenant_id) {
+  if (adminSession && !adminSession.is_superadmin && adminSession.tenant_id) {
     return adminSession.tenant_id;
   }
 

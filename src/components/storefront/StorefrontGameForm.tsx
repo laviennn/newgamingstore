@@ -5,9 +5,10 @@ import Image from "next/image";
 import { DynamicFieldBuilder } from "@/components/storefront/DynamicFieldBuilder";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Info, ShoppingCart, ChevronDown, ChevronUp, Ticket, CheckCircle2, Loader2 } from "lucide-react";
+import { Info, ShoppingCart, ChevronDown, ChevronUp, Ticket, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { validatePromoCode, getAvailablePromos } from "@/components/storefront/promoActions";
 import { createOrder } from "@/components/storefront/checkoutActions";
+import { checkUsername } from "@/app/actions/usernameValidator";
 import { useNotification } from "@/components/ui/notification";
 
 // Helper for angled number badge
@@ -49,6 +50,9 @@ export function StorefrontGameForm({
   // Modal Checkout States
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [validatedUsername, setValidatedUsername] = useState<string | null>(null);
+  const [usernameWarning, setUsernameWarning] = useState<string | null>(null);
   const [accountData, setAccountData] = useState<{label: string, value: string}[]>([]);
   
   // Wallet state
@@ -118,7 +122,7 @@ export function StorefrontGameForm({
 
   // Helper removed from here
 
-  const handleCheckout = (e: React.FormEvent) => {
+  const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProduct || !selectedPayment) return;
     
@@ -127,16 +131,46 @@ export function StorefrontGameForm({
     const formData = new FormData(form);
     
     const data: {label: string, value: string}[] = [];
+    let userId = "";
+    let serverId = "";
+
     if (game.form_fields && Array.isArray(game.form_fields)) {
       game.form_fields.forEach((field: any) => {
         const val = formData.get(field.name);
         if (val) {
           data.push({ label: field.label, value: val.toString() });
+          // Standarisasi userId dan serverId (atau zoneId)
+          if (field.name.toLowerCase().includes('user') || field.name.toLowerCase() === 'id' || field.name === 'userId') {
+            userId = val.toString();
+          }
+          if (field.name.toLowerCase().includes('server') || field.name.toLowerCase() === 'zone' || field.name === 'zoneId' || field.name === 'serverId') {
+            serverId = val.toString();
+          }
         }
       });
     }
 
     setAccountData(data);
+    setValidatedUsername(null);
+    setUsernameWarning(null);
+
+    if (game.has_username_validator) {
+      setIsCheckingUsername(true);
+      try {
+        const gameCode = game.validator_game_code || game.slug || "";
+        const res = await checkUsername(userId, serverId, gameCode, game.validator_provider);
+        if (res.success && res.username) {
+           setValidatedUsername(res.username);
+        } else {
+           setUsernameWarning(res.message || "Username tidak ditemukan atau gagal memvalidasi data ID & Server.");
+        }
+      } catch (err) {
+        setUsernameWarning("Terjadi kesalahan sistem saat memvalidasi username. Pastikan ID & Server benar.");
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    }
+
     setIsConfirmModalOpen(true);
   };
 
@@ -151,10 +185,16 @@ export function StorefrontGameForm({
       productPrice: selectedProduct.price,
       paymentMethodId: selectedPayment.id,
       tenantId: game.tenant_id,
-      accountData: accountData.reduce((acc: any, curr: any) => {
-        acc[curr.label] = curr.value;
-        return acc;
-      }, {}),
+      accountData: (() => {
+        const accObj = accountData.reduce((acc: any, curr: any) => {
+          acc[curr.label] = curr.value;
+          return acc;
+        }, {});
+        if (validatedUsername) {
+          accObj["Username"] = validatedUsername;
+        }
+        return accObj;
+      })(),
       promo: appliedPromo,
       waNumber: waNumber,
     };
@@ -568,10 +608,10 @@ export function StorefrontGameForm({
           </div>
           <Button
             type="submit"
-            disabled={!selectedProduct || !selectedPayment}
+            disabled={!selectedProduct || !selectedPayment || isCheckingUsername}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 h-10 text-xs rounded-xl shadow-lg shadow-blue-600/30 shrink-0 disabled:opacity-50"
           >
-            Pesan Sekarang!
+            {isCheckingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pesan Sekarang!"}
           </Button>
         </div>
       </div>
@@ -603,10 +643,11 @@ export function StorefrontGameForm({
             <Button
               type="submit"
               size="lg"
-              disabled={!selectedProduct || !selectedPayment}
+              disabled={!selectedProduct || !selectedPayment || isCheckingUsername}
               className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold h-12 text-base rounded-xl transition-all shadow-lg"
             >
-              <ShoppingCart className="w-5 h-5 mr-2" /> Pesan Sekarang!
+              {isCheckingUsername ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShoppingCart className="w-5 h-5 mr-2" />} 
+              {isCheckingUsername ? "Mengecek..." : "Pesan Sekarang!"}
             </Button>
           </>
         ) : (
@@ -673,6 +714,25 @@ export function StorefrontGameForm({
                       <span className="font-bold text-white text-right max-w-[60%] truncate">{data.value}</span>
                     </div>
                   ))}
+
+                  {validatedUsername && (
+                    <div className="flex items-start justify-between text-sm pt-2 border-t border-white/10">
+                      <span className="text-green-400 font-bold">Username Game</span>
+                      <span className="font-extrabold text-green-300 text-right max-w-[60%] truncate">
+                        {typeof validatedUsername === 'string' ? validatedUsername : String(validatedUsername)}
+                      </span>
+                    </div>
+                  )}
+
+                  {usernameWarning && (
+                    <div className="mt-2 bg-amber-500/15 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="text-xs text-amber-300 font-medium leading-relaxed">
+                        <span className="font-bold block text-amber-200 mb-0.5">Peringatan Validasi Username:</span>
+                        {usernameWarning}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -23,6 +23,9 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
     game?.form_fields ? JSON.stringify(game.form_fields, null, 2) : "[\n  {\n    \"name\": \"userId\",\n    \"type\": \"text\",\n    \"label\": \"User ID\",\n    \"required\": true\n  }\n]"
   );
   const [isPopular, setIsPopular] = React.useState<boolean>(game?.is_popular || false);
+  const [hasUsernameValidator, setHasUsernameValidator] = React.useState<boolean>(game?.has_username_validator || false);
+  const [validatorProvider, setValidatorProvider] = React.useState<string>(game?.validator_provider || "auto");
+  const [validatorGameCode, setValidatorGameCode] = React.useState<string>(game?.validator_game_code || "");
 
   React.useEffect(() => {
     setTimeout(() => {
@@ -31,6 +34,9 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
       setGuidePreview(game?.guide_image_url || null);
       setCategoryId(game?.category_id || "");
       setIsPopular(game?.is_popular || false);
+      setHasUsernameValidator(game?.has_username_validator || false);
+      setValidatorProvider(game?.validator_provider || "auto");
+      setValidatorGameCode(game?.validator_game_code || "");
       if (game) {
         setFormFieldsJson(game.form_fields ? JSON.stringify(game.form_fields, null, 2) : "[]");
       } else {
@@ -115,6 +121,10 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
     payload.append("category_id", categoryId);
     payload.append("form_fields", formFieldsJson);
     payload.append("is_popular", isPopular ? "true" : "false");
+    
+    payload.append("has_username_validator", hasUsernameValidator ? "true" : "false");
+    if (validatorProvider) payload.append("validator_provider", validatorProvider);
+    if (validatorGameCode) payload.append("validator_game_code", validatorGameCode);
     
     payload.append("topup_instructions", formData.get("topup_instructions") as string);
     payload.append("guide_image_url", finalGuideUrl);
@@ -239,6 +249,50 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
               />
               <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
+          </div>
+
+          <div className="space-y-4 border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium">Username Validation</label>
+                <p className="text-xs text-muted-foreground">Validasi username pemain sebelum proses checkout (memerlukan API)</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={hasUsernameValidator} 
+                  onChange={(e) => setHasUsernameValidator(e.target.checked)} 
+                />
+                <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            {hasUsernameValidator && (
+              <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border border-border/50">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Provider API</label>
+                  <select 
+                    value={validatorProvider}
+                    onChange={(e) => setValidatorProvider(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="auto">Auto (Failover)</option>
+                    <option value="rapidapi">RapidAPI (id-game-checker)</option>
+                    <option value="vip-reseller">VIP-Reseller</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Game Code (untuk API)</label>
+                  <Input 
+                    placeholder="misal: mobile-legends" 
+                    value={validatorGameCode}
+                    onChange={(e) => setValidatorGameCode(e.target.value)}
+                    required={hasUsernameValidator}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2 border-t pt-4">
