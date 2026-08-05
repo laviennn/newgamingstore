@@ -116,7 +116,7 @@ export function AuthCard({
 
           <div className='mb-8'>
             <h2 className='text-3xl font-bold text-white mb-2'>
-              {mode === 'login' ? 'Selamat Datang' : 'Buat Akun'}
+              {mode === 'login' ? 'Login Member' : 'Buat Akun'}
             </h2>
             <p className='text-gray-400 text-sm'>
               {mode === 'login'
