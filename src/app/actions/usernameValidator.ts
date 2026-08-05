@@ -70,11 +70,19 @@ const CANONICAL_GAME_MAP: Record<string, { vipReseller: string; kokinpay: string
   "aov": { vipReseller: "arena-of-valor", kokinpay: "arena-of-valor", rapidApi: "arena-of-valor" },
 };
 
-function normalizeServerId(gameCode: string, serverId?: string): string | undefined {
+function normalizeServerId(provider: string, gameCode: string, serverId?: string): string | undefined {
   if (!serverId) return serverId;
   const s = serverId.trim().toLowerCase();
 
   if (gameCode.includes("genshin")) {
+    if (provider === "kokinpay") {
+      if (s === "asia") return "os_asia";
+      if (s === "america" || s === "usa") return "os_usa";
+      if (s === "europe" || s === "euro") return "os_euro";
+      if (s === "tw_hk_mo" || s === "cht") return "os_cht";
+      return s;
+    }
+
     if (s === "os_asia") return "asia";
     if (s === "os_usa") return "america";
     if (s === "os_euro") return "europe";
@@ -182,7 +190,7 @@ const vipResellerStrategy: ValidationProviderStrategy = {
       }
 
       const sign = crypto.createHash('md5').update(apiId + apiKey).digest('hex');
-      const targetServer = normalizeServerId(targetCode, serverId);
+      const targetServer = normalizeServerId(this.id, targetCode, serverId);
 
       const formData = new URLSearchParams();
       formData.append('key', apiKey);
@@ -307,7 +315,7 @@ const rapidApiStrategy: ValidationProviderStrategy = {
         return { success: false, message: msg };
       }
 
-      const targetServer = normalizeServerId(targetCode, serverId);
+      const targetServer = normalizeServerId(this.id, targetCode, serverId);
 
       const apiPrefix = targetCode === 'hokid' ? 'rapid-api' : 'rapid_api';
       let url = `https://check-id-game.p.rapidapi.com/api/${apiPrefix}/${targetCode}/${uid}`;
@@ -425,7 +433,7 @@ const kokinPayStrategy: ValidationProviderStrategy = {
     }
 
     const targetCode = this.resolveGameCode(rawGameCode, overrides);
-    const targetServer = normalizeServerId(targetCode, serverId);
+    const targetServer = normalizeServerId(this.id, targetCode, serverId);
     
     const body: Record<string, string> = {
       api_key: apiKey,
