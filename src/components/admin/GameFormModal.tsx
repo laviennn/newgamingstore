@@ -11,10 +11,65 @@ import { useNotification } from "@/components/ui/notification";
 import { Loader2, UploadCloud } from "lucide-react";
 import Image from "next/image";
 
+const PRESET_GAME_CODE_MAP: Record<string, string> = {
+  "mobile-legends": "mobile-legends",
+  "mobile-legend": "mobile-legends",
+  "mlbb": "mobile-legends",
+  "ml": "mobile-legends",
+  "cek_game_ml": "mobile-legends",
+  "cek-game-ml": "mobile-legends",
+
+  "genshin-impact": "genshin-impact",
+  "genshin": "genshin-impact",
+  "genshin_impact": "genshin-impact",
+
+  "free-fire": "free-fire",
+  "freefire": "free-fire",
+  "free-fire-max": "free-fire",
+  "ff": "free-fire",
+
+  "pubg-mobile": "pubgm",
+  "pubgm": "pubgm",
+  "pubg": "pubgm",
+  "pubgm-global": "pubgm",
+
+  "valorant": "valorant",
+  "val": "valorant",
+
+  "point-blank": "pointblank",
+  "pointblank": "pointblank",
+  "pb": "pointblank",
+
+  "cod-mobile": "codm",
+  "codm": "codm",
+  "call-of-duty-mobile": "codm",
+  "call-of-duty": "codm",
+
+  "honkai-star-rail": "honkai-star-rail",
+  "hsr": "honkai-star-rail",
+};
+
+function resolveAutoGameCode(slug?: string, name?: string): string {
+  const normSlug = (slug || "").toLowerCase().trim();
+  const normName = (name || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+
+  if (normSlug && PRESET_GAME_CODE_MAP[normSlug]) {
+    return PRESET_GAME_CODE_MAP[normSlug];
+  }
+  if (normName && PRESET_GAME_CODE_MAP[normName]) {
+    return PRESET_GAME_CODE_MAP[normName];
+  }
+
+  // Fallback: Use slug if available, otherwise slugified name
+  return normSlug || normName || "";
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOpen: boolean; onClose: () => void; game?: any, categories?: any[] }) {
   const { showNotification, NotificationComponent } = useNotification();
   const [loading, setLoading] = React.useState(false);
+  const [nameValue, setNameValue] = React.useState<string>(game?.name || "");
+  const [slugValue, setSlugValue] = React.useState<string>(game?.slug || "");
   const [imagePreview, setImagePreview] = React.useState<string | null>(game?.image_url || null);
   const [bgPreview, setBgPreview] = React.useState<string | null>(game?.background_image || null);
   const [guidePreview, setGuidePreview] = React.useState<string | null>(game?.guide_image_url || null);
@@ -29,6 +84,8 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
 
   React.useEffect(() => {
     setTimeout(() => {
+      setNameValue(game?.name || "");
+      setSlugValue(game?.slug || "");
       setImagePreview(game?.image_url || null);
       setBgPreview(game?.background_image || null);
       setGuidePreview(game?.guide_image_url || null);
@@ -44,6 +101,14 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
       }
     }, 0);
   }, [game]);
+
+  const handleToggleValidator = (checked: boolean) => {
+    setHasUsernameValidator(checked);
+    if (checked && (!validatorGameCode || validatorGameCode.trim() === "")) {
+      const autoCode = resolveAutoGameCode(slugValue || game?.slug, nameValue || game?.name);
+      setValidatorGameCode(autoCode);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -155,11 +220,25 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium">Game Name</label>
-              <Input id="name" name="name" placeholder="Mobile Legends" defaultValue={game?.name || ""} required />
+              <Input 
+                id="name" 
+                name="name" 
+                placeholder="Mobile Legends" 
+                value={nameValue} 
+                onChange={(e) => setNameValue(e.target.value)} 
+                required 
+              />
             </div>
             <div className="space-y-2">
               <label htmlFor="slug" className="text-sm font-medium">Slug</label>
-              <Input id="slug" name="slug" placeholder="mobile-legends" defaultValue={game?.slug || ""} required />
+              <Input 
+                id="slug" 
+                name="slug" 
+                placeholder="mobile-legends" 
+                value={slugValue} 
+                onChange={(e) => setSlugValue(e.target.value)} 
+                required 
+              />
             </div>
             <div className="space-y-2">
               <label htmlFor="developer" className="text-sm font-medium">Developer</label>
@@ -260,9 +339,11 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
               <label className="relative inline-flex items-center cursor-pointer">
                 <input 
                   type="checkbox" 
+                  name="has_username_validator"
+                  value="true"
                   className="sr-only peer" 
                   checked={hasUsernameValidator} 
-                  onChange={(e) => setHasUsernameValidator(e.target.checked)} 
+                  onChange={(e) => handleToggleValidator(e.target.checked)} 
                 />
                 <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
@@ -273,19 +354,32 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Provider API</label>
                   <select 
+                    name="validator_provider"
                     value={validatorProvider}
                     onChange={(e) => setValidatorProvider(e.target.value)}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
                     <option value="auto">Auto (Failover)</option>
-                    <option value="rapidapi">RapidAPI (id-game-checker)</option>
                     <option value="vip-reseller">VIP-Reseller</option>
+                    <option value="kokinpay">KokinPay</option>
+                    <option value="rapidapi">RapidAPI (check-id-game)</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Game Code (untuk API)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Game Code (untuk API)</label>
+                    <button
+                      type="button"
+                      onClick={() => setValidatorGameCode(resolveAutoGameCode(slugValue || game?.slug, nameValue || game?.name))}
+                      className="text-[11px] text-primary hover:underline font-semibold"
+                      title="Isi otomatis kode game dari preset atau slug"
+                    >
+                      ⚡ Auto-fill
+                    </button>
+                  </div>
                   <Input 
-                    placeholder="misal: mobile-legends" 
+                    name="validator_game_code"
+                    placeholder="misal: mobile-legends atau cek_game_ml" 
                     value={validatorGameCode}
                     onChange={(e) => setValidatorGameCode(e.target.value)}
                     required={hasUsernameValidator}

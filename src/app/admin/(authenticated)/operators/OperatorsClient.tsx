@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useNotification } from "@/components/ui/notification";
+import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { createOperator, deleteOperator } from "./actions";
 
 export function OperatorsClient({ initialOperators, roles, tenants }: { initialOperators: any[], roles: any[], tenants: any[] }) {
@@ -14,6 +15,12 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "", roleId: "", tenantId: "" });
   const [loading, setLoading] = useState(false);
+  const [deleteState, setDeleteState] = useState<{ isOpen: boolean; id: string; email: string; loading: boolean }>({
+    isOpen: false,
+    id: "",
+    email: "",
+    loading: false,
+  });
   const { showNotification, NotificationComponent } = useNotification();
 
   const handleOpenDialog = () => {
@@ -42,14 +49,20 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Hapus akses BO operator ini?")) return;
-    const res = await deleteOperator(id);
+  const handleDeleteClick = (id: string, email: string) => {
+    setDeleteState({ isOpen: true, id, email, loading: false });
+  };
+
+  const confirmDelete = async () => {
+    setDeleteState(prev => ({ ...prev, loading: true }));
+    const res = await deleteOperator(deleteState.id);
     if (res.success) {
-      setOperators(operators.filter(o => o.id !== id));
-      showNotification("success", "Terhapus", "Akses operator berhasil dicabut");
+      setOperators(operators.filter(o => o.id !== deleteState.id));
+      showNotification("success", "Terhapus", `Akses operator "${deleteState.email}" berhasil dicabut`);
+      setDeleteState({ isOpen: false, id: "", email: "", loading: false });
     } else {
-      showNotification("error", "Gagal", res.message || "Gagal menghapus");
+      showNotification("error", "Gagal", res.message || "Gagal menghapus operator");
+      setDeleteState(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -88,7 +101,7 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
                 </td>
                 <td className="px-6 py-4 text-right">
                   {!op.is_superadmin && (
-                    <Button variant="destructive" size="icon" onClick={() => handleDelete(op.id)}>
+                    <Button variant="destructive" size="icon" onClick={() => handleDeleteClick(op.id, op.email)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
@@ -166,6 +179,16 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        isOpen={deleteState.isOpen}
+        onClose={() => setDeleteState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmDelete}
+        title="Cabut Akses Operator"
+        description="Apakah Anda yakin ingin mencabut akses BO operator ini? Operator tersebut tidak akan dapat login lagi ke Dashboard Admin."
+        itemName={deleteState.email}
+        loading={deleteState.loading}
+      />
     </div>
   );
 }

@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { TenantSelector } from "@/components/admin/TenantSelector";
-import { LayoutDashboard, Users, Gamepad2, ShoppingCart, FileText, Settings, Menu, Layers, BookOpen, HelpCircle, Contact, CreditCard, Palette, Tag, ChevronDown, Folder, Globe, Shield, Crown, UserCheck } from "lucide-react";
+import { AdminUserMenu } from "@/components/admin/AdminUserMenu";
+import { LayoutDashboard, Users, Gamepad2, ShoppingCart, FileText, Settings, Menu, Layers, BookOpen, HelpCircle, Contact, CreditCard, Palette, Tag, ChevronDown, Folder, Globe, Shield, Crown, UserCheck, Activity } from "lucide-react";
 import { getAdminSession, setAdminTenantCookie, getActiveAdminTenantId } from "@/app/admin/actions";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -14,6 +15,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const isSuperAdmin = adminSession.is_superadmin;
+  const permissions: string[] = adminSession.admin_roles?.permissions || [];
+  const hasPerm = (p: string) => isSuperAdmin || permissions.includes(p);
+  
   const supabase = await createClient();
   const { data: tenants } = await supabase.from('tenants').select('id, name').order('created_at', { ascending: true });
   
@@ -39,6 +43,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Dashboard
             </Link>
 
+            {(hasPerm("manage_games") || hasPerm("manage_categories") || hasPerm("manage_products")) && (
             <details className="group [&_summary::-webkit-details-marker]:hidden mt-2">
               <summary className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50 cursor-pointer list-none">
                 <div className="flex items-center gap-3">
@@ -48,18 +53,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
               </summary>
               <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-border/50 pl-2">
+                {hasPerm("manage_games") && (
                 <Link href="/games" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <Gamepad2 className="h-4 w-4" /> Games
                 </Link>
+                )}
+                {hasPerm("manage_categories") && (
                 <Link href="/categories" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <Layers className="h-4 w-4" /> Categories
                 </Link>
+                )}
+                {hasPerm("manage_products") && (
                 <Link href="/products" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <ShoppingCart className="h-4 w-4" /> Products
                 </Link>
+                )}
               </div>
             </details>
+            )}
 
+            {(hasPerm("manage_orders") || hasPerm("manage_deposits") || hasPerm("manage_payments") || hasPerm("manage_promos") || hasPerm("manage_memberships") || hasPerm("manage_members")) && (
             <details className="group [&_summary::-webkit-details-marker]:hidden mt-2">
               <summary className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50 cursor-pointer list-none">
                 <div className="flex items-center gap-3">
@@ -69,27 +82,41 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
               </summary>
               <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-border/50 pl-2">
+                {hasPerm("manage_orders") && (
                 <Link href="/orders" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <FileText className="h-4 w-4" /> Orders
                 </Link>
+                )}
+                {hasPerm("manage_deposits") && (
                 <Link href="/deposits" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <CreditCard className="h-4 w-4" /> Deposits
                 </Link>
+                )}
+                {hasPerm("manage_payments") && (
                 <Link href="/payments" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <CreditCard className="h-4 w-4" /> Payments
                 </Link>
+                )}
+                {hasPerm("manage_promos") && (
                 <Link href="/promos" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <Tag className="h-4 w-4" /> Promos
                 </Link>
+                )}
+                {hasPerm("manage_memberships") && (
                 <Link href="/memberships" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <Crown className="h-4 w-4" /> Paket Membership
                 </Link>
+                )}
+                {hasPerm("manage_members") && (
                 <Link href="/members" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <UserCheck className="h-4 w-4" /> Members
                 </Link>
+                )}
               </div>
             </details>
+            )}
 
+            {(hasPerm("manage_articles") || hasPerm("manage_faqs") || hasPerm("manage_contacts")) && (
             <details className="group [&_summary::-webkit-details-marker]:hidden mt-2">
               <summary className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50 cursor-pointer list-none">
                 <div className="flex items-center gap-3">
@@ -99,18 +126,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
               </summary>
               <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-border/50 pl-2">
+                {hasPerm("manage_articles") && (
                 <Link href="/articles" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <BookOpen className="h-4 w-4" /> Articles
                 </Link>
+                )}
+                {hasPerm("manage_faqs") && (
                 <Link href="/faqs" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <HelpCircle className="h-4 w-4" /> FAQ
                 </Link>
+                )}
+                {hasPerm("manage_contacts") && (
                 <Link href="/contacts" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <Contact className="h-4 w-4" /> Contacts & Footer
                 </Link>
+                )}
               </div>
             </details>
+            )}
 
+            {(isSuperAdmin || hasPerm("manage_roles") || hasPerm("manage_operators")) && (
             <details className="group [&_summary::-webkit-details-marker]:hidden mt-2">
               <summary className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50 cursor-pointer list-none">
                 <div className="flex items-center gap-3">
@@ -120,27 +155,35 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
               </summary>
               <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-border/50 pl-2">
-                <Link href="/tenants" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
-                  <Users className="h-4 w-4" /> Tenants
-                </Link>
-                <Link href="/content" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
-                  <Settings className="h-4 w-4" /> Content & Settings
-                </Link>
-                <Link href="/theme" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
-                  <Palette className="h-4 w-4" /> Theme & Branding
-                </Link>
                 {isSuperAdmin && (
                   <>
-                    <Link href="/roles" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
-                      <Shield className="h-4 w-4" /> Roles & Permissions
+                    <Link href="/tenants" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                      <Users className="h-4 w-4" /> Tenants
                     </Link>
-                    <Link href="/operators" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
-                      <UserCheck className="h-4 w-4" /> Operators
+                    <Link href="/content" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                      <Settings className="h-4 w-4" /> Content & Settings
+                    </Link>
+                    <Link href="/theme" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                      <Palette className="h-4 w-4" /> Theme & Branding
+                    </Link>
+                    <Link href="/api-logs" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                      <Activity className="h-4 w-4" /> API Logs & Kuota
                     </Link>
                   </>
                 )}
+                {hasPerm("manage_roles") && (
+                  <Link href="/roles" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                    <Shield className="h-4 w-4" /> Roles & Permissions
+                  </Link>
+                )}
+                {hasPerm("manage_operators") && (
+                  <Link href="/operators" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                    <UserCheck className="h-4 w-4" /> Operators
+                  </Link>
+                )}
               </div>
             </details>
+            )}
           </nav>
         </div>
       </aside>
@@ -158,9 +201,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
              {isSuperAdmin && tenants && currentTenantId && (
                 <TenantSelector tenants={tenants} currentTenantId={currentTenantId} />
              )}
-             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-                A
-             </div>
+             <AdminUserMenu 
+               email={adminSession.email || ""} 
+               isSuperAdmin={isSuperAdmin} 
+               roleName={adminSession.admin_roles?.name} 
+             />
           </div>
         </header>
         

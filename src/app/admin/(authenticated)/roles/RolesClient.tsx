@@ -7,24 +7,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNotification } from "@/components/ui/notification";
+import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { createRole, updateRole, deleteRole } from "./actions";
 
 const AVAILABLE_PERMISSIONS = [
-  { id: "manage_games", label: "Manage Games" },
-  { id: "manage_categories", label: "Manage Categories" },
-  { id: "manage_products", label: "Manage Products" },
-  { id: "manage_articles", label: "Manage Articles" },
-  { id: "manage_faqs", label: "Manage FAQs" },
-  { id: "manage_payments", label: "Manage Payments" },
-  { id: "manage_promos", label: "Manage Promos" },
-  { id: "manage_orders", label: "Manage Orders" },
-  { id: "manage_memberships", label: "Manage Memberships" },
-  { id: "manage_members", label: "Manage Members" },
-  { id: "manage_deposits", label: "Manage Deposits" },
-  { id: "manage_tenants", label: "Manage Tenants" },
-  { id: "manage_theme", label: "Manage Theme" },
-  { id: "manage_contacts", label: "Manage Contacts" },
-  { id: "manage_content", label: "Manage Content" }
+  { category: "Katalog & Layanan", perms: [
+    { id: "manage_games", label: "Manage Games" },
+    { id: "manage_categories", label: "Manage Categories" },
+    { id: "manage_products", label: "Manage Products" },
+  ]},
+  { category: "Transaksi & Promo", perms: [
+    { id: "manage_orders", label: "Manage Orders" },
+    { id: "manage_deposits", label: "Manage Deposits" },
+    { id: "manage_payments", label: "Manage Payments" },
+    { id: "manage_promos", label: "Manage Promos" },
+    { id: "manage_memberships", label: "Manage Memberships" },
+    { id: "manage_members", label: "Manage Members" },
+  ]},
+  { category: "Konten & Informasi", perms: [
+    { id: "manage_articles", label: "Manage Articles" },
+    { id: "manage_faqs", label: "Manage FAQs" },
+    { id: "manage_contacts", label: "Manage Contacts" },
+  ]},
+  { category: "Pengaturan Sistem", perms: [
+    { id: "manage_roles", label: "Manage Roles & Perms" },
+    { id: "manage_operators", label: "Manage Operators" },
+  ]},
 ];
 
 export function RolesClient({ initialRoles }: { initialRoles: any[] }) {
@@ -32,6 +40,12 @@ export function RolesClient({ initialRoles }: { initialRoles: any[] }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ id: "", name: "", permissions: [] as string[] });
   const [loading, setLoading] = useState(false);
+  const [deleteState, setDeleteState] = useState<{ isOpen: boolean; id: string; name: string; loading: boolean }>({
+    isOpen: false,
+    id: "",
+    name: "",
+    loading: false,
+  });
   const { showNotification, NotificationComponent } = useNotification();
 
   const handleOpenDialog = (role?: any) => {
@@ -80,14 +94,20 @@ export function RolesClient({ initialRoles }: { initialRoles: any[] }) {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Hapus role ini?")) return;
-    const res = await deleteRole(id);
+  const handleDeleteClick = (id: string, name: string) => {
+    setDeleteState({ isOpen: true, id, name, loading: false });
+  };
+
+  const confirmDelete = async () => {
+    setDeleteState(prev => ({ ...prev, loading: true }));
+    const res = await deleteRole(deleteState.id);
     if (res.success) {
-      setRoles(roles.filter(r => r.id !== id));
-      showNotification("success", "Terhapus", "Role berhasil dihapus");
+      setRoles(roles.filter(r => r.id !== deleteState.id));
+      showNotification("success", "Terhapus", `Role "${deleteState.name}" berhasil dihapus`);
+      setDeleteState({ isOpen: false, id: "", name: "", loading: false });
     } else {
-      showNotification("error", "Gagal", res.message || "Gagal menghapus");
+      showNotification("error", "Gagal", res.message || "Gagal menghapus role");
+      setDeleteState(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -122,7 +142,7 @@ export function RolesClient({ initialRoles }: { initialRoles: any[] }) {
                     <Button variant="outline" size="icon" onClick={() => handleOpenDialog(role)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="destructive" size="icon" onClick={() => handleDelete(role.id)}>
+                    <Button variant="destructive" size="icon" onClick={() => handleDeleteClick(role.id, role.name)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -154,23 +174,44 @@ export function RolesClient({ initialRoles }: { initialRoles: any[] }) {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label>Permissions</Label>
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                {AVAILABLE_PERMISSIONS.map((perm) => (
-                  <label key={perm.id} className="flex items-center space-x-2 border p-3 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={formData.permissions.includes(perm.id)}
-                      onChange={() => handleTogglePermission(perm.id)}
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                    <span className="text-sm font-medium">{perm.label}</span>
-                  </label>
+            <div className="space-y-4 mt-4 border-t pt-4">
+              <div>
+                <Label className="text-base font-semibold">Permissions</Label>
+                <p className="text-sm text-muted-foreground mb-4">Centang fitur yang dapat diakses oleh Role ini.</p>
+              </div>
+              <div className="space-y-6">
+                {AVAILABLE_PERMISSIONS.map((group) => (
+                  <div key={group.category} className="space-y-3">
+                    <h4 className="text-sm font-semibold text-primary/80 uppercase tracking-wider">{group.category}</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {group.perms.map((perm) => (
+                        <label 
+                          key={perm.id} 
+                          className={`flex items-center space-x-3 border p-3 rounded-xl cursor-pointer transition-all ${
+                            formData.permissions.includes(perm.id) 
+                              ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20' 
+                              : 'bg-background hover:bg-muted/50 border-border/60'
+                          }`}
+                        >
+                          <div className="flex items-center justify-center">
+                            <input
+                              type="checkbox"
+                              checked={formData.permissions.includes(perm.id)}
+                              onChange={() => handleTogglePermission(perm.id)}
+                              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary focus:ring-offset-0"
+                            />
+                          </div>
+                          <span className={`text-sm ${formData.permissions.includes(perm.id) ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'}`}>
+                            {perm.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-4 border-t">
+            <div className="flex justify-end gap-2 pt-6 border-t mt-6">
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
               <Button type="submit" disabled={loading}>
                 {loading ? "Menyimpan..." : "Simpan"}
@@ -179,6 +220,16 @@ export function RolesClient({ initialRoles }: { initialRoles: any[] }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        isOpen={deleteState.isOpen}
+        onClose={() => setDeleteState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmDelete}
+        title="Hapus Role"
+        description="Apakah Anda yakin ingin menghapus role ini? Operator dengan role ini mungkin akan kehilangan akses yang relevan."
+        itemName={deleteState.name}
+        loading={deleteState.loading}
+      />
     </div>
   );
 }
