@@ -141,13 +141,15 @@ export function MobileSidebar({
                     Masuk
                   </Button>
                 </Link>
-                <Link
-                  href='/register'
-                  className='flex-1'>
-                  <Button className='w-full justify-center rounded-xl font-bold text-black bg-white hover:bg-gray-200 shadow-[0_0_15px_rgba(255,255,255,0.3)]'>
-                    Daftar
-                  </Button>
-                </Link>
+                {authMode === 'email' && (
+                  <Link
+                    href='/register'
+                    className='flex-1'>
+                    <Button className='w-full justify-center rounded-xl font-bold text-black bg-white hover:bg-gray-200 shadow-[0_0_15px_rgba(255,255,255,0.3)]'>
+                      Daftar
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           )}

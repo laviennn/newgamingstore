@@ -14,9 +14,11 @@ const NOMINAL_OPTIONS = [
 export function DepositForm({
   paymentChannels,
   waNumber,
+  tenantId,
 }: {
   paymentChannels: any[];
   waNumber: string;
+  tenantId?: string;
 }) {
   const { showNotification, NotificationComponent } = useNotification();
   const [selectedNominal, setSelectedNominal] = useState<number | null>(null);
@@ -64,7 +66,8 @@ export function DepositForm({
     const depositData = {
       paymentMethodId: selectedPayment.id,
       waNumber: waNumber,
-      amount: amount
+      amount: amount,
+      tenantId: tenantId,
     };
 
     const res = await createDepositOrder(depositData);

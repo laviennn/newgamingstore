@@ -2,11 +2,26 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileClient } from "./ProfileClient";
 import { headers } from "next/headers";
+import { getStorefrontSession } from "@/lib/tenantAuth";
 
-export default async function MemberProfilePage() {
+export default async function MemberProfilePage({
+  params,
+}: {
+  params: Promise<{ domain: string }>;
+}) {
+  const { domain } = await params;
+  const session = await getStorefrontSession(domain);
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  // Username mode members redirect ke dashboard (profile settings = email-only)
+  if (session.type === "username") {
+    redirect("/member/dashboard");
+  }
+
   const supabase = await createClient();
-
-  // Authenticate user
   const { data: authData } = await supabase.auth.getUser();
   const user = authData?.user;
 

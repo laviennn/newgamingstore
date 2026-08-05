@@ -27,7 +27,7 @@ export async function createDepositOrder(depositData: any) {
       .from('deposits')
       .insert(payload)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
        console.error("Deposit insertion error:", error);
@@ -36,6 +36,10 @@ export async function createDepositOrder(depositData: any) {
           return { success: false, message: "Tabel deposits belum dibuat di database." };
        }
        return { success: false, message: error.message };
+    }
+
+    if (!data) {
+      return { success: false, message: "Gagal membuat permohonan deposit. Silakan coba lagi." };
     }
 
     return { success: true, invoiceId: data.invoice_id };
@@ -78,7 +82,7 @@ export async function checkDepositStatus(invoiceId: string) {
       .from('deposits')
       .select('*, payment_channels(*)')
       .eq('invoice_id', invoiceId)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return { success: false, message: "Permohonan deposit dengan Invoice ID tersebut tidak ditemukan." };

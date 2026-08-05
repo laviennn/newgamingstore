@@ -91,6 +91,7 @@ export default async function MemberDepositPage({
       <DepositForm
         paymentChannels={paymentChannels || []}
         waNumber={user.phone || ''}
+        tenantId={tenant?.id}
       />
     </div>
   );
