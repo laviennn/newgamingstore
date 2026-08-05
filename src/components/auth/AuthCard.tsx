@@ -1,215 +1,303 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, X } from "lucide-react";
-import { login, signup } from "@/app/actions/auth";
+import { useState, useTransition } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Eye, EyeOff, X, MessageCircle } from 'lucide-react';
+import { login, signup, loginWithUsername } from '@/app/actions/auth';
+import type { AuthMode } from '@/lib/tenantAuth';
 
 interface AuthCardProps {
-  mode: "login" | "register";
+  mode: 'login' | 'register';
+  authMode?: AuthMode;
+  tenantId?: string;
+  whatsapp?: string;
 }
 
-export function AuthCard({ mode }: AuthCardProps) {
+function buildWhatsappUrl(whatsapp?: string) {
+  if (!whatsapp) return null;
+  const digits = whatsapp.replace(/[^0-9]/g, '');
+  if (!digits) return null;
+  return `https://wa.me/${digits}?text=${encodeURIComponent('Halo Admin, saya ingin mendaftar akun member.')}`;
+}
+
+export function AuthCard({
+  mode,
+  authMode = 'email',
+  tenantId,
+  whatsapp,
+}: AuthCardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState("");
+
+  const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
+  const isUsernameMode = authMode === 'username' && mode === 'login';
+  const waUrl = buildWhatsappUrl(whatsapp);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^0-9+]/g, '');
     setPhone(val);
-    
+
     if (val.length > 0) {
       if (!/^(08|62|\+62)/.test(val)) {
-        setPhoneError("Nomor harus diawali 08, 62, atau +62");
+        setPhoneError('Nomor harus diawali 08, 62, atau +62');
       } else if (val.length < 10 || val.length > 15) {
-        setPhoneError("Panjang nomor harus 10-15 digit");
+        setPhoneError('Panjang nomor harus 10-15 digit');
       } else {
-        setPhoneError("");
+        setPhoneError('');
       }
     } else {
-      setPhoneError("");
+      setPhoneError('');
     }
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-    
-    if (mode === "register" && phoneError) {
-      setError("Silakan perbaiki nomor telepon Anda.");
+
+    if (mode === 'register' && phoneError) {
+      setError('Silakan perbaiki nomor telepon Anda.');
       return;
     }
 
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
-      const action = mode === "login" ? login : signup;
-      const result = await action(formData);
-
-      if (result?.error) {
-        setError(result.error);
+      if (isUsernameMode) {
+        if (!tenantId) {
+          setError('Konfigurasi tenant tidak ditemukan.');
+          return;
+        }
+        const result = await loginWithUsername(formData, tenantId);
+        if (result?.error) setError(result.error);
+        return;
       }
+
+      const action = mode === 'login' ? login : signup;
+      const result = await action(formData);
+      if (result?.error) setError(result.error);
     });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-[1000px] h-[600px] bg-[#121212] rounded-2xl overflow-hidden flex shadow-2xl relative">
-
-        {/* Left Side: Background Banner (Desktop Only) */}
-        <div className="hidden md:flex md:w-1/2 relative">
+    <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm'>
+      <div className='w-full max-w-[1000px] h-[600px] bg-[#121212] rounded-2xl overflow-hidden flex shadow-2xl relative'>
+        <div className='hidden md:flex md:w-1/2 relative'>
           <Image
-            src="https://assets.newgamingstore.com/login_bg_1778139696.webp"
-            alt="NewGamingStore Banner"
+            src='https://assets.newgamingstore.com/login_bg_1778139696.webp'
+            alt='NewGamingStore Banner'
             fill
-            sizes="(max-width: 768px) 0vw, 500px"
-            className="object-cover"
+            sizes='(max-width: 768px) 0vw, 500px'
+            className='object-cover'
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/40 to-transparent" />
-          <div className="absolute bottom-10 left-10 right-10">
-            <h1 className="text-white text-5xl font-black mb-2 tracking-tight">NewGamingStore</h1>
-            <p className="text-gray-300 text-sm">
+          <div className='absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/40 to-transparent' />
+          <div className='absolute bottom-10 left-10 right-10'>
+            <h1 className='text-white text-5xl font-black mb-2 tracking-tight'>
+              NewGamingStore
+            </h1>
+            <p className='text-gray-300 text-sm'>
               NEWGAMINGSTORE | Platform Top Up Game & Voucher Terpercaya
             </p>
           </div>
         </div>
 
-        {/* Right Side: Form Content */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 relative flex flex-col justify-center">
-
+        <div className='w-full md:w-1/2 p-8 md:p-12 relative flex flex-col justify-center overflow-y-auto'>
           <button
-            onClick={() => router.push("/")}
-            className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
+            onClick={() => router.push('/')}
+            className='absolute top-6 right-6 text-gray-400 hover:text-white transition-colors'>
+            <X className='w-6 h-6' />
           </button>
 
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">
-              {mode === "login" ? "Selamat Datang" : "Buat Akun"}
+          <div className='mb-8'>
+            <h2 className='text-3xl font-bold text-white mb-2'>
+              {mode === 'login' ? 'Selamat Datang' : 'Buat Akun'}
             </h2>
-            <p className="text-gray-400 text-sm">
-              {mode === "login"
-                ? "Silakan masuk untuk melanjutkan."
-                : "Daftar sekarang untuk memulai."}
+            <p className='text-gray-400 text-sm'>
+              {mode === 'login'
+                ? isUsernameMode
+                  ? 'Masuk dengan username dan password Anda.'
+                  : 'Silakan masuk untuk melanjutkan.'
+                : 'Daftar sekarang untuk memulai.'}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {isUsernameMode && (
+            <div className='mb-5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4'>
+              <p className='text-sm text-emerald-200 mb-2'>
+                Pendaftaran akun hanya tersedia melalui Admin. Hubungi kami
+                untuk mendaftar.
+              </p>
+              {waUrl ? (
+                <a
+                  href={waUrl}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='inline-flex items-center gap-2 text-sm font-semibold text-[#25D366] hover:text-[#1fbd58] transition-colors'>
+                  <MessageCircle className='w-4 h-4' />
+                  Hubungi Admin via WhatsApp
+                </a>
+              ) : (
+                <p className='text-xs text-gray-400'>
+                  Hubungi Admin untuk pendaftaran akun.
+                </p>
+              )}
+            </div>
+          )}
+
+          <form
+            onSubmit={handleSubmit}
+            className='space-y-5'>
             {error && (
-              <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg">
+              <div className='bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg'>
                 {error}
               </div>
             )}
 
-            {mode === "register" && (
+            {mode === 'register' && (
               <>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-300">Nama Lengkap</label>
+                <div className='space-y-1.5'>
+                  <label className='text-sm font-medium text-gray-300'>
+                    Nama Lengkap
+                  </label>
                   <input
-                    name="name"
-                    type="text"
-                    placeholder="John Doe"
+                    name='name'
+                    type='text'
+                    placeholder='John Doe'
                     required
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    className='w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 transition-colors'
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-300">Nomor Telepon (WhatsApp)</label>
+                <div className='space-y-1.5'>
+                  <label className='text-sm font-medium text-gray-300'>
+                    Nomor Telepon (WhatsApp)
+                  </label>
                   <input
-                    name="phone"
-                    type="tel"
-                    placeholder="081234567890"
+                    name='phone'
+                    type='tel'
+                    placeholder='081234567890'
                     value={phone}
                     onChange={handlePhoneChange}
                     required
                     className={`w-full bg-[#1a1a1a] border ${phoneError ? 'border-red-500' : 'border-white/10'} rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 transition-colors`}
                   />
                   {phoneError && (
-                    <p className="text-xs text-red-500 mt-1">{phoneError}</p>
+                    <p className='text-xs text-red-500 mt-1'>{phoneError}</p>
                   )}
                 </div>
               </>
             )}
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">Email</label>
-              <input
-                name="email"
-                type="text"
-                placeholder="johndoe@example.com"
-                required
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-              />
-            </div>
-
-            <div className="space-y-1.5 relative">
-              <label className="text-sm font-medium text-gray-300">Password</label>
-              <div className="relative">
+            {isUsernameMode ? (
+              <div className='space-y-1.5'>
+                <label className='text-sm font-medium text-gray-300'>
+                  Username
+                </label>
                 <input
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Masukkan password"
+                  name='username'
+                  type='text'
+                  placeholder='Username'
                   required
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 transition-colors pr-12"
+                  autoComplete='username'
+                  className='w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 transition-colors'
+                />
+              </div>
+            ) : (
+              <div className='space-y-1.5'>
+                <label className='text-sm font-medium text-gray-300'>
+                  Email
+                </label>
+                <input
+                  name='email'
+                  type='text'
+                  placeholder='johndoe@example.com'
+                  required
+                  className='w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 transition-colors'
+                />
+              </div>
+            )}
+
+            <div className='space-y-1.5 relative'>
+              <label className='text-sm font-medium text-gray-300'>
+                Password
+              </label>
+              <div className='relative'>
+                <input
+                  name='password'
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder='Masukkan password'
+                  required
+                  autoComplete={
+                    isUsernameMode
+                      ? 'current-password'
+                      : mode === 'login'
+                        ? 'current-password'
+                        : 'new-password'
+                  }
+                  className='w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 transition-colors pr-12'
                 />
                 <button
-                  type="button"
+                  type='button'
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  className='absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors'>
+                  {showPassword ? (
+                    <EyeOff className='w-5 h-5' />
+                  ) : (
+                    <Eye className='w-5 h-5' />
+                  )}
                 </button>
               </div>
             </div>
 
-            {mode === "login" && (
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer group">
+            {mode === 'login' && !isUsernameMode && (
+              <div className='flex items-center justify-between'>
+                <label className='flex items-center gap-2 cursor-pointer group'>
                   <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-gray-600 bg-[#1a1a1a] text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900"
+                    type='checkbox'
+                    className='w-4 h-4 rounded border-gray-600 bg-[#1a1a1a] text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900'
                   />
-                  <span className="text-sm text-gray-400 group-hover:text-white transition-colors">
+                  <span className='text-sm text-gray-400 group-hover:text-white transition-colors'>
                     Ingat Saya
                   </span>
                 </label>
-                <Link href="#" className="text-sm text-blue-500 hover:text-blue-400 transition-colors">
+                <Link
+                  href='#'
+                  className='text-sm text-blue-500 hover:text-blue-400 transition-colors'>
                   Lupa Password?
                 </Link>
               </div>
             )}
 
             <button
-              type="submit"
+              type='submit'
               disabled={isPending}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+              className='w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
               {isPending
-                ? "MEMPROSES..."
-                : mode === "login"
-                  ? "MASUK SEKARANG"
-                  : "DAFTAR SEKARANG"}
+                ? 'MEMPROSES...'
+                : mode === 'login'
+                  ? 'MASUK SEKARANG'
+                  : 'DAFTAR SEKARANG'}
             </button>
 
-            <div className="text-center mt-6">
-              <span className="text-sm text-gray-400">
-                {mode === "login" ? "Belum punya akun? " : "Sudah punya akun? "}
-              </span>
-              <Link
-                href={mode === "login" ? "/register" : "/login"}
-                className="text-sm text-blue-500 hover:text-blue-400 transition-colors"
-              >
-                {mode === "login" ? "Daftar sekarang" : "Masuk sekarang"}
-              </Link>
-            </div>
+            {!isUsernameMode && (
+              <div className='text-center mt-6'>
+                <span className='text-sm text-gray-400'>
+                  {mode === 'login'
+                    ? 'Belum punya akun? '
+                    : 'Sudah punya akun? '}
+                </span>
+                <Link
+                  href={mode === 'login' ? '/register' : '/login'}
+                  className='text-sm text-blue-500 hover:text-blue-400 transition-colors'>
+                  {mode === 'login' ? 'Daftar sekarang' : 'Masuk sekarang'}
+                </Link>
+              </div>
+            )}
           </form>
         </div>
       </div>

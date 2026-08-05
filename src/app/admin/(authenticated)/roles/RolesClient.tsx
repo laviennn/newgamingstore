@@ -19,6 +19,7 @@ const AVAILABLE_PERMISSIONS = [
   { id: "manage_promos", label: "Manage Promos" },
   { id: "manage_orders", label: "Manage Orders" },
   { id: "manage_memberships", label: "Manage Memberships" },
+  { id: "manage_members", label: "Manage Members" },
   { id: "manage_deposits", label: "Manage Deposits" },
   { id: "manage_tenants", label: "Manage Tenants" },
   { id: "manage_theme", label: "Manage Theme" },

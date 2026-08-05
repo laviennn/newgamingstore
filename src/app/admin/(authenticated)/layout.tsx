@@ -84,6 +84,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <Link href="/memberships" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
                   <Crown className="h-4 w-4" /> Paket Membership
                 </Link>
+                <Link href="/members" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                  <UserCheck className="h-4 w-4" /> Members
+                </Link>
               </div>
             </details>
 

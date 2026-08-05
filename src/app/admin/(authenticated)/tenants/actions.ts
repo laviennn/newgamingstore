@@ -1,16 +1,17 @@
-"use server";
+'use server';
 
-import { createClient } from "@/utils/supabase/server";
-import { revalidatePath } from "next/cache";
+import { createClient } from '@/utils/supabase/server';
+import { revalidatePath } from 'next/cache';
 
 export async function saveTenant(formData: FormData, id?: string) {
-  const name = formData.get("name") as string;
-  const domain = formData.get("domain") as string;
-  const admin_domain = formData.get("admin_domain") as string;
-  const is_maintenance = formData.get("is_maintenance") === "on";
+  const name = formData.get('name') as string;
+  const domain = formData.get('domain') as string;
+  const admin_domain = formData.get('admin_domain') as string;
+  const is_maintenance = formData.get('is_maintenance') === 'on';
+  const auth_mode = (formData.get('auth_mode') as string) || 'email';
 
   if (!name || !domain || !admin_domain) {
-    return { error: "Name, Domain, and Admin Domain are required." };
+    return { error: 'Name, Domain, and Admin Domain are required.' };
   }
 
   const supabase = await createClient();
@@ -19,23 +20,24 @@ export async function saveTenant(formData: FormData, id?: string) {
     if (id) {
       // Update
       const { error } = await supabase
-        .from("tenants")
-        .update({ name, domain, admin_domain, is_maintenance })
-        .eq("id", id);
+        .from('tenants')
+        .update({ name, domain, admin_domain, is_maintenance, auth_mode })
+        .eq('id', id);
       if (error) throw error;
     } else {
       // Insert
       const { error } = await supabase
-        .from("tenants")
-        .insert([{ name, domain, admin_domain, is_maintenance }]);
+        .from('tenants')
+        .insert([{ name, domain, admin_domain, is_maintenance, auth_mode }]);
       if (error) throw error;
     }
 
-    revalidatePath("/admin/tenants");
+    revalidatePath('/admin/tenants');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (err) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const error = err as any;
-    return { error: error.message || "Failed to save tenant." };
+    return { error: error.message || 'Failed to save tenant.' };
   }
 }

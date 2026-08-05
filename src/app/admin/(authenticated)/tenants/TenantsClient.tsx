@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { TenantFormModal } from "@/components/admin/TenantFormModal";
+import * as React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { TenantFormModal } from '@/components/admin/TenantFormModal';
 
 interface TenantsClientProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,9 +27,9 @@ export function TenantsClient({ initialTenants }: TenantsClientProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Tenants</h1>
+    <div className='space-y-6'>
+      <div className='flex items-center justify-between'>
+        <h1 className='text-3xl font-bold tracking-tight'>Tenants</h1>
         <Button onClick={handleAddTenant}>Add Tenant</Button>
       </div>
 
@@ -38,36 +38,47 @@ export function TenantsClient({ initialTenants }: TenantsClientProps) {
           <CardTitle>Registered Tenants</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative w-full overflow-auto">
-            <table className="w-full caption-bottom text-sm text-left">
-              <thead className="[&_tr]:border-b">
-                <tr className="border-b transition-colors hover:bg-muted/50">
-                  <th className="h-12 px-4 font-medium">Name</th>
-                  <th className="h-12 px-4 font-medium">Storefront Domain</th>
-                  <th className="h-12 px-4 font-medium">Status</th>
-                  <th className="h-12 px-4 font-medium">Created At</th>
-                  <th className="h-12 px-4 font-medium text-right">Actions</th>
+          <div className='relative w-full overflow-auto'>
+            <table className='w-full caption-bottom text-sm text-left'>
+              <thead className='[&_tr]:border-b'>
+                <tr className='border-b transition-colors hover:bg-muted/50'>
+                  <th className='h-12 px-4 font-medium'>Name</th>
+                  <th className='h-12 px-4 font-medium'>Storefront Domain</th>
+                  <th className='h-12 px-4 font-medium'>Status</th>
+                  <th className='h-12 px-4 font-medium'>Created At</th>
+                  <th className='h-12 px-4 font-medium text-right'>Actions</th>
                 </tr>
               </thead>
-              <tbody className="[&_tr:last-child]:border-0">
+              <tbody className='[&_tr:last-child]:border-0'>
                 {initialTenants.map((t) => (
-                  <tr key={t.id} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-4 font-medium">{t.name}</td>
-                    <td className="p-4 font-mono text-xs">{t.domain}</td>
-                    <td className="p-4">
+                  <tr
+                    key={t.id}
+                    className='border-b transition-colors hover:bg-muted/50'>
+                    <td className='p-4 font-medium'>{t.name}</td>
+                    <td className='p-4 font-mono text-xs'>{t.domain}</td>
+                    <td className='p-4'>
                       {t.is_maintenance ? (
-                        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80">
+                        <span className='inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80'>
                           Maintenance
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80">
+                        <span className='inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80'>
                           Active
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-xs">{t.created_at ? new Date(t.created_at).toISOString().split('T')[0] : ''}</td>
-                    <td className="p-4 text-right">
-                       <Button variant="outline" size="sm" onClick={() => handleEditTenant(t)}>Edit</Button>
+                    <td className='p-4 text-xs'>
+                      {t.created_at
+                        ? new Date(t.created_at).toISOString().split('T')[0]
+                        : ''}
+                    </td>
+                    <td className='p-4 text-right'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => handleEditTenant(t)}>
+                        Edit
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -77,11 +88,13 @@ export function TenantsClient({ initialTenants }: TenantsClientProps) {
         </CardContent>
       </Card>
 
-      <TenantFormModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        tenant={selectedTenant}
-      />
+      {isModalOpen && (
+        <TenantFormModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          tenant={selectedTenant}
+        />
+      )}
     </div>
   );
 }

@@ -1,9 +1,28 @@
-import { AuthCard } from "@/components/auth/AuthCard";
+import { redirect } from 'next/navigation';
+import { AuthCard } from '@/components/auth/AuthCard';
+import { getTenantAuthConfig } from '@/lib/tenantAuth';
 
-export default function RegisterPage() {
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default async function RegisterPage({
+  params,
+}: {
+  params: Promise<{ domain: string }>;
+}) {
+  const { domain } = await params;
+  const tenantConfig = await getTenantAuthConfig(domain);
+
+  if (tenantConfig?.authMode === 'username') {
+    redirect('/login');
+  }
+
   return (
-    <div className="min-h-screen bg-black">
-      <AuthCard mode="register" />
+    <div className='min-h-screen bg-black'>
+      <AuthCard
+        mode='register'
+        authMode='email'
+      />
     </div>
   );
 }
