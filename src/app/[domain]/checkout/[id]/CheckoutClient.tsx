@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { 
-  ShoppingBag, 
-  CreditCard, 
-  Cpu, 
-  CheckCircle2, 
+import {
+  ShoppingBag,
+  CreditCard,
+  Cpu,
+  CheckCircle2,
   Download,
   Copy,
   ChevronDown,
@@ -23,7 +23,7 @@ import { useNotification } from "@/components/ui/notification";
 
 export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConfig: any }) {
   const { showNotification, NotificationComponent } = useNotification();
-  const [timeLeft, setTimeLeft] = useState<{h: number, m: number, s: number} | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{ h: number, m: number, s: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -102,71 +102,71 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
 
     setUploading(true);
     try {
-       const uploadFormData = new FormData();
-       uploadFormData.append("file", file);
-       const res = await uploadFile(uploadFormData);
-       
-       if (res.error) {
-          showNotification("error", "Gagal Upload", res.error);
-          await logUploadError({
-             context: "Checkout Payment Proof Upload (R2)",
-             invoiceId: order.invoice_id,
-             fileName: file.name,
-             fileSize: file.size,
-             fileType: file.type,
-             errorMessage: res.error,
-             userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
-             url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
-          });
-       } else if (res.url) {
-          const updateRes = await updatePaymentProof(order.invoice_id, res.url);
-          if (updateRes.success) {
-             setPaymentProofUrl(res.url);
-             setPaymentStatus('PAID');
-             showNotification("success", "Berhasil", "Bukti transfer berhasil diunggah!");
-          } else {
-             const errorMsg = updateRes.message || "Gagal menyimpan URL bukti transfer.";
-             showNotification("error", "Gagal Disimpan", errorMsg);
-             await logUploadError({
-                context: "Checkout Payment Proof DB Update",
-                invoiceId: order.invoice_id,
-                fileName: file.name,
-                fileSize: file.size,
-                fileType: file.type,
-                errorMessage: errorMsg,
-                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
-                url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
-             });
-          }
-       }
-    } catch (err: any) {
-       const errorMsg = err?.message || "Terjadi kesalahan sistem saat upload.";
-       showNotification("error", "Kesalahan Sistem", errorMsg);
-       await logUploadError({
-          context: "Checkout Payment Proof Exception",
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      const res = await uploadFile(uploadFormData);
+
+      if (res.error) {
+        showNotification("error", "Gagal Upload", res.error);
+        await logUploadError({
+          context: "Checkout Payment Proof Upload (R2)",
           invoiceId: order.invoice_id,
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,
-          errorMessage: errorMsg,
-          errorStack: err?.stack || String(err),
+          errorMessage: res.error,
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
           url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
-       });
+        });
+      } else if (res.url) {
+        const updateRes = await updatePaymentProof(order.invoice_id, res.url);
+        if (updateRes.success) {
+          setPaymentProofUrl(res.url);
+          setPaymentStatus('PAID');
+          showNotification("success", "Berhasil", "Bukti transfer berhasil diunggah!");
+        } else {
+          const errorMsg = updateRes.message || "Gagal menyimpan URL bukti transfer.";
+          showNotification("error", "Gagal Disimpan", errorMsg);
+          await logUploadError({
+            context: "Checkout Payment Proof DB Update",
+            invoiceId: order.invoice_id,
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            errorMessage: errorMsg,
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
+            url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
+          });
+        }
+      }
+    } catch (err: any) {
+      const errorMsg = err?.message || "Terjadi kesalahan sistem saat upload.";
+      showNotification("error", "Kesalahan Sistem", errorMsg);
+      await logUploadError({
+        context: "Checkout Payment Proof Exception",
+        invoiceId: order.invoice_id,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        errorMessage: errorMsg,
+        errorStack: err?.stack || String(err),
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
+        url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
+      });
     } finally {
-       setUploading(false);
+      setUploading(false);
     }
   };
 
   const handleWAConfirm = () => {
-     if (!paymentProofUrl) {
-        showNotification("warning", "Perhatian", "Harap unggah Bukti Transfer terlebih dahulu sebelum konfirmasi ke WA!");
-        return;
-     }
+    if (!paymentProofUrl) {
+      showNotification("warning", "Perhatian", "Harap unggah Bukti Transfer terlebih dahulu sebelum konfirmasi ke WA!");
+      return;
+    }
 
-     const waNumber = tenantConfig?.whatsapp?.replace(/[^0-9]/g, "") || "6281234567890"; // fallback
-     
-     const message = `Halo Admin, saya ingin konfirmasi pembayaran:
+    const waNumber = tenantConfig?.whatsapp?.replace(/[^0-9]/g, "") || "6281234567890"; // fallback
+
+    const message = `Halo Admin, saya ingin konfirmasi pembayaran:
 - No. Invoice: *${order.invoice_id}*
 - Pesanan: *${order.products?.name}*
 - Total: *Rp ${Number(order.total_price).toLocaleString('id-ID')}*
@@ -174,8 +174,8 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
 
 Mohon segera diproses ya, terima kasih!`;
 
-     const encoded = encodeURIComponent(message);
-     window.open(`https://wa.me/${waNumber}?text=${encoded}`, '_blank');
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/${waNumber}?text=${encoded}`, '_blank');
   };
 
   // Status mappings
@@ -189,7 +189,7 @@ Mohon segera diproses ya, terima kasih!`;
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white pt-24 pb-20 print:bg-white print:text-black">
       <div className="container mx-auto px-4 max-w-6xl">
-        
+
         {/* Progress Stepper */}
         <div className="mb-12 print:hidden">
           <h2 className="text-lg font-bold mb-6">Progress Transaksi</h2>
@@ -197,7 +197,7 @@ Mohon segera diproses ya, terima kasih!`;
             <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-800 -z-10 transform -translate-y-1/2"></div>
             {/* Active progress line (dummy calc based on step) */}
             <div className={`absolute left-0 top-1/2 h-0.5 bg-blue-600 -z-10 transform -translate-y-1/2 transition-all duration-500`} style={{ width: order.status === 'Success' ? '100%' : '33%' }}></div>
-            
+
             {stepperStates.map((step, idx) => (
               <div key={idx} className="flex flex-col items-center w-1/4 text-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 bg-[#0a0a0a] ${step.active ? 'border-green-500 text-green-500' : 'border-gray-600 text-gray-500'}`}>
@@ -214,7 +214,7 @@ Mohon segera diproses ya, terima kasih!`;
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* Left Column: Game Info & Pricing */}
           <div className="lg:col-span-7 space-y-6">
             <div className="flex items-center justify-between print:hidden">
@@ -226,9 +226,9 @@ Mohon segera diproses ya, terima kasih!`;
             {/* Account Info Card */}
             <div className="bg-[#151515] rounded-2xl border border-gray-800 p-4 sm:p-6 flex flex-row items-start gap-4 sm:gap-6 print:border-gray-300 print:text-black">
               {order.games?.image_url && (
-                 <div className="w-20 sm:w-28 md:w-32 shrink-0">
-                    <img src={order.games.image_url} alt={order.games.name} className="w-full rounded-xl shadow-lg aspect-square object-cover" />
-                 </div>
+                <div className="w-20 sm:w-28 md:w-32 shrink-0">
+                  <img src={order.games.image_url} alt={order.games.name} className="w-full rounded-xl shadow-lg aspect-square object-cover" />
+                </div>
               )}
               <div className="flex-1 min-w-0 space-y-2.5">
                 <h3 className="font-bold text-base sm:text-lg border-b border-gray-800/80 pb-2 mb-3">Informasi Akun</h3>
@@ -247,7 +247,7 @@ Mohon segera diproses ya, terima kasih!`;
 
             {/* Price Details */}
             <div className="bg-[#151515] rounded-2xl border border-gray-800 overflow-hidden print:border-gray-300">
-              <div 
+              <div
                 className="bg-[#1c1c1c] p-4 flex justify-between items-center cursor-pointer hover:bg-[#222]"
                 onClick={() => setIsDetailsOpen(!isDetailsOpen)}
               >
@@ -293,7 +293,7 @@ Mohon segera diproses ya, terima kasih!`;
                 <Download className="w-4 h-4 mr-2" /> Unduh Invoice
               </Button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <p className="text-gray-400 text-sm mb-1">Metode Pembayaran</p>
@@ -331,69 +331,69 @@ Mohon segera diproses ya, terima kasih!`;
               {/* Dynamic Payment Instructions */}
               <div className="pt-6">
                 {order.payment_channels?.category === "QRIS" ? (
-                   <div className="bg-[#1c1c1c] p-6 rounded-xl border border-blue-500/30 text-center shadow-[0_0_20px_rgba(37,99,235,0.15)] print:shadow-none print:border print:border-gray-300">
-                     <p className="text-sm font-bold text-blue-400 mb-2">SCAN UNTUK MEMBAYAR</p>
-                     
-                     <div className="bg-white p-3 rounded-xl w-64 mx-auto mb-4 relative shadow-lg">
-                       {order.payment_channels.qr_image_url ? (
-                         <img src={fixUrl(order.payment_channels.qr_image_url)} alt="QRIS" className="w-full h-auto object-contain rounded" />
-                       ) : (
-                         <div className="w-full aspect-square border-2 border-dashed border-gray-300 rounded flex flex-col items-center justify-center text-gray-400">
-                           <span className="text-xs font-medium">QRIS Belum Diatur</span>
-                         </div>
-                       )}
-                     </div>
+                  <div className="bg-[#1c1c1c] p-6 rounded-xl border border-blue-500/30 text-center shadow-[0_0_20px_rgba(37,99,235,0.15)] print:shadow-none print:border print:border-gray-300">
+                    <p className="text-sm font-bold text-blue-400 mb-2">SCAN UNTUK MEMBAYAR</p>
 
-                     <div className="bg-blue-500/10 text-blue-400 text-xs p-3 rounded-lg mb-4 text-left border border-blue-500/20">
-                       <span className="font-bold flex items-center gap-1 mb-1">⚠️ Perhatian Khusus QRIS Static:</span>
-                       Saat memindai QRIS ini di aplikasi M-Banking/E-Wallet Anda, Anda <b>WAJIB MENGETIK NOMINAL TAGIHAN SECARA MANUAL</b>. <br/>
-                       Pastikan nominal transfer TEPAT: <b className="text-white text-sm">Rp {Number(order.total_price).toLocaleString("id-ID")}</b>
-                     </div>
+                    <div className="bg-white p-3 rounded-xl w-64 mx-auto mb-4 relative shadow-lg">
+                      {order.payment_channels.qr_image_url ? (
+                        <img src={fixUrl(order.payment_channels.qr_image_url)} alt="QRIS" className="w-full h-auto object-contain rounded" />
+                      ) : (
+                        <div className="w-full aspect-square border-2 border-dashed border-gray-300 rounded flex flex-col items-center justify-center text-gray-400">
+                          <span className="text-xs font-medium">QRIS Belum Diatur</span>
+                        </div>
+                      )}
+                    </div>
 
-                     {order.payment_channels.qr_image_url && (
-                       <a 
-                         href={fixUrl(order.payment_channels.qr_image_url)} 
-                         download="QRIS_Payment.png"
-                         target="_blank"
-                         rel="noreferrer"
-                         className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all w-full sm:w-auto justify-center"
-                       >
-                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                         </svg>
-                         Simpan QRIS ke Galeri
-                       </a>
-                     )}
-                   </div>
+                    <div className="bg-blue-500/10 text-blue-400 text-xs p-3 rounded-lg mb-4 text-left border border-blue-500/20">
+                      <span className="font-bold flex items-center gap-1 mb-1">⚠️ Perhatian Khusus QRIS Static:</span>
+                      Saat memindai QRIS ini di aplikasi M-Banking/E-Wallet Anda, Anda <b>WAJIB MENGETIK NOMINAL TAGIHAN SECARA MANUAL</b>. <br />
+                      Pastikan nominal transfer TEPAT: <b className="text-white text-sm">Rp {Number(order.total_price).toLocaleString("id-ID")}</b>
+                    </div>
+
+                    {order.payment_channels.qr_image_url && (
+                      <a
+                        href={fixUrl(order.payment_channels.qr_image_url)}
+                        download="QRIS_Payment.png"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all w-full sm:w-auto justify-center"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Simpan QRIS ke Galeri
+                      </a>
+                    )}
+                  </div>
                 ) : order.payment_channels?.account_number === 'WALLET' ? (
-                   <div className="bg-[#1c1c1c] p-6 rounded-xl border border-blue-500/30 text-center">
-                     <p className="text-sm font-bold text-blue-400 mb-2">PEMBAYARAN SALDO AKUN</p>
-                     <p className="text-sm text-gray-400 mb-2">Tagihan akan dipotong dari Saldo Akun secara otomatis.</p>
-                     <p className="text-xs text-yellow-500">Mohon tunggu sistem memproses transaksi Anda.</p>
-                   </div>
+                  <div className="bg-[#1c1c1c] p-6 rounded-xl border border-blue-500/30 text-center">
+                    <p className="text-sm font-bold text-blue-400 mb-2">PEMBAYARAN SALDO AKUN</p>
+                    <p className="text-sm text-gray-400 mb-2">Tagihan akan dipotong dari Saldo Akun secara otomatis.</p>
+                    <p className="text-xs text-yellow-500">Mohon tunggu sistem memproses transaksi Anda.</p>
+                  </div>
                 ) : order.payment_channels?.account_number ? (
-                   <div className="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800 text-center print:border-gray-300 print:bg-gray-50">
-                     <p className="text-sm text-gray-400 mb-2 print:text-gray-600">Silakan transfer pembayaran ke rekening berikut:</p>
-                     <div className="flex items-center justify-center gap-3 mb-2">
-                       <h4 className="text-2xl font-black text-blue-500 tracking-wider">{order.payment_channels.account_number}</h4>
-                       <button onClick={() => {
-                          navigator.clipboard.writeText(order.payment_channels.account_number);
-                          showNotification("success", "Tersalin", "Nomor rekening berhasil disalin!");
-                       }} className="text-gray-500 hover:text-white transition-colors print:hidden">
-                         <Copy className="w-5 h-5" />
-                       </button>
-                     </div>
-                     <p className="font-bold text-white text-lg print:text-black">a.n. {order.payment_channels.account_name || tenantConfig.siteName}</p>
-                   </div>
+                  <div className="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800 text-center print:border-gray-300 print:bg-gray-50">
+                    <p className="text-sm text-gray-400 mb-2 print:text-gray-600">Silakan transfer pembayaran ke rekening berikut:</p>
+                    <div className="flex items-center justify-center gap-3 mb-2">
+                      <h4 className="text-2xl font-black text-blue-500 tracking-wider">{order.payment_channels.account_number}</h4>
+                      <button onClick={() => {
+                        navigator.clipboard.writeText(order.payment_channels.account_number);
+                        showNotification("success", "Tersalin", "Nomor rekening berhasil disalin!");
+                      }} className="text-gray-500 hover:text-white transition-colors print:hidden">
+                        <Copy className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <p className="font-bold text-white text-lg print:text-black">a.n. {order.payment_channels.account_name || tenantConfig.siteName}</p>
+                  </div>
                 ) : (
-                   <div className="bg-white p-4 rounded-xl w-64 h-64 mx-auto flex items-center justify-center relative shadow-lg print:shadow-none print:border print:border-gray-300">
-                     <div className="text-center">
-                       <p className="text-black font-bold mb-2">SCAN UNTUK BAYAR</p>
-                       <div className="w-48 h-48 border-4 border-dashed border-gray-300 rounded flex items-center justify-center">
-                         <span className="text-gray-400 text-sm font-medium">QRIS IMAGE HERE</span>
-                       </div>
-                     </div>
-                   </div>
+                  <div className="bg-white p-4 rounded-xl w-64 h-64 mx-auto flex items-center justify-center relative shadow-lg print:shadow-none print:border print:border-gray-300">
+                    <div className="text-center">
+                      <p className="text-black font-bold mb-2">SCAN UNTUK BAYAR</p>
+                      <div className="w-48 h-48 border-4 border-dashed border-gray-300 rounded flex items-center justify-center">
+                        <span className="text-gray-400 text-sm font-medium">QRIS IMAGE HERE</span>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -405,7 +405,7 @@ Mohon segera diproses ya, terima kasih!`;
                     <p className="text-sm text-gray-400">
                       Silakan unggah bukti transfer Anda agar pesanan dapat segera kami proses.
                     </p>
-                    
+
                     {/* Upload Button */}
                     <div className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all overflow-hidden ${paymentProofUrl ? 'border-green-500/50' : 'border-gray-700 hover:bg-gray-800/50 bg-[#1c1c1c]'}`}>
                       {paymentProofUrl ? (
@@ -430,23 +430,25 @@ Mohon segera diproses ya, terima kasih!`;
                           </p>
                         </div>
                       )}
-                      <input 
-                        type="file" 
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 block" 
-                        accept="image/*,image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif" 
+                      <input
+                        type="file"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 block"
+                        accept="image/*,image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
                         onClick={(e) => { (e.target as HTMLInputElement).value = ''; }}
-                        onChange={handleUploadProof} 
-                        disabled={uploading} 
+                        onChange={handleUploadProof}
+                        disabled={uploading}
                       />
                     </div>
 
                     {/* WA Button */}
-                    <Button 
+                    <Button
                       onClick={handleWAConfirm}
                       disabled={!paymentProofUrl}
                       className={`w-full h-14 rounded-xl font-bold text-base shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 ${paymentProofUrl ? 'bg-[#25D366] hover:bg-[#128C7E] text-white' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}
                     >
-                      <MessageCircle className="w-5 h-5" /> Konfirmasi via WhatsApp
+                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
+                      </svg>Konfirmasi via WhatsApp
                     </Button>
                   </div>
                 </div>

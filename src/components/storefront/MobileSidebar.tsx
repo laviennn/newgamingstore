@@ -200,18 +200,6 @@ export function MobileSidebar({
               <List className='w-5 h-5' />
               Daftar Harga
             </Link>
-            <Link
-              href='#'
-              className='flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-xl hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors'>
-              <Trophy className='w-5 h-5' />
-              Leaderboard
-            </Link>
-            <Link
-              href='#'
-              className='flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-xl hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors'>
-              <MessageCircle className='w-5 h-5' />
-              Menu Lainnya
-            </Link>
           </nav>
         </div>
 

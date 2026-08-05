@@ -290,10 +290,18 @@ export default async function MemberDashboardPage({
                   <h3 className='text-xl font-bold text-white'>{name}</h3>
                   <BadgeCheck className='w-5 h-5 text-blue-500' />
                 </div>
-                <div className='flex items-center gap-2 text-xs text-gray-400 mb-1'>
-                  <Mail className='w-3.5 h-3.5 opacity-70' />
-                  <span>{user.email}</span>
-                </div>
+                {/* Email: hanya tampil di mode email. Username mode pakai email sintetis — sembunyikan */}
+                {user.isUsernameMode ? (
+                  <div className='flex items-center gap-2 text-xs text-gray-400 mb-1'>
+                    <Mail className='w-3.5 h-3.5 opacity-70' />
+                    <span>@{user.name}</span>
+                  </div>
+                ) : (
+                  <div className='flex items-center gap-2 text-xs text-gray-400 mb-1'>
+                    <Mail className='w-3.5 h-3.5 opacity-70' />
+                    <span>{user.email}</span>
+                  </div>
+                )}
                 <div className='flex items-center gap-2 text-xs text-gray-400'>
                   <Calendar className='w-3.5 h-3.5 opacity-70' />
                   <span>Member sejak: {createdAtFormatted}</span>

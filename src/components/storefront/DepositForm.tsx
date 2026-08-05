@@ -80,7 +80,7 @@ export function DepositForm({
   };
 
   return (
-    <form onSubmit={handleCheckout} className="space-y-6 w-full relative pb-24 lg:pb-0">
+    <form onSubmit={handleCheckout} className="space-y-6 w-full relative pb-36 lg:pb-0">
       {NotificationComponent}
       
       {/* 1. Pilih Nominal */}
@@ -218,24 +218,59 @@ export function DepositForm({
         </div>
       </div>
 
-      {/* Floating Checkout Button for Mobile, Fixed bottom for Desktop */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a0a0a]/90 backdrop-blur-md border-t border-white/10 z-50 lg:relative lg:p-0 lg:bg-transparent lg:border-none lg:mt-6">
+      {/* Mobile: Floating Summary Bar — sama seperti StorefrontGameForm */}
+      <div className="fixed bottom-16 left-0 right-0 z-40 bg-[#0f0f11]/95 backdrop-blur-md border-t border-border/40 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] lg:hidden">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {amount >= 10000 && selectedPayment ? (
+              <>
+                <p className="text-[11px] font-medium text-white/70 truncate mb-0.5">
+                  via {selectedPayment.name}
+                </p>
+                <p className="text-sm font-black text-blue-400">
+                  Rp {amount.toLocaleString('id-ID')}
+                </p>
+              </>
+            ) : (
+              <p className="text-xs font-medium text-white/50">
+                Pilih nominal &amp; metode pembayaran
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={amount < 10000 || !selectedPayment || isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 h-10 text-xs rounded-xl shadow-lg shadow-blue-600/30 shrink-0 disabled:opacity-50 transition-colors flex items-center gap-2"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              'Lanjutkan'
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop: Sticky Button */}
+      <div className="hidden lg:block sticky bottom-6 z-40 mt-6">
         <button
           type="submit"
           disabled={amount < 10000 || !selectedPayment || isSubmitting}
-          className="w-full bg-blue-500 hover:bg-blue-400 disabled:bg-[#1a1a1a] disabled:text-gray-500 text-white font-bold text-lg py-4 rounded-full shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3"
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-[#1a1a1a] disabled:text-gray-500 text-white font-bold text-base h-12 rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-3"
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="w-6 h-6 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
               Memproses...
             </>
           ) : (
             <>
               Lanjutkan Pembayaran
-              <span className="bg-black/20 px-3 py-1 rounded-full text-sm font-black">
-                Rp {amount.toLocaleString('id-ID')}
-              </span>
+              {amount >= 10000 && (
+                <span className="bg-black/20 px-3 py-1 rounded-full text-sm font-black">
+                  Rp {amount.toLocaleString('id-ID')}
+                </span>
+              )}
             </>
           )}
         </button>
