@@ -30,19 +30,19 @@ const CANONICAL_GAME_MAP: Record<string, { vipReseller: string; kokinpay: string
   "mlbb": { vipReseller: "mobile-legends", kokinpay: "mobile-legends", rapidApi: "cek_game_ml" },
   "ml": { vipReseller: "mobile-legends", kokinpay: "mobile-legends", rapidApi: "cek_game_ml" },
 
-  "genshin-impact": { vipReseller: "genshin-impact", kokinpay: "genshin-impact", rapidApi: "genshin" },
-  "genshin": { vipReseller: "genshin-impact", kokinpay: "genshin-impact", rapidApi: "genshin" },
-  "genshin_impact": { vipReseller: "genshin-impact", kokinpay: "genshin-impact", rapidApi: "genshin" },
+  "genshin-impact": { vipReseller: "genshin-impact", kokinpay: "genshin-impact", rapidApi: "test_game_genshin" },
+  "genshin": { vipReseller: "genshin-impact", kokinpay: "genshin-impact", rapidApi: "test_game_genshin" },
+  "genshin_impact": { vipReseller: "genshin-impact", kokinpay: "genshin-impact", rapidApi: "test_game_genshin" },
 
   "free-fire": { vipReseller: "free-fire", kokinpay: "free-fire", rapidApi: "free-fire" },
   "free-fire-max": { vipReseller: "free-fire", kokinpay: "free-fire-max", rapidApi: "free-fire" },
   "freefire": { vipReseller: "free-fire", kokinpay: "free-fire", rapidApi: "free-fire" },
   "ff": { vipReseller: "free-fire", kokinpay: "free-fire", rapidApi: "free-fire" },
 
-  "pubg-mobile": { vipReseller: "pubgm", kokinpay: "pubg-mobile", rapidApi: "pubgm-global" },
-  "pubgm": { vipReseller: "pubgm", kokinpay: "pubg-mobile", rapidApi: "pubgm-global" },
-  "pubg": { vipReseller: "pubgm", kokinpay: "pubg-mobile", rapidApi: "pubgm-global" },
-  "pubgm-global": { vipReseller: "pubgm", kokinpay: "pubg-mobile", rapidApi: "pubgm-global" },
+  "pubg-mobile": { vipReseller: "pubgm", kokinpay: "pubg-mobile", rapidApi: "cekpubgmobile" },
+  "pubgm": { vipReseller: "pubgm", kokinpay: "pubg-mobile", rapidApi: "cekpubgmobile" },
+  "pubg": { vipReseller: "pubgm", kokinpay: "pubg-mobile", rapidApi: "cekpubgmobile" },
+  "pubgm-global": { vipReseller: "pubgm", kokinpay: "pubg-mobile", rapidApi: "cekpubgmobile" },
 
   "valorant": { vipReseller: "valorant", kokinpay: "valorant", rapidApi: "valorant" },
   "val": { vipReseller: "valorant", kokinpay: "valorant", rapidApi: "valorant" },
@@ -59,8 +59,9 @@ const CANONICAL_GAME_MAP: Record<string, { vipReseller: string; kokinpay: string
   "honkai-star-rail": { vipReseller: "honkai-star-rail", kokinpay: "honkai-star-rail", rapidApi: "honkai-star-rail" },
   "hsr": { vipReseller: "honkai-star-rail", kokinpay: "honkai-star-rail", rapidApi: "honkai-star-rail" },
 
-  "honor-of-kings": { vipReseller: "honor-of-kings", kokinpay: "honor-of-kings", rapidApi: "honor-of-kings" },
-  "hok": { vipReseller: "honor-of-kings", kokinpay: "honor-of-kings", rapidApi: "honor-of-kings" },
+  "honor-of-kings": { vipReseller: "honor-of-kings", kokinpay: "honor-of-kings", rapidApi: "hokid" },
+  "hok": { vipReseller: "honor-of-kings", kokinpay: "honor-of-kings", rapidApi: "hokid" },
+  "hokid": { vipReseller: "honor-of-kings", kokinpay: "honor-of-kings", rapidApi: "hokid" },
   
   "league-of-legends-wild-rift": { vipReseller: "league-of-legends-wild-rift", kokinpay: "league-of-legends-wild-rift", rapidApi: "league-of-legends-wild-rift" },
   "wild-rift": { vipReseller: "league-of-legends-wild-rift", kokinpay: "league-of-legends-wild-rift", rapidApi: "league-of-legends-wild-rift" },
@@ -308,7 +309,8 @@ const rapidApiStrategy: ValidationProviderStrategy = {
 
       const targetServer = normalizeServerId(targetCode, serverId);
 
-      let url = `https://check-id-game.p.rapidapi.com/api/rapid_api/${targetCode}/${uid}`;
+      const apiPrefix = targetCode === 'hokid' ? 'rapid-api' : 'rapid_api';
+      let url = `https://check-id-game.p.rapidapi.com/api/${apiPrefix}/${targetCode}/${uid}`;
       if (targetServer) {
         url += `/${targetServer}`;
       }
