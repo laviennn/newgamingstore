@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { User } from "@supabase/supabase-js";
+import type { UnifiedSessionUser } from "@/lib/tenantAuth";
 import { 
   Rocket, 
   Shield, 
@@ -50,7 +50,7 @@ export function UpgradeClient({
   tenantConfig,
   tenantId,
 }: {
-  user: User;
+  user: UnifiedSessionUser;
   currentLevel: string;
   dynamicPackages: any[];
   paymentChannels: any[];
@@ -127,7 +127,7 @@ export function UpgradeClient({
         amount: Number(activeSelectedPkg.price),
         paymentChannelId: selectedPaymentId,
         userEmail: user.email || "",
-        waNumber: user.user_metadata?.phone || null,
+        waNumber: user.phone || null,
         tenantId: tenantId,
       });
 

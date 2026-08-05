@@ -265,12 +265,14 @@ export default async function MemberDashboardPage({
                   MEMBER ID
                 </span>
               </div>
-              <Link
-                href='/member/profile'
-                className='bg-blue-500 hover:bg-blue-400 text-white font-semibold px-4 py-1.5 rounded-full text-xs flex items-center gap-1.5 transition-colors shadow-lg shadow-blue-500/20'>
-                <Settings className='w-3.5 h-3.5' />
-                <span>Atur Profil</span>
-              </Link>
+              {!user.isUsernameMode && (
+                <Link
+                  href='/member/profile'
+                  className='bg-blue-500 hover:bg-blue-400 text-white font-semibold px-4 py-1.5 rounded-full text-xs flex items-center gap-1.5 transition-colors shadow-lg shadow-blue-500/20'>
+                  <Settings className='w-3.5 h-3.5' />
+                  <span>Atur Profil</span>
+                </Link>
+              )}
             </div>
 
             <div className='mb-5 inline-flex bg-white/5 border border-white/10 px-2.5 py-1 rounded-md'>
