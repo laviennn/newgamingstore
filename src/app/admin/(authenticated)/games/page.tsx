@@ -20,7 +20,12 @@ export default async function GamesPage() {
       const currentTenantId = await getActiveAdminTenantId();
       
       if (currentTenantId) {
-        const { data, error } = await supabase.from('games').select('*, categories(name)').eq('tenant_id', currentTenantId).order('created_at', { ascending: false });
+        const { data, error } = await supabase
+          .from('games')
+          .select('*, categories(name)')
+          .eq('tenant_id', currentTenantId)
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: false });
         if (!error && data) games = data;
 
         const { data: catData } = await supabase.from('categories').select('*').eq('tenant_id', currentTenantId).order('sort_order', { ascending: true });

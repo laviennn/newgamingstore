@@ -78,6 +78,7 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
     game?.form_fields ? JSON.stringify(game.form_fields, null, 2) : "[\n  {\n    \"name\": \"userId\",\n    \"type\": \"text\",\n    \"label\": \"User ID\",\n    \"required\": true\n  }\n]"
   );
   const [isPopular, setIsPopular] = React.useState<boolean>(game?.is_popular || false);
+  const [sortOrder, setSortOrder] = React.useState<number>(game?.sort_order ?? 0);
   const [hasUsernameValidator, setHasUsernameValidator] = React.useState<boolean>(game?.has_username_validator || false);
   const [validatorProvider, setValidatorProvider] = React.useState<string>(game?.validator_provider || "auto");
   const [validatorGameCode, setValidatorGameCode] = React.useState<string>(game?.validator_game_code || "");
@@ -91,6 +92,7 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
       setGuidePreview(game?.guide_image_url || null);
       setCategoryId(game?.category_id || "");
       setIsPopular(game?.is_popular || false);
+      setSortOrder(game?.sort_order ?? 0);
       setHasUsernameValidator(game?.has_username_validator || false);
       setValidatorProvider(game?.validator_provider || "auto");
       setValidatorGameCode(game?.validator_game_code || "");
@@ -186,6 +188,7 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
     payload.append("category_id", categoryId);
     payload.append("form_fields", formFieldsJson);
     payload.append("is_popular", isPopular ? "true" : "false");
+    payload.append("sort_order", sortOrder.toString());
     
     payload.append("has_username_validator", hasUsernameValidator ? "true" : "false");
     if (validatorProvider) payload.append("validator_provider", validatorProvider);
@@ -257,6 +260,18 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+            </div>
+            <div className="space-y-2 col-span-2 sm:col-span-1">
+              <label htmlFor="sort_order" className="text-sm font-medium">Urutan Tampil (Sort Order)</label>
+              <Input 
+                id="sort_order" 
+                name="sort_order" 
+                type="number"
+                placeholder="0" 
+                value={sortOrder} 
+                onChange={(e) => setSortOrder(parseInt(e.target.value, 10) || 0)} 
+              />
+              <p className="text-[11px] text-muted-foreground">Angka lebih kecil akan tampil lebih awal di storefront.</p>
             </div>
           </div>
           

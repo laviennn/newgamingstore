@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { deleteGame, toggleGamePopular } from "@/app/admin/(authenticated)/games/actions";
+import { deleteGame, toggleGamePopular, updateGamesOrder } from "@/app/admin/(authenticated)/games/actions";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { useNotification } from "@/components/ui/notification";
-import { Trash2, Edit, Star } from "lucide-react";
+import { Trash2, Edit, Star, GripVertical } from "lucide-react";
 import { GameFormModal } from "@/components/admin/GameFormModal";
 
 import Image from "next/image";
@@ -13,9 +13,17 @@ import Image from "next/image";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function GamesClient({ initialGames, categories = [] }: { initialGames: any[], categories?: any[] }) {
   const { showNotification, NotificationComponent } = useNotification();
+  const [games, setGames] = React.useState(initialGames);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedGame, setSelectedGame] = React.useState<any>(null);
+
+  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    setGames(initialGames);
+  }, [initialGames]);
 
   const handleTogglePopular = async (id: string, currentPopular: boolean) => {
     const res = await toggleGamePopular(id, !currentPopular);
@@ -60,11 +68,59 @@ export function GamesClient({ initialGames, categories = [] }: { initialGames: a
     }
   };
 
+  // Drag and Drop handlers
+  const handleDragStart = (e: React.DragEvent<HTMLTableRowElement>, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLTableRowElement>, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLTableRowElement>, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+    const newGames = [...games];
+    const [movedItem] = newGames.splice(draggedIndex, 1);
+    newGames.splice(targetIndex, 0, movedItem);
+
+    setGames(newGames);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+
+    // Save order asynchronously
+    saveOrder(newGames);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const saveOrder = async (updatedGames: any[]) => {
+    const orderedIds = updatedGames.map(g => g.id);
+    const res = await updateGamesOrder(orderedIds);
+    if (res.error) {
+      showNotification("error", "Gagal Menyimpan Urutan", res.error);
+    } else {
+      showNotification("success", "Urutan Diperbarui", "Urutan game berhasil disesuaikan untuk Storefront.");
+    }
+  };
+
   return (
     <>
       {NotificationComponent}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Games Catalog</h1>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Games Catalog</h1>
+          <p className="text-sm text-muted-foreground mt-1">Geser & lepaskan (drag and drop) baris game untuk mengubah urutan tampil di Storefront.</p>
+        </div>
         <Button onClick={handleAdd}>Add Game</Button>
       </div>
 
@@ -72,6 +128,8 @@ export function GamesClient({ initialGames, categories = [] }: { initialGames: a
         <table className="w-full caption-bottom text-sm text-left">
           <thead className="[&_tr]:border-b bg-muted/50">
             <tr className="border-b transition-colors hover:bg-muted/50">
+              <th className="h-12 px-2 font-medium w-10 text-center"></th>
+              <th className="h-12 px-4 font-medium text-center w-20">Urutan</th>
               <th className="h-12 px-4 font-medium w-16">Image</th>
               <th className="h-12 px-4 font-medium">Game Name</th>
               <th className="h-12 px-4 font-medium">Category</th>
@@ -82,8 +140,33 @@ export function GamesClient({ initialGames, categories = [] }: { initialGames: a
             </tr>
           </thead>
           <tbody className="[&_tr:last-child]:border-0">
-            {initialGames.map((g) => (
-              <tr key={g.id} className="border-b transition-colors hover:bg-muted/50">
+            {games.map((g, index) => (
+              <tr 
+                key={g.id} 
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+                className={`border-b transition-all select-none ${
+                  draggedIndex === index ? "opacity-30 bg-muted/80 scale-[0.99]" : ""
+                } ${
+                  dragOverIndex === index ? "border-y-2 border-y-primary bg-primary/10" : "hover:bg-muted/50"
+                }`}
+              >
+                <td className="p-2 text-center">
+                  <div 
+                    className="cursor-grab active:cursor-grabbing p-1.5 rounded-lg hover:bg-muted inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" 
+                    title="Geser untuk mengubah urutan"
+                  >
+                    <GripVertical className="w-5 h-5" />
+                  </div>
+                </td>
+                <td className="p-4 text-center font-mono text-xs font-semibold">
+                  <span className="px-2.5 py-1 rounded-md bg-muted/80 border border-border/50 text-foreground font-bold">
+                    #{index + 1}
+                  </span>
+                </td>
                 <td className="p-4">
                   <div className="relative w-12 h-12 rounded-lg bg-muted border overflow-hidden flex items-center justify-center">
                     {g.image_url ? (
@@ -129,9 +212,9 @@ export function GamesClient({ initialGames, categories = [] }: { initialGames: a
                 </td>
               </tr>
             ))}
-            {initialGames.length === 0 && (
+            {games.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                <td colSpan={9} className="p-8 text-center text-muted-foreground">
                   No games found. Add your first game!
                 </td>
               </tr>

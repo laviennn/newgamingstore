@@ -22,6 +22,8 @@ export async function saveGame(formData: FormData, id?: string) {
   const has_username_validator = formData.get("has_username_validator") === "true";
   const validator_provider = formData.get("validator_provider") as string || null;
   const validator_game_code = formData.get("validator_game_code") as string || null;
+  const sort_order_raw = formData.get("sort_order") as string;
+  const sort_order = sort_order_raw !== null && sort_order_raw !== "" ? parseInt(sort_order_raw, 10) : 0;
 
   if (!name || !slug) {
     return { error: "Name and Slug are required." };
@@ -58,17 +60,18 @@ export async function saveGame(formData: FormData, id?: string) {
     if (id) {
       const { error } = await supabase
         .from("games")
-        .update({ name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text, has_username_validator, validator_provider, validator_game_code })
+        .update({ name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text, has_username_validator, validator_provider, validator_game_code, sort_order })
         .eq("id", id)
         .eq("tenant_id", tenant_id);
       if (error) throw error;
     } else {
       const { error } = await supabase
         .from("games")
-        .insert([{ tenant_id, name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text, has_username_validator, validator_provider, validator_game_code }]);
+        .insert([{ tenant_id, name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text, has_username_validator, validator_provider, validator_game_code, sort_order }]);
       if (error) throw error;
     }
 
+    revalidatePath("/");
     revalidatePath("/admin/games");
     revalidatePath("/admin/products");
     return { success: true };
@@ -110,5 +113,31 @@ export async function deleteGame(id: string) {
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Failed to delete game." };
+  }
+}
+
+export async function updateGamesOrder(orderedIds: string[]) {
+  const supabase = await createClient();
+  const tenant_id = await getActiveAdminTenantId();
+  if (!tenant_id) return { error: "No active tenant selected." };
+
+  try {
+    const updates = orderedIds.map((id, index) =>
+      supabase
+        .from("games")
+        .update({ sort_order: index + 1 })
+        .eq("id", id)
+        .eq("tenant_id", tenant_id)
+    );
+
+    const results = await Promise.all(updates);
+    const firstError = results.find(r => r.error)?.error;
+    if (firstError) throw firstError;
+
+    revalidatePath("/");
+    revalidatePath("/admin/games");
+    return { success: true };
+  } catch (err: unknown) {
+    return { error: (err as Error).message || "Failed to update games order." };
   }
 }

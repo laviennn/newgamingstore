@@ -65,9 +65,22 @@ export default async function StorefrontPage({
 
       if (tenantId) {
         // Fetch Popular Games
-        let { data: gamesData } = await supabase.from('games').select('*').eq('tenant_id', tenantId).eq('is_popular', true);
+        let { data: gamesData } = await supabase
+          .from('games')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('is_popular', true)
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: false });
+
         if (!gamesData || gamesData.length === 0) {
-          const fallback = await supabase.from('games').select('*').eq('tenant_id', tenantId).limit(6);
+          const fallback = await supabase
+            .from('games')
+            .select('*')
+            .eq('tenant_id', tenantId)
+            .order('sort_order', { ascending: true })
+            .order('created_at', { ascending: false })
+            .limit(6);
           gamesData = fallback.data;
         }
 
@@ -110,7 +123,12 @@ export default async function StorefrontPage({
         if (catData) categories = catData;
 
         // Fetch All Games for Category Section
-        const { data: allGamesData } = await supabase.from('games').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false });
+        const { data: allGamesData } = await supabase
+          .from('games')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: false });
         if (allGamesData) allGames = allGamesData;
 
         // Fetch Latest Articles

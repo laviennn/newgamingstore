@@ -82,13 +82,13 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size (max 10MB)
-    const MAX_SIZE = 10 * 1024 * 1024;
+    // Check size (max 2MB)
+    const MAX_SIZE = 2 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      const errorMsg = "Ukuran file terlalu besar. Maksimal 10MB.";
-      showNotification("error", "Gagal Upload", errorMsg);
+      const errorMsg = "Ukuran file terlalu besar. Maksimal 2MB.";
+      showNotification("error", "Ukuran File Melebihi Batas", "Ukuran foto bukti transfer maksimal 2MB. Silakan pilih foto lain atau kompres gambar Anda terlebih dahulu.");
       await logUploadError({
-        context: "Checkout Payment Proof Upload",
+        context: "Checkout Payment Proof Upload (Size Limit Exceeded)",
         invoiceId: order.invoice_id,
         fileName: file.name,
         fileSize: file.size,
@@ -140,15 +140,19 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
         }
       }
     } catch (err: any) {
-      const errorMsg = err?.message || "Terjadi kesalahan sistem saat upload.";
-      showNotification("error", "Kesalahan Sistem", errorMsg);
+      let rawMsg = err?.message || String(err);
+      let userFriendlyMsg = "Terjadi kesalahan saat mengunggah foto bukti pembayaran. Silakan coba lagi.";
+      if (typeof rawMsg === 'string' && (rawMsg.includes('Body exceeded') || rawMsg.includes('1 MB') || rawMsg.includes('bodySizeLimit'))) {
+        userFriendlyMsg = "Ukuran foto terlalu besar untuk diunggah (Maksimal 2MB). Silakan kompres foto Anda.";
+      }
+      showNotification("error", "Gagal Unggah Gambar", userFriendlyMsg);
       await logUploadError({
         context: "Checkout Payment Proof Exception",
         invoiceId: order.invoice_id,
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
-        errorMessage: errorMsg,
+        errorMessage: rawMsg,
         errorStack: err?.stack || String(err),
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
         url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
@@ -423,10 +427,13 @@ Mohon segera diproses ya, terima kasih!`;
                           ) : (
                             <UploadCloud className="w-8 h-8 mb-3 text-gray-400" />
                           )}
-                          <p className="mb-2 text-sm text-gray-400">
+                          <p className="mb-1 text-sm text-gray-400">
                             <span className="font-semibold text-white">
                               {uploading ? 'Mengunggah...' : 'Klik untuk upload bukti'}
                             </span>
+                          </p>
+                          <p className="text-xs text-gray-500 font-medium">
+                            Maksimal ukuran foto 2MB (JPG, PNG, WEBP)
                           </p>
                         </div>
                       )}
