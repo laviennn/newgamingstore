@@ -145,7 +145,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </details>
             )}
 
-            {(isSuperAdmin || hasPerm("manage_roles") || hasPerm("manage_operators")) && (
+            {(isSuperAdmin || hasPerm("manage_roles") || hasPerm("manage_operators") || hasPerm("manage_content") || hasPerm("manage_theme")) && (
             <details className="group [&_summary::-webkit-details-marker]:hidden mt-2">
               <summary className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted/50 cursor-pointer list-none">
                 <div className="flex items-center gap-3">
@@ -156,20 +156,24 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </summary>
               <div className="ml-5 mt-1 flex flex-col gap-1 border-l border-border/50 pl-2">
                 {isSuperAdmin && (
-                  <>
-                    <Link href="/tenants" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
-                      <Users className="h-4 w-4" /> Tenants
-                    </Link>
-                    <Link href="/content" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
-                      <Settings className="h-4 w-4" /> Content & Settings
-                    </Link>
-                    <Link href="/theme" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
-                      <Palette className="h-4 w-4" /> Theme & Branding
-                    </Link>
-                    <Link href="/api-logs" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
-                      <Activity className="h-4 w-4" /> API Logs & Kuota
-                    </Link>
-                  </>
+                  <Link href="/tenants" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                    <Users className="h-4 w-4" /> Tenants
+                  </Link>
+                )}
+                {hasPerm("manage_content") && (
+                  <Link href="/content" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                    <Settings className="h-4 w-4" /> Content & Settings
+                  </Link>
+                )}
+                {hasPerm("manage_theme") && (
+                  <Link href="/theme" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                    <Palette className="h-4 w-4" /> Theme & Branding
+                  </Link>
+                )}
+                {isSuperAdmin && (
+                  <Link href="/api-logs" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                    <Activity className="h-4 w-4" /> API Logs & Kuota
+                  </Link>
                 )}
                 {hasPerm("manage_roles") && (
                   <Link href="/roles" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">

@@ -1,14 +1,13 @@
 import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 import { AdminDepositsClient } from "./AdminDepositsClient";
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDepositsPage() {
   if (!(await checkPermission("manage_deposits"))) {
-    redirect("/?error=unauthorized");
+    return <UnauthorizedAccess permission="manage_deposits" />;
   }
 
   const supabase = await createClient();

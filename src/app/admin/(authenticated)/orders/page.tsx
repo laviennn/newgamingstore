@@ -1,14 +1,12 @@
 import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 import { OrderListClient } from "./OrderListClient";
 
 export default async function OrdersPage() {
   if (!(await checkPermission("manage_orders"))) {
-    redirect("/?error=unauthorized");
+    return <UnauthorizedAccess permission="manage_orders" />;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

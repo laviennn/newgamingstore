@@ -42,11 +42,12 @@ export async function adminLogin(formData: FormData) {
   // Check if user is an admin
   const { data: adminUser, error: adminError } = await supabase
     .from('admin_users')
-    .select('*, admin_roles(name, permissions)')
+    .select('*, admin_roles!left(name, permissions)')
     .eq('id', authData.user.id)
-    .single();
+    .maybeSingle();
 
   if (adminError || !adminUser) {
+    console.error("[adminLogin Error]", adminError);
     // If not in admin_users, sign them out immediately
     await supabase.auth.signOut();
     return { success: false, message: "Akses ditolak. Anda bukan Admin." };
@@ -66,19 +67,27 @@ export async function adminLogout() {
 }
 
 export async function getAdminSession() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) return null;
 
-  const { data: adminUser } = await supabase
-    .from('admin_users')
-    .select('*, admin_roles(name, permissions)')
-    .eq('id', user.id)
-    .single();
+    const { data: adminUser, error: adminError } = await supabase
+      .from('admin_users')
+      .select('*, admin_roles!left(name, permissions)')
+      .eq('id', user.id)
+      .maybeSingle();
 
-  if (!adminUser) return null;
+    if (adminError || !adminUser) {
+      if (adminError) console.error("[getAdminSession Error]", adminError);
+      return null;
+    }
 
-  return adminUser;
+    return adminUser;
+  } catch (err) {
+    console.error("[getAdminSession Exception]", err);
+    return null;
+  }
 }
 
 export async function checkPermission(permissionName: string) {

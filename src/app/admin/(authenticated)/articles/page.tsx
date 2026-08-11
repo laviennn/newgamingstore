@@ -1,12 +1,11 @@
 import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 import { ArticlesClient } from "./ArticlesClient";
 
 export default async function ArticlesPage() {
   if (!(await checkPermission("manage_articles"))) {
-    redirect("/?error=unauthorized");
+    return <UnauthorizedAccess permission="manage_articles" />;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

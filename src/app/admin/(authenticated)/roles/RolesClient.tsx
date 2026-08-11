@@ -25,11 +25,13 @@ const AVAILABLE_PERMISSIONS = [
     { id: "manage_members", label: "Manage Members" },
   ]},
   { category: "Konten & Informasi", perms: [
+    { id: "manage_content", label: "Settings Contents & Settings" },
     { id: "manage_articles", label: "Manage Articles" },
     { id: "manage_faqs", label: "Manage FAQs" },
     { id: "manage_contacts", label: "Manage Contacts" },
   ]},
   { category: "Pengaturan Sistem", perms: [
+    { id: "manage_theme", label: "Theme & Branding" },
     { id: "manage_roles", label: "Manage Roles & Perms" },
     { id: "manage_operators", label: "Manage Operators" },
   ]},

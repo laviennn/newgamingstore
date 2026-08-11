@@ -1,3 +1,5 @@
+import { getAdminSession } from "@/app/admin/actions";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { getApiValidationLogs, getApiValidationStats } from "./actions";
 import { ApiLogsClient } from "./ApiLogsClient";
 
@@ -5,6 +7,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function ApiLogsPage() {
+  const session = await getAdminSession();
+  if (!session?.is_superadmin) {
+    return <UnauthorizedAccess title="Akses Ditolak (Khusus SuperAdmin)" description="Halaman pemantauan API Validation Logs & Kuota RapidAPI hanya dapat diakses oleh SuperAdmin." />;
+  }
+
   const [logsRes, stats] = await Promise.all([
     getApiValidationLogs({ page: 1, limit: 20 }),
     getApiValidationStats(),

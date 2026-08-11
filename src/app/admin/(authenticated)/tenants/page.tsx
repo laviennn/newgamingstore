@@ -1,11 +1,11 @@
 import { checkPermission } from "@/app/admin/actions";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { createClient } from "@/utils/supabase/server";
 import { TenantsClient } from "./TenantsClient";
 
 export default async function TenantsPage() {
   if (!(await checkPermission("manage_tenants"))) {
-    redirect("/?error=unauthorized");
+    return <UnauthorizedAccess permission="manage_tenants" />;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

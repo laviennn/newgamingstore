@@ -1,12 +1,11 @@
 import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 import { CategoriesClient } from "./CategoriesClient";
 
 export default async function CategoriesPage() {
   if (!(await checkPermission("manage_categories"))) {
-    redirect("/?error=unauthorized");
+    return <UnauthorizedAccess permission="manage_categories" />;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

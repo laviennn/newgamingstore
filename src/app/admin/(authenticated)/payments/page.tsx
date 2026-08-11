@@ -1,12 +1,11 @@
 import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 import { PaymentClient } from "./PaymentClient";
 
 export default async function PaymentsPage() {
   if (!(await checkPermission("manage_payments"))) {
-    redirect("/?error=unauthorized");
+    return <UnauthorizedAccess permission="manage_payments" />;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,12 +1,11 @@
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
-import { GamesClient } from "./GamesClient";
 import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
+import { createClient } from "@/utils/supabase/server";
+import { GamesClient } from "./GamesClient";
 
 export default async function GamesPage() {
   if (!(await checkPermission("manage_games"))) {
-    redirect("/?error=unauthorized");
+    return <UnauthorizedAccess permission="manage_games" />;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

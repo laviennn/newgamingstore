@@ -1,10 +1,10 @@
 import { checkPermission } from "@/app/admin/actions";
-import { redirect } from "next/navigation";
 import ContactsClient from "./ContactsClient";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 
 export default async function ContactsPage() {
   if (!(await checkPermission("manage_contacts"))) {
-    redirect("/?error=unauthorized");
+    return <UnauthorizedAccess permission="manage_contacts" />;
   }
   return <ContactsClient />;
 }

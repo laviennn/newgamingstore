@@ -1,12 +1,11 @@
 import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 import { FaqClient } from "./FaqClient";
 
 export default async function FaqsPage() {
   if (!(await checkPermission("manage_faqs"))) {
-    redirect("/?error=unauthorized");
+    return <UnauthorizedAccess permission="manage_faqs" />;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
