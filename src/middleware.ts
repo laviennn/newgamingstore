@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const config = {
   matcher: [
@@ -13,7 +14,7 @@ export const config = {
   ],
 };
 
-export default function middleware(req: NextRequest) {
+export default async function middleware(req: NextRequest) {
   const url = req.nextUrl;
 
   // Get hostname of request (e.g. demo.vercel.pub, demo.localhost:3000)
@@ -33,8 +34,38 @@ export default function middleware(req: NextRequest) {
   // Extract the tenant domain (removing port if present)
   const currentHost = hostname.split(':')[0];
 
-  // 1. Handle Path-Based Bypass (e.g. /bypass_maintenance=true or /bypass or /preview)
   const pathname = url.pathname.toLowerCase();
+  const isAdminDomain =
+    currentHost.startsWith('admin.') ||
+    currentHost === process.env.NEXT_PUBLIC_ADMIN_DOMAIN;
+  const isLoginPath = pathname === '/login' || pathname === '/admin/login';
+  const isServerAction = req.headers.has('next-action');
+
+  // Check rate limit on direct POST requests to Admin Login (non-Server Action)
+  if (isAdminDomain && isLoginPath && req.method === 'POST' && !isServerAction) {
+    const clientIp =
+      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      req.headers.get('x-real-ip') ||
+      '127.0.0.1';
+
+    const rateLimit = await checkRateLimit('admin-login', clientIp);
+
+    if (!rateLimit.success) {
+      return new NextResponse(
+        JSON.stringify({
+          success: false,
+          message: `Terlalu banyak percobaan login (Too Many Requests). Silakan coba lagi dalam ${rateLimit.reset} detik.`,
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': String(rateLimit.reset),
+          },
+        }
+      );
+    }
+  }
   if (pathname.includes('bypass') || pathname.includes('preview')) {
     const isDisable =
       pathname.includes('false') ||

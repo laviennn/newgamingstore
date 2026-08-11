@@ -2,6 +2,7 @@
 
 import { cookies, headers } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function setAdminTenantCookie(tenantId: string) {
   const cookieStore = await cookies();
@@ -11,6 +12,22 @@ export async function setAdminTenantCookie(tenantId: string) {
 export async function adminLogin(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+
+  // 1. Rate Limiting Check (Max 5 attempts / 15 mins)
+  const headerList = await headers();
+  const clientIp =
+    headerList.get('x-forwarded-for')?.split(',')[0].trim() ||
+    headerList.get('x-real-ip') ||
+    email ||
+    '127.0.0.1';
+
+  const rateLimit = await checkRateLimit('admin-login', clientIp);
+  if (!rateLimit.success) {
+    return {
+      success: false,
+      message: `Terlalu banyak percobaan login. Silakan coba lagi dalam ${rateLimit.reset} detik.`,
+    };
+  }
 
   const supabase = await createClient();
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({

@@ -447,7 +447,7 @@ export function StorefrontGameForm({
                           <div className="flex items-center gap-1.5 hidden sm:flex">
                             {items.slice(0, 4).map((item: any) => (
                               <div key={item.id} className="w-9 h-6 bg-white rounded flex items-center justify-center overflow-hidden p-0.5">
-                                {item.logo_url && <Image src={item.logo_url} alt="" width={32} height={20} className="object-contain" />}
+                                {item.logo_url && <Image src={item.logo_url} alt="" width={32} height={20} style={{ width: "auto", height: "auto" }} className="object-contain" />}
                               </div>
                             ))}
                             {items.length > 4 && <span className="text-xs font-bold text-white/90 ml-1">+{items.length - 4}</span>}
