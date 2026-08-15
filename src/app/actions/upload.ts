@@ -1,6 +1,10 @@
 "use server";
 
 import { uploadImageToR2 } from "@/lib/upload";
+import { resolveTenantAssetDomain } from "@/lib/storageUtils";
+import { getActiveAdminTenantId } from "@/app/admin/actions";
+import { createClient } from "@/utils/supabase/server";
+import { headers } from "next/headers";
 
 export async function uploadFile(formData: FormData) {
   try {
@@ -15,8 +19,53 @@ export async function uploadFile(formData: FormData) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     
-    // Gunakan utilitas terpusat uploadImageToR2 (Magic Bytes Check + UUID sanitization)
-    const result = await uploadImageToR2(buffer, "uploads");
+    // Resolve Tenant Context for Dynamic Branded Asset Domain
+    let tenantDomain: string | null = null;
+    let customAssetDomain: string | null = null;
+
+    try {
+      const supabase = await createClient();
+      const adminTenantId = await getActiveAdminTenantId();
+
+      if (adminTenantId) {
+        const { data: tenantData } = await supabase
+          .from("tenants")
+          .select("domain, theme_config")
+          .eq("id", adminTenantId)
+          .maybeSingle();
+
+        if (tenantData) {
+          tenantDomain = tenantData.domain;
+          customAssetDomain = tenantData.theme_config?.storage_public_url || tenantData.theme_config?.custom_asset_domain || null;
+        }
+      } else {
+        // Fallback to Hostname detection (for storefront customer payment proof uploads)
+        const headerList = await headers();
+        const rawHost = headerList.get("host") || headerList.get("x-forwarded-host") || "";
+        const domainWithoutPort = rawHost.split(":")[0];
+
+        if (domainWithoutPort) {
+          const { data: matchedTenant } = await supabase
+            .from("tenants")
+            .select("domain, theme_config")
+            .or(`admin_domain.eq.${domainWithoutPort},domain.eq.${domainWithoutPort}`)
+            .maybeSingle();
+
+          if (matchedTenant) {
+            tenantDomain = matchedTenant.domain;
+            customAssetDomain = matchedTenant.theme_config?.storage_public_url || matchedTenant.theme_config?.custom_asset_domain || null;
+          }
+        }
+      }
+    } catch (tenantErr) {
+      console.warn("[UPLOAD_TENANT_DETECTION_WARNING]", tenantErr);
+    }
+
+    // Resolve tenant-specific public asset domain (e.g. https://assets.topupdisiniyuk.com)
+    const publicBaseUrl = resolveTenantAssetDomain(tenantDomain, customAssetDomain);
+
+    // Gunakan utilitas terpusat uploadImageToR2 (Magic Bytes Check + UUID sanitization + Dynamic Tenant Domain)
+    const result = await uploadImageToR2(buffer, "uploads", publicBaseUrl);
 
     if (!result.success || !result.url) {
       return { error: result.error || "Gagal mengunggah file gambar." };

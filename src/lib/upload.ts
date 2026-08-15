@@ -77,7 +77,8 @@ export function validateImageMagicBytes(buffer: Buffer): { valid: boolean; ext?:
  */
 export async function uploadImageToR2(
   fileBuffer: Buffer,
-  folder: string = "uploads"
+  folder: string = "uploads",
+  publicBaseUrl?: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
     // 1. Validation biner Magic Bytes
@@ -102,7 +103,8 @@ export async function uploadImageToR2(
 
     await r2Client.send(command);
 
-    const baseUrl = PUBLIC_DOMAIN.endsWith('/') ? PUBLIC_DOMAIN.slice(0, -1) : PUBLIC_DOMAIN;
+    const activeDomain = publicBaseUrl || PUBLIC_DOMAIN;
+    const baseUrl = activeDomain.endsWith('/') ? activeDomain.slice(0, -1) : activeDomain;
     const publicUrl = `${baseUrl}/${safeFilename}`;
     return { success: true, url: publicUrl };
   } catch (err: any) {
