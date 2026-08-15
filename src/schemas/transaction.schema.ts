@@ -12,8 +12,7 @@ export const DepositSchema = z.object({
     .regex(/^[0-9+]+$/, "Format nomor WhatsApp tidak valid"),
   amount: z
     .number({ invalid_type_error: "Nominal harus berupa angka" })
-    .positive("Nominal deposit harus bernilai positif")
-    .min(10000, "Minimal deposit adalah Rp 10.000"),
+    .positive("Nominal deposit harus bernilai positif"),
   customerEmail: z
     .string()
     .email("Format email tidak valid")

@@ -9,12 +9,15 @@ export async function createOrder(orderData: any) {
   try {
     const supabase = await createClient();
     
-    // Determine tenant name from config or use default
-    // We could pass tenantName from the client config
-    const tenantName = orderData.tenantName || "NewGamingStore";
-    const invoiceId = generateInvoiceId(tenantName);
+    const { data: tenantData } = await supabase
+      .from('tenants')
+      .select('name, domain, theme_config')
+      .eq('id', orderData.tenantId)
+      .maybeSingle();
 
-    const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', orderData.tenantId).single();
+    const tenantIdentifier = tenantData?.theme_config?.siteName || tenantData?.name || tenantData?.domain || orderData.tenantName || "NewGamingStore";
+    const invoiceId = generateInvoiceId(tenantIdentifier);
+
     const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
 
     // Calculate total price with promo

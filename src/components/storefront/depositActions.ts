@@ -63,10 +63,18 @@ export async function createDepositOrder(depositData: any) {
       };
     }
 
-    const invoiceId = generateInvoiceId("DEP");
+    const invoiceId = generateInvoiceId("DEP", "DEP");
 
     const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', validData.tenantId).single();
     const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
+
+    const minDeposit = currency === 'MYR' ? 5 : 10000;
+    if (validData.amount < minDeposit) {
+      return {
+        success: false,
+        message: `Minimal deposit adalah ${currency === 'MYR' ? 'RM 5' : 'Rp 10.000'}`,
+      };
+    }
 
     const payload = {
        invoice_id: invoiceId,

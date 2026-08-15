@@ -28,15 +28,23 @@ export default async function DepositCheckoutPage({
      return notFound();
   }
 
-  const { data: deposit, error } = await supabase
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+  let query = supabase
     .from('deposits')
     .select(`
       *,
       payment_channels (name, category, account_number, account_name, qr_image_url)
     `)
-    .eq('invoice_id', id)
-    .eq('tenant_id', tenantData.id)
-    .single();
+    .eq('tenant_id', tenantData.id);
+
+  if (isUUID) {
+    query = query.or(`id.eq.${id},invoice_id.eq.${id}`);
+  } else {
+    query = query.eq('invoice_id', id);
+  }
+
+  const { data: deposit, error } = await query.maybeSingle();
 
   if (error || !deposit) {
     console.error("Error fetching deposit:", error);

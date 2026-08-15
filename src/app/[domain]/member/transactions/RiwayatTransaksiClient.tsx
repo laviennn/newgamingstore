@@ -184,8 +184,8 @@ export function RiwayatTransaksiClient({ initialOrders, language = "id", currenc
                   return (
                     <tr key={order.id} className="hover:bg-white/5 transition-colors">
                       <td className="py-5 px-6">
-                        <Link href={`/checkout/${order.id}`} className="font-semibold text-[#2B95FF] hover:underline text-sm tracking-wide">
-                          {order.transaction_id || order.id.substring(0, 10)}
+                        <Link href={`/checkout/${order.invoice_id || order.id}`} className="font-semibold text-[#2B95FF] hover:underline text-sm tracking-wide">
+                          {order.invoice_id || order.transaction_id || order.id.substring(0, 10)}
                         </Link>
                       </td>
                       <td className="py-5 px-6 font-medium text-white text-sm">

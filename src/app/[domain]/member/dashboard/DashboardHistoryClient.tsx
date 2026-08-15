@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { getDictionary, Language } from "@/lib/dictionary";
 import { Currency, formatCurrency } from "@/lib/currencyUtils";
@@ -81,7 +82,12 @@ export function DashboardHistoryClient({ mergedHistory, language = "id", currenc
                   return (
                     <tr key={item.id} className="hover:bg-white/5 transition-colors">
                       <td className="py-4 px-4 font-semibold text-theme-primary opacity-90">
-                        {item.invoice_id || item.transaction_id || item.id.substring(0, 10)}
+                        <Link 
+                          href={isDeposit ? `/deposit-checkout/${item.invoice_id || item.id}` : `/checkout/${item.invoice_id || item.id}`}
+                          className="hover:underline tracking-wide"
+                        >
+                          {item.invoice_id || item.transaction_id || item.id.substring(0, 10)}
+                        </Link>
                       </td>
                       <td className="py-4 px-4 text-gray-200">
                         {itemName}
