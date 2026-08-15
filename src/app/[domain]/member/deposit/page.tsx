@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { DepositForm } from '@/components/storefront/DepositForm';
 import { getUnifiedSession } from '@/lib/tenantAuth';
 import { getDictionary } from '@/lib/dictionary';
+import { Currency, formatCurrency } from '@/lib/currencyUtils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,21 +26,34 @@ export default async function MemberDepositPage({
   }
 
   // Fetch tenant
+  const targetDomain = domain === 'demo.localhost' ? 'localhost' : domain;
   let { data: tenant } = await supabase
     .from('tenants')
     .select('id, theme_config')
-    .eq('domain', domain)
+    .or(`domain.eq.${targetDomain},admin_domain.eq.${targetDomain}`)
     .maybeSingle();
+
+  if (!tenant && targetDomain.includes('localhost')) {
+    const { data: localTenant } = await supabase
+      .from('tenants')
+      .select('id, theme_config')
+      .eq('domain', 'localhost')
+      .maybeSingle();
+    if (localTenant) tenant = localTenant;
+  }
+
   if (!tenant) {
     const res = await supabase
       .from('tenants')
       .select('id, theme_config')
+      .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
-    if (res.data) tenant = res.data;
+    tenant = res.data;
   }
   
   const language = tenant?.theme_config?.language || 'id';
+  const currency: Currency = (tenant?.theme_config?.currency || (language === 'ms' ? 'MYR' : 'IDR')) as Currency;
   const dict = getDictionary(language);
 
   // Fetch active payment channels
@@ -86,8 +100,7 @@ export default async function MemberDepositPage({
           </span>
         </div>
         <div className='text-3xl font-black text-white'>
-          <span className='text-gray-400 font-bold text-xl mr-1'>Rp</span>
-          {currentBalance.toLocaleString('id-ID')}
+          {formatCurrency(currentBalance, currency)}
         </div>
       </div>
 
@@ -96,6 +109,7 @@ export default async function MemberDepositPage({
         waNumber={user.phone || ''}
         tenantId={tenant?.id}
         language={language}
+        currency={currency}
       />
     </div>
   );

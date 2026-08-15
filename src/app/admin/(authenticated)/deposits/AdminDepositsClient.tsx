@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Eye, Loader2, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { Currency, formatCurrency } from "@/lib/currencyUtils";
+import { updateDepositStatusAction } from "./actions";
 
 export function AdminDepositsClient({ initialDeposits, currency = 'IDR' }: { initialDeposits: any[], currency?: Currency }) {
   const { showNotification, NotificationComponent } = useNotification();
@@ -20,18 +21,16 @@ export function AdminDepositsClient({ initialDeposits, currency = 'IDR' }: { ini
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     setIsLoading(id);
     try {
-      const { error } = await supabase
-        .from('deposits')
-        .update({ status: newStatus })
-        .eq('id', id);
-
-      if (error) throw error;
+      const res = await updateDepositStatusAction(id, newStatus);
+      if (!res.success) {
+        throw new Error(res.message);
+      }
 
       setDeposits(prev => prev.map(d => d.id === id ? { ...d, status: newStatus } : d));
-      showNotification("success", "Status Diperbarui", `Deposit berhasil diubah menjadi ${newStatus}`);
-    } catch (err) {
+      showNotification("success", "Status Diperbarui", `Deposit berhasil diubah menjadi ${newStatus} dan saldo dompet telah disinkronkan.`);
+    } catch (err: any) {
       console.error(err);
-      showNotification("error", "Gagal", "Terjadi kesalahan saat memperbarui status.");
+      showNotification("error", "Gagal", err.message || "Terjadi kesalahan saat memperbarui status.");
     } finally {
       setIsLoading(null);
     }

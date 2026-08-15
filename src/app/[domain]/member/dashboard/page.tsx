@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { DashboardHistoryClient } from './DashboardHistoryClient';
 import { getUnifiedSession } from '@/lib/tenantAuth';
 import { getDictionary } from '@/lib/dictionary';
+import { Currency, formatCurrency } from '@/lib/currencyUtils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -34,33 +35,63 @@ export default async function MemberDashboardPage({
     redirect('/login');
   }
 
-  // 2. Fetch Tenant Config for WA Channel setting
-  let waChannelActive = false;
-  let waChannelUrl = '';
-
-  const { data: tenantData } = await supabase
+  // 2. Fetch Tenant Data & Config
+  const targetDomain = domain === 'demo.localhost' ? 'localhost' : domain;
+  let { data: tenantData } = await supabase
     .from('tenants')
-    .select('theme_config')
-    .eq('domain', domain)
+    .select('id, theme_config')
+    .or(`domain.eq.${targetDomain},admin_domain.eq.${targetDomain}`)
     .maybeSingle();
 
+  if (!tenantData && targetDomain.includes('localhost')) {
+    const { data: localTenant } = await supabase
+      .from('tenants')
+      .select('id, theme_config')
+      .eq('domain', 'localhost')
+      .maybeSingle();
+    if (localTenant) tenantData = localTenant;
+  }
+
+  if (!tenantData) {
+    const res = await supabase
+      .from('tenants')
+      .select('id, theme_config')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    tenantData = res.data;
+  }
+
+  const tenantId = tenantData?.id;
   const language = tenantData?.theme_config?.language || 'id';
+  const currency: Currency = (tenantData?.theme_config?.currency || (language === 'ms' ? 'MYR' : 'IDR')) as Currency;
+
+  let waChannelActive = false;
+  let waChannelUrl = '';
 
   if (tenantData?.theme_config) {
     waChannelActive = tenantData.theme_config.waChannelActive ?? false;
     waChannelUrl = tenantData.theme_config.waChannelUrl || '#';
   }
 
-  // 3. Fetch User's Orders & Deposits from DB
-  const { data: allOrders } = await supabase
+  // 3. Fetch User's Orders & Deposits from DB strictly for this tenant
+  let ordersQuery = supabase
     .from('orders')
     .select('*, games(name)')
     .order('created_at', { ascending: false });
 
-  const { data: allDeposits } = await supabase
+  let depositsQuery = supabase
     .from('deposits')
     .select('*')
     .order('created_at', { ascending: false });
+
+  if (tenantId) {
+    ordersQuery = ordersQuery.eq('tenant_id', tenantId);
+    depositsQuery = depositsQuery.eq('tenant_id', tenantId);
+  }
+
+  const { data: allOrders } = await ordersQuery;
+  const { data: allDeposits } = await depositsQuery;
 
   // 4. Fetch Wallet Balance
   const userEmail = (user.email || '').toLowerCase();
@@ -340,10 +371,7 @@ export default async function MemberDashboardPage({
                 {dict.member_wallet_balance}
               </span>
               <div className='text-4xl font-black text-white mt-1'>
-                <span className='text-gray-400 font-bold text-2xl mr-1'>
-                  Rp
-                </span>{' '}
-                {currentBalance.toLocaleString('id-ID')}
+                {formatCurrency(currentBalance, currency)}
               </div>
             </div>
           </div>
@@ -406,7 +434,7 @@ export default async function MemberDashboardPage({
 
           <div className='bg-[#121212] border border-white/5 rounded-2xl p-5 text-center'>
             <div className='text-xl font-black text-white'>
-              Rp {totalSpent.toLocaleString('id-ID')}
+              {formatCurrency(totalSpent, currency)}
             </div>
             <div className='text-xs font-medium text-gray-400 mt-0.5'>
               {dict.member_stat_total_sale}
@@ -416,7 +444,7 @@ export default async function MemberDashboardPage({
       </div>
 
       {/* 5. Riwayat Transaksi Terbaru Table */}
-      <DashboardHistoryClient mergedHistory={mergedHistory} language={language} />
+      <DashboardHistoryClient mergedHistory={mergedHistory} language={language} currency={currency} />
     </div>
   );
 }

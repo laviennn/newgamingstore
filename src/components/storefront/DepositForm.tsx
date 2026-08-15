@@ -7,21 +7,23 @@ import { createDepositOrder } from "@/components/storefront/depositActions";
 import { useNotification } from "@/components/ui/notification";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getDictionary, Language } from "@/lib/dictionary";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
-const NOMINAL_OPTIONS = [
-  10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000
-];
+const IDR_NOMINALS = [10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000];
+const MYR_NOMINALS = [5, 10, 20, 50, 100, 200, 500, 1000];
 
 export function DepositForm({
   paymentChannels,
   waNumber,
   tenantId,
   language = 'id',
+  currency = 'IDR',
 }: {
   paymentChannels: any[];
   waNumber: string;
   tenantId?: string;
   language?: Language;
+  currency?: Currency;
 }) {
   const dict = getDictionary(language);
   const { showNotification, NotificationComponent } = useNotification();
@@ -33,6 +35,10 @@ export function DepositForm({
   // Checkout States
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const nominalOptions = currency === 'MYR' ? MYR_NOMINALS : IDR_NOMINALS;
+  const minDeposit = currency === 'MYR' ? 5 : 10000;
+  const currencyPrefix = currency === 'MYR' ? 'RM' : 'Rp';
 
   const amount = selectedNominal || (customNominal ? parseInt(customNominal.replace(/[^0-9]/g, "")) : 0) || 0;
 
@@ -52,8 +58,12 @@ export function DepositForm({
 
   const handleCheckout = (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount < 10000) {
-      showNotification("error", "Nominal Terlalu Kecil", "Minimal deposit adalah Rp 10.000");
+    if (amount < minDeposit) {
+      showNotification(
+        "error", 
+        "Nominal Terlalu Kecil", 
+        `Minimal deposit adalah ${formatCurrency(minDeposit, currency)}`
+      );
       return;
     }
     if (!selectedPayment) {
@@ -98,7 +108,7 @@ export function DepositForm({
 
         <div className="p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {NOMINAL_OPTIONS.map((nom) => {
+            {nominalOptions.map((nom) => {
               const isSelected = selectedNominal === nom;
               return (
                 <div
@@ -117,7 +127,7 @@ export function DepositForm({
                   <Wallet className={`w-6 h-6 ${isSelected ? 'text-theme-primary opacity-90' : 'text-gray-400 group-hover:text-theme-primary opacity-90 transition-colors'}`} />
                   <div className="text-center">
                     <div className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-gray-300'}`}>
-                      Rp {nom.toLocaleString('id-ID')}
+                      {formatCurrency(nom, currency)}
                     </div>
                   </div>
                 </div>
@@ -128,18 +138,18 @@ export function DepositForm({
           <div className="flex flex-col space-y-2">
             <label className="text-sm font-bold text-gray-300">{dict.member_dep_custom_lbl}</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Rp</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{currencyPrefix}</span>
               <input
                 type="text"
-                placeholder={dict.member_dep_custom_ph}
+                placeholder={currency === 'MYR' ? 'Contoh: 50' : dict.member_dep_custom_ph}
                 value={customNominal}
                 onChange={(e) => {
                   let val = e.target.value.replace(/[^0-9]/g, "");
                   if (val.startsWith("0")) val = val.substring(1);
-                  setCustomNominal(val ? parseInt(val).toLocaleString('id-ID') : "");
+                  setCustomNominal(val ? (currency === 'MYR' ? val : parseInt(val).toLocaleString('id-ID')) : "");
                   setSelectedNominal(null);
                 }}
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white font-bold focus:border-theme-primary focus:ring-1 focus:ring-blue-500 transition-all outline-none"
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-2xl py-3 pl-14 pr-4 text-white font-bold focus:border-theme-primary focus:ring-1 focus:ring-blue-500 transition-all outline-none"
               />
             </div>
           </div>
@@ -226,13 +236,13 @@ export function DepositForm({
       <div className="fixed bottom-16 left-0 right-0 z-40 bg-[#0f0f11]/95 backdrop-blur-md border-t border-border/40 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] lg:hidden">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
-            {amount >= 10000 && selectedPayment ? (
+            {amount >= minDeposit && selectedPayment ? (
               <>
                 <p className="text-[11px] font-medium text-white/70 truncate mb-0.5">
                   via {selectedPayment.name}
                 </p>
                 <p className="text-sm font-black text-theme-primary opacity-90">
-                  Rp {amount.toLocaleString('id-ID')}
+                  {formatCurrency(amount, currency)}
                 </p>
               </>
             ) : (
@@ -243,7 +253,7 @@ export function DepositForm({
           </div>
           <button
             type="submit"
-            disabled={amount < 10000 || !selectedPayment || isSubmitting}
+            disabled={amount < minDeposit || !selectedPayment || isSubmitting}
             className="bg-theme-primary hover:bg-theme-primary brightness-90 text-white font-bold px-5 h-10 text-xs rounded-xl shadow-lg shadow-[var(--accent-glow)] shrink-0 disabled:opacity-50 transition-colors flex items-center gap-2"
           >
             {isSubmitting ? (
@@ -259,7 +269,7 @@ export function DepositForm({
       <div className="hidden lg:block sticky bottom-6 z-40 mt-6">
         <button
           type="submit"
-          disabled={amount < 10000 || !selectedPayment || isSubmitting}
+          disabled={amount < minDeposit || !selectedPayment || isSubmitting}
           className="w-full bg-theme-primary hover:bg-theme-primary brightness-90 disabled:bg-[#1a1a1a] disabled:text-gray-500 text-white font-bold text-base h-12 rounded-xl shadow-lg shadow-[var(--accent-glow)] transition-all flex items-center justify-center gap-3"
         >
           {isSubmitting ? (
@@ -270,9 +280,9 @@ export function DepositForm({
           ) : (
             <>
               Lanjutkan Pembayaran
-              {amount >= 10000 && (
+              {amount >= minDeposit && (
                 <span className="bg-black/20 px-3 py-1 rounded-full text-sm font-black">
-                  Rp {amount.toLocaleString('id-ID')}
+                  {formatCurrency(amount, currency)}
                 </span>
               )}
             </>
@@ -294,7 +304,7 @@ export function DepositForm({
             <div className="space-y-3">
                <div className="flex justify-between items-center py-2 border-b border-white/5">
                  <span className="text-gray-400 text-sm">Nominal Deposit</span>
-                 <span className="text-white font-bold">Rp {amount.toLocaleString('id-ID')}</span>
+                 <span className="text-white font-bold">{formatCurrency(amount, currency)}</span>
                </div>
                <div className="flex justify-between items-center py-2 border-b border-white/5">
                  <span className="text-gray-400 text-sm">Metode Pembayaran</span>

@@ -19,11 +19,34 @@ export default async function MemberTransactionsHistoryPage({
     redirect("/login");
   }
 
-  const { data: tenantData } = await supabase
+  // Fetch Tenant Data & Config
+  const targetDomain = domain === 'demo.localhost' ? 'localhost' : domain;
+  let { data: tenantData } = await supabase
     .from('tenants')
-    .select('theme_config')
-    .eq('domain', domain)
+    .select('id, theme_config')
+    .or(`domain.eq.${targetDomain},admin_domain.eq.${targetDomain}`)
     .maybeSingle();
+
+  if (!tenantData && targetDomain.includes('localhost')) {
+    const { data: localTenant } = await supabase
+      .from('tenants')
+      .select('id, theme_config')
+      .eq('domain', 'localhost')
+      .maybeSingle();
+    if (localTenant) tenantData = localTenant;
+  }
+
+  if (!tenantData) {
+    const res = await supabase
+      .from('tenants')
+      .select('id, theme_config')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    tenantData = res.data;
+  }
+
+  const tenantId = tenantData?.id;
   const language = tenantData?.theme_config?.language || 'id';
   const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
 
@@ -31,11 +54,17 @@ export default async function MemberTransactionsHistoryPage({
   const userPhoneRaw = (user.phone || "").replace(/[^0-9]/g, "");
   const userPhoneShort = userPhoneRaw.replace(/^(62|0)/, "");
 
-  // Fetch all orders with games relation
-  const { data: allOrders } = await supabase
+  // Fetch all orders strictly for this tenant
+  let ordersQuery = supabase
     .from("orders")
     .select("*, games(name)")
     .order("created_at", { ascending: false });
+
+  if (tenantId) {
+    ordersQuery = ordersQuery.eq('tenant_id', tenantId);
+  }
+
+  const { data: allOrders } = await ordersQuery;
 
   // Filter for this user
   let orders = (allOrders || []).filter((o) => {

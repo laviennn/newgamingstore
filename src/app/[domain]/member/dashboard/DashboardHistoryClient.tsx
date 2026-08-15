@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { getDictionary, Language } from "@/lib/dictionary";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
-export function DashboardHistoryClient({ mergedHistory, language = "id" }: { mergedHistory: any[], language?: Language }) {
+export function DashboardHistoryClient({ mergedHistory, language = "id", currency = "IDR" }: { mergedHistory: any[], language?: Language, currency?: Currency }) {
   const dict = getDictionary(language);
   const [limit, setLimit] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,6 +70,7 @@ export function DashboardHistoryClient({ mergedHistory, language = "id" }: { mer
                     
                   const itemName = isDeposit ? "Deposit Saldo" : (item.games?.name ? `${item.games.name} Item` : "Top Up Service");
                   const price = isDeposit ? item.amount : item.total_price;
+                  const itemCurrency = item.currency || currency;
                   const orderDate = new Date(item.created_at).toLocaleDateString("id-ID", {
                     day: "2-digit",
                     month: "short",
@@ -86,7 +88,7 @@ export function DashboardHistoryClient({ mergedHistory, language = "id" }: { mer
                       </td>
                       <td className="py-4 px-4 text-gray-400 text-xs">{targetFormatted}</td>
                       <td className="py-4 px-4 font-bold text-white">
-                        Rp {Number(price).toLocaleString("id-ID")}
+                        {formatCurrency(Number(price), itemCurrency)}
                       </td>
                       <td className="py-4 px-4 text-gray-400 text-xs">{orderDate}</td>
                       <td className="py-4 px-4 text-right">

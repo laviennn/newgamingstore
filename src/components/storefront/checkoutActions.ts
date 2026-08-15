@@ -3,6 +3,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { generateInvoiceId } from "@/lib/invoiceUtils";
 
+import { getMemberSession } from "@/utils/memberSession";
+
 export async function createOrder(orderData: any) {
   try {
     const supabase = await createClient();
@@ -34,20 +36,43 @@ export async function createOrder(orderData: any) {
     const fee = 0;
     totalPrice += fee;
 
-    // Check if user is logged in to associate order with member email
-    const { data: authData } = await supabase.auth.getUser();
-    const currentUser = authData?.user;
+    // Check if user is logged in (supports both Username mode and Supabase Email mode)
+    let loggedInEmail: string | null = null;
+    let loggedInPhone: string | null = null;
+
+    // 1. Try Custom Member Session (Username Auth Mode)
+    const memberSession = await getMemberSession();
+    if (memberSession) {
+      loggedInEmail = `${memberSession.username}@${memberSession.tenantId}.member`.toLowerCase();
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('phone')
+        .eq('id', memberSession.memberId)
+        .maybeSingle();
+      if (memberData?.phone) {
+        loggedInPhone = memberData.phone;
+      }
+    }
+
+    // 2. Try Supabase Auth (Email Auth Mode) if not in username session
+    if (!loggedInEmail) {
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user?.email) {
+        loggedInEmail = authData.user.email.toLowerCase();
+        loggedInPhone = authData.user.user_metadata?.phone || null;
+      }
+    }
 
     const isWalletPayment = orderData.paymentMethodId === '11111111-1111-1111-1111-111111111111';
 
     // If Payment Method is Wallet, deduct balance first
     if (isWalletPayment) {
-      if (!currentUser?.email) {
+      if (!loggedInEmail) {
         return { success: false, message: "Harap login terlebih dahulu untuk menggunakan Saldo Akun." };
       }
       
       const { error: rpcError } = await supabase.rpc('deduct_wallet_balance', {
-        p_email: currentUser.email.toLowerCase(),
+        p_email: loggedInEmail,
         p_amount: totalPrice,
         p_tenant_id: orderData.tenantId
       });
@@ -66,14 +91,14 @@ export async function createOrder(orderData: any) {
        tenant_id: orderData.tenantId, // Can be null if not multi-tenant strictly
        account_data: orderData.accountData,
        promo_code_id: orderData.promo?.id || null,
-       wa_number: orderData.waNumber,
+       wa_number: orderData.waNumber || loggedInPhone || null,
        original_price: originalPrice,
        discount_amount: discountAmount,
        fee: fee,
        total_price: totalPrice,
        status: isWalletPayment ? 'Processed' : 'Pending',
        payment_status: isWalletPayment ? 'PAID' : 'UNPAID',
-       customer_email: currentUser?.email || orderData.waNumber || 'no-email@test.com', // use member email if logged in
+       customer_email: loggedInEmail || orderData.customerEmail || orderData.waNumber || 'no-email@test.com', // accurately use member email
        form_data: orderData.accountData, // fallback for original schema
        currency: currency
     };

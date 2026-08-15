@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { generateInvoiceId } from "@/lib/invoiceUtils";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { DepositSchema } from "@/schemas/transaction.schema";
+import { getMemberSession } from "@/utils/memberSession";
 
 export async function createDepositOrder(depositData: any) {
   try {
@@ -18,9 +19,32 @@ export async function createDepositOrder(depositData: any) {
 
     const supabase = await createClient();
     
-    // Check if user is logged in
-    const { data: authData } = await supabase.auth.getUser();
-    const currentUser = authData?.user;
+    // Check if user is logged in (supports both Username mode and Supabase Email mode)
+    let loggedInEmail: string | null = null;
+    let loggedInPhone: string | null = null;
+
+    // 1. Try Custom Member Session (Username Auth Mode)
+    const memberSession = await getMemberSession();
+    if (memberSession) {
+      loggedInEmail = `${memberSession.username}@${memberSession.tenantId}.member`.toLowerCase();
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('phone')
+        .eq('id', memberSession.memberId)
+        .maybeSingle();
+      if (memberData?.phone) {
+        loggedInPhone = memberData.phone;
+      }
+    }
+
+    // 2. Try Supabase Auth (Email Auth Mode) if not in username session
+    if (!loggedInEmail) {
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user?.email) {
+        loggedInEmail = authData.user.email.toLowerCase();
+        loggedInPhone = authData.user.user_metadata?.phone || null;
+      }
+    }
 
     // 2. Rate Limiting Check (Max 10 per minute per User / IP)
     const headerList = await headers();
@@ -29,7 +53,7 @@ export async function createDepositOrder(depositData: any) {
       headerList.get('x-real-ip') ||
       '127.0.0.1';
 
-    const identifier = currentUser?.id || currentUser?.email || validData.waNumber || clientIp;
+    const identifier = loggedInEmail || validData.waNumber || clientIp;
     const rateLimit = await checkRateLimit('storefront-mutation', identifier);
 
     if (!rateLimit.success) {
@@ -47,10 +71,10 @@ export async function createDepositOrder(depositData: any) {
     const payload = {
        invoice_id: invoiceId,
        payment_channel_id: validData.paymentMethodId,
-       wa_number: validData.waNumber,
+       wa_number: validData.waNumber || loggedInPhone || null,
        amount: validData.amount,
        status: 'Pending',
-       customer_email: currentUser?.email || validData.customerEmail || validData.waNumber || 'no-email@test.com',
+       customer_email: loggedInEmail || validData.customerEmail || validData.waNumber || 'no-email@test.com',
        tenant_id: validData.tenantId,
        currency: currency
     };
