@@ -5,6 +5,7 @@ import { Search, ChevronDown, Download, RefreshCcw, LayoutGrid, CheckCircle2 } f
 import Image from "next/image";
 import { getDictionary, Language } from "@/lib/dictionary";
 import { Currency, formatCurrency } from "@/lib/currencyUtils";
+import { normalizeAssetUrl } from "@/lib/storageUtils";
 
 export function PricesClient({ initialGames, initialProducts, language = 'id', currency = 'IDR' }: { initialGames: any[], initialProducts: any[], language?: Language, currency?: Currency }) {
   const dict = getDictionary(language);
@@ -16,7 +17,7 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
   // Fix image urls
   const fixUrl = (url: string | null) => {
     if (!url) return '';
-    return url.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com');
+    return normalizeAssetUrl(url);
   };
 
   const games = initialGames.map(g => ({ ...g, image_url: fixUrl(g.image_url) }));
