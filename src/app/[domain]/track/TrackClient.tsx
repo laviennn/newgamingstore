@@ -193,6 +193,15 @@ export function TrackClient({ language = 'id', currency = 'IDR' }: { language?: 
                  </Link>
               </div>
             )}
+
+            {order.payment_status === 'PAID' && order.status !== 'Success' && (
+              <div className="p-6 bg-blue-500/5 border-t border-blue-500/10 text-center">
+                 <p className="text-sm text-blue-400 font-medium">{dict.checkout_status_paid_processing || "Pembayaran diterima dan pesanan sedang diproses."}</p>
+                 <Link href={`/checkout/${order.invoice_id}`} className="mt-3 inline-flex items-center text-sm text-blue-400 hover:text-blue-300 underline font-semibold">
+                   {dict.track_full_invoice_btn}
+                 </Link>
+              </div>
+            )}
             
             {order.status === 'Success' && (
               <div className="p-6 bg-green-500/5 border-t border-green-500/10 text-center">

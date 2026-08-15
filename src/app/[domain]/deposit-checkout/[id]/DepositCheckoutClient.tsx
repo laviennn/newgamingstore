@@ -194,13 +194,40 @@ Mohon segera diproses ya, terima kasih!`;
      window.open(`https://wa.me/${waNumber}?text=${encoded}`, '_blank');
   };
 
+  const isPaid = paymentStatus === 'PAID';
+  const isSuccess = status === 'Success';
+  const isFailed = status === 'Failed';
+  const isExpired = !isPaid && !isSuccess && timeLeft?.h === 0 && timeLeft?.m === 0 && timeLeft?.s === 0;
+
   // Status mappings
-  const stepperStates = [
-    { title: "Permohonan Dibuat", desc: isUpgrade ? "Permohonan upgrade dibuat" : "Permohonan deposit dibuat", icon: Wallet, active: true },
-    { title: "Pembayaran", desc: "Silakan melakukan pembayaran", icon: CreditCard, active: paymentStatus === 'UNPAID' },
-    { title: "Sedang Di Proses", desc: "Verifikasi pembayaran.", icon: Cpu, active: paymentStatus === 'PAID' && status === 'Processed' },
-    { title: isUpgrade ? "Upgrade Berhasil" : "Deposit Berhasil", desc: isUpgrade ? `Akun telah diupgrade ke ${packageName}.` : "Saldo telah ditambahkan.", icon: CheckCircle2, active: status === 'Success' },
+  const steps = [
+    {
+      title: isUpgrade ? "Permohonan Upgrade" : "Permohonan Deposit",
+      desc: isUpgrade ? "Permohonan upgrade dibuat" : "Permohonan deposit dibuat",
+      icon: Wallet,
+      state: 'completed',
+    },
+    {
+      title: "Pembayaran",
+      desc: "Silakan melakukan pembayaran",
+      icon: CreditCard,
+      state: isPaid || isSuccess ? 'completed' : isExpired ? 'failed' : 'active',
+    },
+    {
+      title: "Sedang Di Proses",
+      desc: "Verifikasi pembayaran",
+      icon: Cpu,
+      state: isSuccess ? 'completed' : isPaid && !isFailed ? 'active' : 'inactive',
+    },
+    {
+      title: isUpgrade ? "Upgrade Berhasil" : "Deposit Berhasil",
+      desc: isUpgrade ? `Akun telah diupgrade ke ${packageName}` : "Saldo telah ditambahkan ke akun",
+      icon: CheckCircle2,
+      state: isSuccess ? 'completed' : isFailed ? 'failed' : 'inactive',
+    },
   ];
+
+  const progressPercent = isSuccess ? 100 : isPaid ? 66 : 33;
 
   return (
     <div className="min-h-screen bg-theme-background text-white pt-24 pb-20 print:bg-white print:text-black">
@@ -210,21 +237,47 @@ Mohon segera diproses ya, terima kasih!`;
         <div className="mb-12 print:hidden">
           <h2 className="text-lg font-bold mb-6">Progress {isUpgrade ? 'Upgrade' : 'Deposit'}</h2>
           <div className="relative flex items-center justify-between">
-            <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-800 -z-10 transform -translate-y-1/2"></div>
-            {/* Active progress line (dummy calc based on step) */}
-            <div className={`absolute left-0 top-1/2 h-0.5 bg-theme-primary -z-10 transform -translate-y-1/2 transition-all duration-500`} style={{ width: status === 'Success' ? '100%' : '33%' }}></div>
+            {/* Background Line */}
+            <div className="absolute left-0 right-0 top-5 h-0.5 bg-gray-800 -z-0 transform -translate-y-1/2"></div>
+            {/* Active Progress Line */}
+            <div 
+              className={`absolute left-0 top-5 h-0.5 ${isFailed ? 'bg-red-500' : 'bg-gradient-to-r from-green-500 to-theme-primary'} -z-0 transform -translate-y-1/2 transition-all duration-700`} 
+              style={{ width: `${progressPercent}%` }}
+            ></div>
             
-            {stepperStates.map((step, idx) => (
-              <div key={idx} className="flex flex-col items-center w-1/4 text-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 bg-theme-background ${step.active ? 'border-green-500 text-green-500' : 'border-gray-600 text-gray-500'}`}>
-                  <step.icon className="w-5 h-5" />
+            {steps.map((step, idx) => {
+              const isCompleted = step.state === 'completed';
+              const isActive = step.state === 'active';
+              const isFail = step.state === 'failed';
+
+              let circleClass = 'border-gray-700 text-gray-500 bg-[#151515]';
+              let titleClass = 'text-gray-400';
+              let IconComp = step.icon;
+
+              if (isCompleted) {
+                circleClass = 'border-green-500 text-green-400 bg-green-500/10 shadow-[0_0_15px_rgba(34,197,94,0.25)]';
+                titleClass = 'text-green-400 font-bold';
+                IconComp = CheckCircle2;
+              } else if (isActive) {
+                circleClass = 'border-theme-primary text-theme-primary bg-theme-primary/10 shadow-[0_0_15px_rgba(59,130,246,0.35)] animate-pulse';
+                titleClass = 'text-theme-primary font-bold';
+              } else if (isFail) {
+                circleClass = 'border-red-500 text-red-400 bg-red-500/10';
+                titleClass = 'text-red-400 font-bold';
+              }
+
+              return (
+                <div key={idx} className="flex flex-col items-center w-1/4 text-center z-10">
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${circleClass}`}>
+                    <IconComp className="w-5 h-5" />
+                  </div>
+                  <div className="mt-3">
+                    <h3 className={`text-xs md:text-sm transition-colors ${titleClass}`}>{step.title}</h3>
+                    <p className="text-[11px] text-gray-500 mt-1 hidden md:block">{step.desc}</p>
+                  </div>
                 </div>
-                <div className="mt-3">
-                  <h3 className={`text-sm font-bold ${step.active ? 'text-green-500' : 'text-gray-400'}`}>{step.title}</h3>
-                  <p className="text-xs text-gray-500 mt-1 hidden md:block">{step.desc}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -234,9 +287,33 @@ Mohon segera diproses ya, terima kasih!`;
           {/* Left Column: Info & Pricing */}
           <div className="lg:col-span-7 space-y-6">
             <div className="flex items-center justify-between print:hidden">
-              <h2 className="text-xl font-bold tracking-wide">
-                {timeLeft ? `${timeLeft.h} Jam ${timeLeft.m} Menit ${timeLeft.s} Detik` : 'Loading...'}
-              </h2>
+              {isSuccess ? (
+                <div className="flex items-center gap-2 text-green-400 font-bold text-lg md:text-xl">
+                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+                  <span>{isUpgrade ? "Upgrade Berhasil Selesai!" : "Deposit Berhasil Ditambahkan!"}</span>
+                </div>
+              ) : isFailed ? (
+                <div className="flex items-center gap-2 text-red-400 font-bold text-lg md:text-xl">
+                  <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                  <span>Permohonan Dibatalkan / Gagal</span>
+                </div>
+              ) : isPaid ? (
+                <div className="flex items-center gap-2 text-theme-primary font-bold text-lg md:text-xl">
+                  <Cpu className="w-5 h-5 animate-pulse text-theme-primary" />
+                  <span>Pembayaran Diterima — Sedang Diverifikasi</span>
+                </div>
+              ) : isExpired ? (
+                <div className="flex items-center gap-2 text-red-400 font-bold text-lg md:text-xl">
+                  <span>⚠️ Waktu Pembayaran Habis</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 text-sm font-medium">Sisa Waktu:</span>
+                  <h2 className="text-lg md:text-xl font-bold tracking-wide text-white">
+                    {timeLeft ? `${timeLeft.h} Jam ${timeLeft.m} Menit ${timeLeft.s} Detik` : 'Memuat waktu...'}
+                  </h2>
+                </div>
+              )}
             </div>
 
             {/* Account Info Card */}
@@ -318,8 +395,25 @@ Mohon segera diproses ya, terima kasih!`;
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-400">{isUpgrade ? 'Status Upgrade' : 'Status Deposit'}</span>
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${status === 'Pending' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-[var(--accent-glow)] text-theme-primary'}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${
+                    isSuccess ? 'bg-green-500/20 text-green-400' :
+                    isFailed ? 'bg-red-500/20 text-red-400' :
+                    status === 'Pending' ? 'bg-yellow-500/20 text-yellow-500' : 
+                    'bg-[var(--accent-glow)] text-theme-primary'
+                  }`}>
                     {status}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-400">Catatan</span>
+                  <span className={`font-medium ${isSuccess ? 'text-green-400' : isPaid ? 'text-theme-primary' : 'text-gray-300'}`}>
+                    {isSuccess
+                      ? (isUpgrade ? 'Akun Telah Berhasil Diupgrade' : 'Saldo Berhasil Ditambahkan')
+                      : isPaid
+                      ? 'Pembayaran Berhasil Diverifikasi'
+                      : isExpired
+                      ? 'Waktu Pembayaran Habis'
+                      : 'Menunggu Pembayaran'}
                   </span>
                 </div>
               </div>

@@ -23,6 +23,9 @@ import { useNotification } from "@/components/ui/notification";
 import { getDictionary } from "@/lib/dictionary";
 import { formatCurrency } from "@/lib/currencyUtils";
 
+import Link from "next/link";
+import { normalizeAssetUrl } from "@/lib/storageUtils";
+
 export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConfig: any }) {
   const dict = getDictionary(tenantConfig?.language || 'id');
   const currency = tenantConfig?.currency || (tenantConfig?.language === 'ms' ? 'MYR' : 'IDR');
@@ -63,7 +66,7 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
 
   const fixUrl = (url: string | null) => {
     if (!url) return '';
-    return url.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com');
+    return normalizeAssetUrl(url, tenantConfig?.domain);
   };
 
   const handleCopy = async () => {
@@ -86,11 +89,11 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size (max 2MB)
-    const MAX_SIZE = 2 * 1024 * 1024;
+    // Check size (max 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      const errorMsg = "Ukuran file terlalu besar. Maksimal 2MB.";
-      showNotification("error", "Ukuran File Melebihi Batas", "Ukuran foto bukti transfer maksimal 2MB. Silakan pilih foto lain atau kompres gambar Anda terlebih dahulu.");
+      const errorMsg = "Ukuran file terlalu besar. Maksimal 5MB.";
+      showNotification("error", "Ukuran File Melebihi Batas", "Ukuran foto bukti transfer maksimal 5MB. Silakan pilih foto lain.");
       await logUploadError({
         context: "Checkout Payment Proof Upload (Size Limit Exceeded)",
         invoiceId: order.invoice_id,
@@ -146,9 +149,6 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
     } catch (err: any) {
       let rawMsg = err?.message || String(err);
       let userFriendlyMsg = "Terjadi kesalahan saat mengunggah foto bukti pembayaran. Silakan coba lagi.";
-      if (typeof rawMsg === 'string' && (rawMsg.includes('Body exceeded') || rawMsg.includes('1 MB') || rawMsg.includes('bodySizeLimit'))) {
-        userFriendlyMsg = "Ukuran foto terlalu besar untuk diunggah (Maksimal 2MB). Silakan kompres foto Anda.";
-      }
       showNotification("error", "Gagal Unggah Gambar", userFriendlyMsg);
       await logUploadError({
         context: "Checkout Payment Proof Exception",
@@ -186,13 +186,41 @@ Mohon segera diproses ya, terima kasih!`;
     window.open(`https://wa.me/${waNumber}?text=${encoded}`, '_blank');
   };
 
-  // Status mappings
-  const stepperStates = [
-    { title: dict.checkout_step1_title, desc: dict.checkout_step1_desc, icon: ShoppingBag, active: true },
-    { title: dict.checkout_step2_title, desc: dict.checkout_step2_desc, icon: CreditCard, active: order.payment_status === 'UNPAID' },
-    { title: dict.checkout_step3_title, desc: dict.checkout_step3_desc, icon: Cpu, active: order.payment_status === 'PAID' && order.status === 'Processed' },
-    { title: dict.checkout_step4_title, desc: dict.checkout_step4_desc, icon: CheckCircle2, active: order.status === 'Success' },
+  // Status flags
+  const isPaid = paymentStatus === 'PAID';
+  const isSuccess = order.status === 'Success';
+  const isFailed = order.status === 'Failed';
+  const isExpired = !isPaid && !isSuccess && timeLeft?.h === 0 && timeLeft?.m === 0 && timeLeft?.s === 0;
+
+  // Stepper calculations
+  const steps = [
+    {
+      title: dict.checkout_step1_title,
+      desc: dict.checkout_step1_desc,
+      icon: ShoppingBag,
+      state: 'completed', // Step 1 is always completed once checkout is open
+    },
+    {
+      title: dict.checkout_step2_title,
+      desc: dict.checkout_step2_desc,
+      icon: CreditCard,
+      state: isPaid || isSuccess ? 'completed' : isExpired ? 'failed' : 'active',
+    },
+    {
+      title: dict.checkout_step3_title,
+      desc: dict.checkout_step3_desc,
+      icon: Cpu,
+      state: isSuccess ? 'completed' : isPaid && !isFailed ? 'active' : 'inactive',
+    },
+    {
+      title: dict.checkout_step4_title,
+      desc: dict.checkout_step4_desc,
+      icon: CheckCircle2,
+      state: isSuccess ? 'completed' : isFailed ? 'failed' : 'inactive',
+    },
   ];
+
+  const progressPercent = isSuccess ? 100 : isPaid ? 66 : 33;
 
   return (
     <div className="min-h-screen bg-theme-background text-white pt-24 pb-20 print:bg-white print:text-black">
@@ -202,21 +230,47 @@ Mohon segera diproses ya, terima kasih!`;
         <div className="mb-12 print:hidden">
           <h2 className="text-lg font-bold mb-6">{dict.checkout_progress_title}</h2>
           <div className="relative flex items-center justify-between">
-            <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-800 -z-10 transform -translate-y-1/2"></div>
-            {/* Active progress line (dummy calc based on step) */}
-            <div className={`absolute left-0 top-1/2 h-0.5 bg-theme-primary -z-10 transform -translate-y-1/2 transition-all duration-500`} style={{ width: order.status === 'Success' ? '100%' : '33%' }}></div>
+            {/* Background Line */}
+            <div className="absolute left-0 right-0 top-5 h-0.5 bg-gray-800 -z-0 transform -translate-y-1/2"></div>
+            {/* Active Progress Line */}
+            <div 
+              className={`absolute left-0 top-5 h-0.5 ${isFailed ? 'bg-red-500' : 'bg-gradient-to-r from-green-500 to-theme-primary'} -z-0 transform -translate-y-1/2 transition-all duration-700`} 
+              style={{ width: `${progressPercent}%` }}
+            ></div>
 
-            {stepperStates.map((step, idx) => (
-              <div key={idx} className="flex flex-col items-center w-1/4 text-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 bg-theme-background ${step.active ? 'border-green-500 text-green-500' : 'border-gray-600 text-gray-500'}`}>
-                  <step.icon className="w-5 h-5" />
+            {steps.map((step, idx) => {
+              const isCompleted = step.state === 'completed';
+              const isActive = step.state === 'active';
+              const isFail = step.state === 'failed';
+
+              let circleClass = 'border-gray-700 text-gray-500 bg-[#151515]';
+              let titleClass = 'text-gray-400';
+              let IconComp = step.icon;
+
+              if (isCompleted) {
+                circleClass = 'border-green-500 text-green-400 bg-green-500/10 shadow-[0_0_15px_rgba(34,197,94,0.25)]';
+                titleClass = 'text-green-400 font-bold';
+                IconComp = CheckCircle2;
+              } else if (isActive) {
+                circleClass = 'border-theme-primary text-theme-primary bg-theme-primary/10 shadow-[0_0_15px_rgba(59,130,246,0.35)] animate-pulse';
+                titleClass = 'text-theme-primary font-bold';
+              } else if (isFail) {
+                circleClass = 'border-red-500 text-red-400 bg-red-500/10';
+                titleClass = 'text-red-400 font-bold';
+              }
+
+              return (
+                <div key={idx} className="flex flex-col items-center w-1/4 text-center z-10">
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${circleClass}`}>
+                    <IconComp className="w-5 h-5" />
+                  </div>
+                  <div className="mt-3">
+                    <h3 className={`text-xs md:text-sm transition-colors ${titleClass}`}>{step.title}</h3>
+                    <p className="text-[11px] text-gray-500 mt-1 hidden md:block">{step.desc}</p>
+                  </div>
                 </div>
-                <div className="mt-3">
-                  <h3 className={`text-sm font-bold ${step.active ? 'text-green-500' : 'text-gray-400'}`}>{step.title}</h3>
-                  <p className="text-xs text-gray-500 mt-1 hidden md:block">{step.desc}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -226,9 +280,33 @@ Mohon segera diproses ya, terima kasih!`;
           {/* Left Column: Game Info & Pricing */}
           <div className="lg:col-span-7 space-y-6">
             <div className="flex items-center justify-between print:hidden">
-              <h2 className="text-xl font-bold tracking-wide">
-                {timeLeft ? `${timeLeft.h} Jam ${timeLeft.m} Menit ${timeLeft.s} Detik` : 'Loading...'}
-              </h2>
+              {isSuccess ? (
+                <div className="flex items-center gap-2 text-green-400 font-bold text-lg md:text-xl">
+                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+                  <span>{dict.checkout_status_success || "Transaksi Berhasil Selesai"}</span>
+                </div>
+              ) : isFailed ? (
+                <div className="flex items-center gap-2 text-red-400 font-bold text-lg md:text-xl">
+                  <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                  <span>{dict.checkout_status_failed || "Transaksi Gagal / Dibatalkan"}</span>
+                </div>
+              ) : isPaid ? (
+                <div className="flex items-center gap-2 text-theme-primary font-bold text-lg md:text-xl">
+                  <Cpu className="w-5 h-5 animate-pulse text-theme-primary" />
+                  <span>{dict.checkout_status_paid_processing || "Pembayaran Diterima — Sedang Diproses"}</span>
+                </div>
+              ) : isExpired ? (
+                <div className="flex items-center gap-2 text-red-400 font-bold text-lg md:text-xl">
+                  <span>⚠️ {dict.checkout_status_expired || "Waktu Pembayaran Habis"}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 text-sm font-medium">{dict.checkout_time_left_label || "Sisa Waktu"}:</span>
+                  <h2 className="text-lg md:text-xl font-bold tracking-wide text-white">
+                    {timeLeft ? `${timeLeft.h} Jam ${timeLeft.m} Menit ${timeLeft.s} Detik` : 'Memuat waktu...'}
+                  </h2>
+                </div>
+              )}
             </div>
 
             {/* Account Info Card */}
@@ -326,13 +404,28 @@ Mohon segera diproses ya, terima kasih!`;
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-400">{dict.checkout_trx_status}</span>
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${order.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-[var(--accent-glow)] text-theme-primary'}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${
+                    isSuccess ? 'bg-green-500/20 text-green-400' :
+                    isFailed ? 'bg-red-500/20 text-red-400' :
+                    order.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-500' : 
+                    'bg-[var(--accent-glow)] text-theme-primary'
+                  }`}>
                     {order.status}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-400">{dict.checkout_voucher_note}</span>
-                  <span className="font-medium">{order.discount_amount > 0 ? dict.checkout_promo_used : dict.checkout_wait_payment}</span>
+                  <span className={`font-medium ${isSuccess ? 'text-green-400' : isPaid ? 'text-theme-primary' : 'text-gray-300'}`}>
+                    {order.discount_amount > 0
+                      ? dict.checkout_promo_used
+                      : isSuccess
+                      ? (dict.checkout_order_completed_note || "Pesanan Berhasil Dikirim")
+                      : isPaid
+                      ? (dict.checkout_payment_verified_note || "Pembayaran Berhasil Diverifikasi")
+                      : isExpired
+                      ? (dict.checkout_status_expired || "Waktu Pembayaran Habis")
+                      : dict.checkout_wait_payment}
+                  </span>
                 </div>
               </div>
 
@@ -418,7 +511,7 @@ Mohon segera diproses ya, terima kasih!`;
                     <div className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all overflow-hidden ${paymentProofUrl ? 'border-green-500/50' : 'border-gray-700 hover:bg-gray-800/50 bg-theme-card'}`}>
                       {paymentProofUrl ? (
                         <div className="relative w-full h-full group">
-                          <img src={paymentProofUrl} alt="Bukti Transfer" className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity" />
+                          <img src={fixUrl(paymentProofUrl)} alt="Bukti Transfer" className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity" />
                           <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                             <CheckCircle2 className="w-8 h-8 mb-2 text-green-500" />
                             <span className="text-sm font-bold text-white bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">{dict.checkout_change_img}</span>
@@ -466,9 +559,11 @@ Mohon segera diproses ya, terima kasih!`;
               )}
 
               <div className="pt-2 pb-4 print:hidden">
-                <Button className="w-full bg-theme-card hover:bg-[#1a1a1a] text-white border border-gray-800 h-14 rounded-xl font-bold text-base shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
-                  <Navigation className="w-5 h-5 text-theme-primary" /> {dict.checkout_tracking_btn}
-                </Button>
+                <Link href={`/track?invoice=${order.invoice_id}`}>
+                  <Button className="w-full bg-theme-card hover:bg-[#1a1a1a] text-white border border-gray-800 h-14 rounded-xl font-bold text-base shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    <Navigation className="w-5 h-5 text-theme-primary" /> {dict.checkout_tracking_btn}
+                  </Button>
+                </Link>
               </div>
 
             </div>
