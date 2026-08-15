@@ -198,43 +198,86 @@ export async function compressImageClient(
         // Draw image onto canvas
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert canvas to WebP Blob
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              resolve({
-                file,
-                originalSize,
-                compressedSize: originalSize,
-                ratio: 0,
-                formattedOriginal: formatFileSize(originalSize),
-                formattedCompressed: formatFileSize(originalSize),
-              });
-              return;
-            }
+        // Convert canvas to WebP Blob (with graceful JPEG fallback if browser outputs raw PNG)
+        const exportType = preset.mimeType || "image/webp";
+        const exportQuality = preset.quality || 0.85;
 
-            // Create new WebP File
-            const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
-            const compressedFile = new File([blob], newFileName, {
-              type: "image/webp",
-              lastModified: Date.now(),
-            });
-
-            const compressedSize = compressedFile.size;
-            const ratio = originalSize > 0 ? (originalSize - compressedSize) / originalSize : 0;
-
+        const processBlob = (blob: Blob | null) => {
+          if (!blob) {
             resolve({
-              file: compressedFile,
+              file,
               originalSize,
-              compressedSize,
-              ratio: Math.max(0, ratio),
+              compressedSize: originalSize,
+              ratio: 0,
               formattedOriginal: formatFileSize(originalSize),
-              formattedCompressed: formatFileSize(compressedSize),
+              formattedCompressed: formatFileSize(originalSize),
             });
-          },
-          preset.mimeType || "image/webp",
-          preset.quality || 0.85
-        );
+            return;
+          }
+
+          // If browser failed to encode WebP and fell back to PNG, and the PNG is larger than original,
+          // attempt JPEG compression to avoid exploding file size.
+          if (blob.type === "image/png" && exportType === "image/webp" && blob.size > originalSize) {
+            canvas.toBlob(
+              (jpgBlob) => {
+                if (jpgBlob && jpgBlob.size < blob.size) {
+                  processFinalBlob(jpgBlob, "jpg", "image/jpeg");
+                } else {
+                  // If both fail or are larger, keep original
+                  resolve({
+                    file,
+                    originalSize,
+                    compressedSize: originalSize,
+                    ratio: 0,
+                    formattedOriginal: formatFileSize(originalSize),
+                    formattedCompressed: formatFileSize(originalSize),
+                  });
+                }
+              },
+              "image/jpeg",
+              exportQuality
+            );
+            return;
+          }
+
+          const ext = blob.type === "image/webp" ? "webp" : blob.type === "image/jpeg" ? "jpg" : "png";
+          processFinalBlob(blob, ext, blob.type);
+        };
+
+        const processFinalBlob = (blob: Blob, ext: string, mime: string) => {
+          // If compressed size is actually larger than original, use original file
+          if (blob.size >= originalSize && originalSize > 0) {
+            resolve({
+              file,
+              originalSize,
+              compressedSize: originalSize,
+              ratio: 0,
+              formattedOriginal: formatFileSize(originalSize),
+              formattedCompressed: formatFileSize(originalSize),
+            });
+            return;
+          }
+
+          const newFileName = file.name.replace(/\.[^/.]+$/, "") + `.${ext}`;
+          const compressedFile = new File([blob], newFileName, {
+            type: mime,
+            lastModified: Date.now(),
+          });
+
+          const compressedSize = compressedFile.size;
+          const ratio = originalSize > 0 ? (originalSize - compressedSize) / originalSize : 0;
+
+          resolve({
+            file: compressedFile,
+            originalSize,
+            compressedSize,
+            ratio: Math.max(0, ratio),
+            formattedOriginal: formatFileSize(originalSize),
+            formattedCompressed: formatFileSize(compressedSize),
+          });
+        };
+
+        canvas.toBlob(processBlob, exportType, exportQuality);
       };
 
       img.src = e.target?.result as string;

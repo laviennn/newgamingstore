@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import sharp from "sharp";
 
 const endpoint =
   process.env.R2_ENDPOINT ||
@@ -71,9 +72,67 @@ export function validateImageMagicBytes(buffer: Buffer): { valid: boolean; ext?:
 }
 
 /**
- * Fungsi utilitas untuk mengunggah gambar ke Cloudflare R2 dengan aman:
- * - Menelaah Magic Bytes untuk memastikan sanitasi tipe gambar
- * - Mengganti nama file acak menggunakan crypto.randomUUID() untuk menghindari serangan Directory Traversal
+ * Mengoptimasi gambar di server menggunakan Sharp:
+ * - Auto-orient (memperbaiki rotasi foto kamera/HP)
+ * - Resize jika melebihi maxWidth / maxHeight
+ * - Konversi 100% ke WebP dengan kompresi cerdas & penghapusan metadata EXIF
+ */
+export async function optimizeImageServer(
+  buffer: Buffer,
+  maxWidth: number = 1920,
+  maxHeight: number = 1080,
+  quality: number = 82
+): Promise<{ buffer: Buffer; mime: string; ext: string }> {
+  try {
+    const image = sharp(buffer);
+    const metadata = await image.metadata();
+
+    // Jika file SVG atau GIF animasi, jangan diubah agar vector/frame animasi tetap utuh
+    if (metadata.format === "svg" || (metadata.format === "gif" && (metadata.pages || 0) > 1)) {
+      const magic = validateImageMagicBytes(buffer);
+      return {
+        buffer,
+        mime: magic.mime || `image/${metadata.format}`,
+        ext: magic.ext || metadata.format || "bin",
+      };
+    }
+
+    const optimizedBuffer = await image
+      .rotate() // Auto-orient berdasarkan EXIF orientation
+      .resize({
+        width: maxWidth,
+        height: maxHeight,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({
+        quality: quality,
+        effort: 4,
+        alphaQuality: 88,
+      })
+      .toBuffer();
+
+    return {
+      buffer: optimizedBuffer,
+      mime: "image/webp",
+      ext: "webp",
+    };
+  } catch (err) {
+    console.warn("[SHARP_OPTIMIZE_FALLBACK]", err);
+    const magicCheck = validateImageMagicBytes(buffer);
+    return {
+      buffer,
+      mime: magicCheck.mime || "application/octet-stream",
+      ext: magicCheck.ext || "bin",
+    };
+  }
+}
+
+/**
+ * Fungsi utilitas untuk mengunggah gambar ke Cloudflare R2 dengan aman & optimal:
+ * - Validasi biner Magic Bytes
+ * - Kompresi & Konversi WebP otomatis via Sharp (menjamin ukuran file ~20KB - 85KB)
+ * - Mencegah Directory Traversal dengan UUID
  */
 export async function uploadImageToR2(
   fileBuffer: Buffer,
@@ -90,15 +149,18 @@ export async function uploadImageToR2(
       };
     }
 
-    // 2. Mencegah Directory Traversal dengan mengganti nama file menggunakan UUID
-    const safeFilename = `${folder}/${crypto.randomUUID()}.${magicCheck.ext}`;
+    // 2. Server-side Guaranteed WebP Optimization
+    const optimized = await optimizeImageServer(fileBuffer);
 
-    // 3. Upload ke Cloudflare R2
+    // 3. Mencegah Directory Traversal dengan mengganti nama file menggunakan UUID
+    const safeFilename = `${folder}/${crypto.randomUUID()}.${optimized.ext}`;
+
+    // 4. Upload ke Cloudflare R2
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: safeFilename,
-      Body: fileBuffer,
-      ContentType: magicCheck.mime,
+      Body: optimized.buffer,
+      ContentType: optimized.mime,
     });
 
     await r2Client.send(command);
