@@ -4,12 +4,13 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { adminUpdateOrderStatus, deleteOrder } from "./actions";
-import { Loader2, Eye, ExternalLink, Trash2 } from "lucide-react";
+import { Loader2, Eye, ExternalLink, Trash2, CreditCard, Wallet } from "lucide-react";
 import { useNotification } from "@/components/ui/notification";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import Image from "next/image";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
-export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
+export function OrderListClient({ initialOrders, currency = 'IDR' }: { initialOrders: any[], currency?: Currency }) {
   const { showNotification, NotificationComponent } = useNotification();
   const [orders, setOrders] = useState(initialOrders);
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -75,7 +76,14 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
             <tr className="border-b transition-colors hover:bg-muted/50">
               <th className="h-12 px-4 font-medium">Invoice</th>
               <th className="h-12 px-4 font-medium">Item</th>
-              <th className="h-12 px-4 font-medium">Total</th>
+              <th className="h-12 px-4 font-medium">
+                <div className="flex items-center gap-1.5">
+                  <span>Total</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">
+                    {currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'}
+                  </span>
+                </div>
+              </th>
               <th className="h-12 px-4 font-medium">Payment</th>
               <th className="h-12 px-4 font-medium">Status</th>
               <th className="h-12 px-4 font-medium">Date</th>
@@ -89,6 +97,7 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
               const isExpired = (now - created > 24 * 60 * 60 * 1000) && o.payment_status === 'UNPAID';
               const displayPaymentStatus = isExpired ? 'EXPIRED' : o.payment_status;
               const orderId = o.invoice_id || o.id;
+              const orderCurr = o.currency || currency;
 
               return (
                 <tr key={o.id || o.invoice_id} className={`border-b transition-colors hover:bg-muted/50 ${isExpired ? 'opacity-70' : ''}`}>
@@ -99,15 +108,25 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
                      <div className="font-semibold">{o.games?.name}</div>
                      <div className="text-muted-foreground text-xs">{o.products?.name}</div>
                   </td>
-                  <td className="p-4 font-medium">Rp {Number(o.total_price).toLocaleString('id-ID')}</td>
+                  <td className="p-4 font-medium">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <span className="text-xs">{orderCurr === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+                      <span>{formatCurrency(Number(o.total_price), orderCurr)}</span>
+                    </div>
+                  </td>
                   <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                        displayPaymentStatus === 'PAID' ? 'bg-green-100 text-green-700' :
-                        displayPaymentStatus === 'EXPIRED' ? 'bg-red-100 text-red-700' :
-                        'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {displayPaymentStatus}
-                    </span>
+                    <div className="space-y-1">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${
+                          displayPaymentStatus === 'PAID' ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400' :
+                          displayPaymentStatus === 'EXPIRED' ? 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400' :
+                          'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400'
+                      }`}>
+                        {displayPaymentStatus}
+                      </span>
+                      <div className="text-xs font-medium text-muted-foreground truncate max-w-[130px]" title={o.payment_channels?.name || (o.payment_channel_id === '11111111-1111-1111-1111-111111111111' ? 'Saldo Akun' : '-')}>
+                        {o.payment_channel_id === '11111111-1111-1111-1111-111111111111' ? '💳 Saldo Akun' : (o.payment_channels?.name || '-')}
+                      </div>
+                    </div>
                   </td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold ${
@@ -119,7 +138,7 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
                       {o.status}
                     </span>
                   </td>
-                  <td className="p-4 text-muted-foreground text-xs">{new Date(o.created_at).toLocaleString()}</td>
+                  <td className="p-4 text-muted-foreground text-xs" suppressHydrationWarning>{new Date(o.created_at).toLocaleString('id-ID')}</td>
                   <td className="p-4 text-right space-x-1 flex items-center justify-end">
                     <Button variant="outline" size="sm" onClick={() => openDetails(o)}>
                        <Eye className="w-4 h-4 mr-1" /> Detail
@@ -145,7 +164,18 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Detail Pesanan</DialogTitle>
+            <DialogTitle className="text-2xl font-bold flex items-center justify-between pr-6">
+              <span>Detail Pesanan</span>
+              {selectedOrder && (
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border shadow-2xs ${
+                  (selectedOrder.currency || currency) === 'MYR' 
+                    ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
+                    : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                }`}>
+                  {(selectedOrder.currency || currency) === 'MYR' ? '🇲🇾 MYR (RM)' : '🇮🇩 IDR (Rp)'}
+                </span>
+              )}
+            </DialogTitle>
           </DialogHeader>
           
           {selectedOrder && (
@@ -153,29 +183,103 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Informasi Umum</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="font-medium">Invoice ID</div>
-                    <div className="font-mono">{selectedOrder.invoice_id}</div>
-                    <div className="font-medium">Tanggal</div>
-                    <div>{new Date(selectedOrder.created_at).toLocaleString()}</div>
-                    <div className="font-medium">Status Pembayaran</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm bg-muted/20 p-3.5 rounded-xl border border-border/30">
+                    <div className="font-medium text-muted-foreground">Invoice ID</div>
+                    <div className="font-mono font-bold text-foreground">{selectedOrder.invoice_id}</div>
+                    <div className="font-medium text-muted-foreground">Tanggal</div>
+                    <div suppressHydrationWarning className="text-foreground">{new Date(selectedOrder.created_at).toLocaleString('id-ID')}</div>
+                    <div className="font-medium text-muted-foreground">Status Pembayaran</div>
                     <div>
-                       <span className={`px-2 py-1 rounded-md text-xs font-bold ${selectedOrder.payment_status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                       <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${selectedOrder.payment_status === 'PAID' ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400'}`}>
                          {selectedOrder.payment_status}
                        </span>
                     </div>
-                    <div className="font-medium">Status Transaksi</div>
+                    <div className="font-medium text-muted-foreground">Status Transaksi</div>
                     <div>
-                       <span className={`px-2 py-1 rounded-md text-xs font-bold ${selectedOrder.status === 'Success' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                       <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${selectedOrder.status === 'Success' ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400'}`}>
                          {selectedOrder.status}
                        </span>
                     </div>
+                    {selectedOrder.customer_email && (
+                      <>
+                        <div className="font-medium text-muted-foreground">Kontak / Email</div>
+                        <div className="font-mono text-xs text-foreground truncate">{selectedOrder.customer_email}</div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Metode Pembayaran Section */}
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-primary" />
+                    <span>Metode Pembayaran</span>
+                  </h3>
+                  <div className="bg-muted/30 p-4 rounded-xl space-y-2.5 text-sm border border-border/40">
+                    {selectedOrder.payment_channel_id === '11111111-1111-1111-1111-111111111111' ? (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Metode</span>
+                        <span className="inline-flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs">
+                          <Wallet className="w-3.5 h-3.5" /> Saldo Akun (Member Balance)
+                        </span>
+                      </div>
+                    ) : selectedOrder.payment_channels ? (
+                      <>
+                        <div className="flex items-center justify-between border-b border-border/30 pb-2">
+                          <span className="text-muted-foreground">Channel</span>
+                          <div className="flex items-center gap-2">
+                            {selectedOrder.payment_channels.logo_url && (
+                              <div className="relative w-8 h-5 bg-white rounded border overflow-hidden shrink-0">
+                                <img 
+                                  src={selectedOrder.payment_channels.logo_url} 
+                                  alt="Logo" 
+                                  className="w-full h-full object-contain p-0.5" 
+                                />
+                              </div>
+                            )}
+                            <span className="font-bold text-foreground">{selectedOrder.payment_channels.name}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-b border-border/30 py-2">
+                          <span className="text-muted-foreground">Kategori</span>
+                          <span className="font-semibold text-xs px-2 py-0.5 rounded bg-muted text-foreground border border-border/40">
+                            {selectedOrder.payment_channels.category || 'Bank Transfer'}
+                          </span>
+                        </div>
+
+                        {selectedOrder.payment_channels.account_number && (
+                          <div className="flex items-center justify-between border-b border-border/30 py-2">
+                            <span className="text-muted-foreground">No. Rekening / HP</span>
+                            <span className="font-mono font-bold text-foreground select-all">
+                              {selectedOrder.payment_channels.account_number}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedOrder.payment_channels.account_name && (
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-muted-foreground">Atas Nama</span>
+                            <span className="font-semibold text-foreground">
+                              {selectedOrder.payment_channels.account_name}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Metode</span>
+                        <span className="font-semibold text-muted-foreground">
+                          {selectedOrder.payment_channel_id ? `ID: ${selectedOrder.payment_channel_id.substring(0, 8)}...` : 'Transfer Manual'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div>
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Data Akun & Item</h3>
-                  <div className="bg-muted/30 p-4 rounded-xl space-y-2 text-sm">
+                  <div className="bg-muted/30 p-4 rounded-xl space-y-2 text-sm border border-border/40">
                     <div className="flex justify-between border-b pb-2">
                       <span className="text-muted-foreground">Game</span>
                       <span className="font-bold">{selectedOrder.games?.name}</span>
@@ -190,9 +294,12 @@ export function OrderListClient({ initialOrders }: { initialOrders: any[] }) {
                         <span className="font-bold">{String(v)}</span>
                       </div>
                     ))}
-                    <div className="flex justify-between pt-2">
+                    <div className="flex justify-between items-center pt-2">
                       <span className="text-muted-foreground">Total Harga</span>
-                      <span className="font-bold text-lg text-blue-600">Rp {Number(selectedOrder.total_price).toLocaleString('id-ID')}</span>
+                      <div className="flex items-center gap-1.5 font-bold text-lg text-primary">
+                        <span className="text-sm">{(selectedOrder.currency || currency) === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+                        <span>{formatCurrency(Number(selectedOrder.total_price), selectedOrder.currency || currency)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

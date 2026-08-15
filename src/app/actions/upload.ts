@@ -9,8 +9,8 @@ export async function uploadFile(formData: FormData) {
       return { error: "No file provided." };
     }
 
-    if (file.size > 2.5 * 1024 * 1024) {
-      return { error: "Ukuran file terlalu besar. Maksimal 2MB." };
+    if (file.size > 10 * 1024 * 1024) {
+      return { error: "Ukuran file terlalu besar. Maksimal 10MB." };
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());

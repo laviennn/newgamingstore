@@ -8,8 +8,10 @@ import { Save, Loader2, AlertCircle, UploadCloud } from "lucide-react";
 import { useNotification } from "@/components/ui/notification";
 import { createClient } from "@/utils/supabase/client";
 import { uploadFile } from "@/app/actions/upload";
+import { compressImageClient } from "@/lib/client-image-compressor";
 import Image from "next/image";
 import { SkeuoToggle } from "@/components/ui/skeuo-switch";
+import { saveContactSettings } from "./actions";
 
 export default function ContactsClient() {
 
@@ -104,18 +106,26 @@ export default function ContactsClient() {
     
     setUploadingBanner(true);
     try {
+      const compressed = await compressImageClient(file, "banner");
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressed.file);
       const result = await uploadFile(formData);
       
       if (result.error) {
         showNotification("error", "Upload Gagal", result.error);
       } else if (result.url) {
         setFooterBannerUrl(result.url);
-        showNotification("success", "Berhasil", "Banner berhasil diunggah.");
+        const percentSaved = Math.round(compressed.ratio * 100);
+        showNotification(
+          "success",
+          "Berhasil",
+          percentSaved > 0
+            ? `Banner berhasil dikompres ke WebP (${percentSaved}% lebih hemat) & diunggah!`
+            : "Banner berhasil diunggah."
+        );
       }
     } catch (err) {
-      showNotification("error", "Upload Gagal", "Terjadi kesalahan.");
+      showNotification("error", "Upload Gagal", "Terjadi kesalahan kompresi atau upload.");
     } finally {
       setUploadingBanner(false);
     }
@@ -127,18 +137,26 @@ export default function ContactsClient() {
     
     setUploadingAvatar(true);
     try {
+      const compressed = await compressImageClient(file, "avatar");
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressed.file);
       const result = await uploadFile(formData);
       
       if (result.error) {
         showNotification("error", "Upload Gagal", result.error);
       } else if (result.url) {
         setWaFloatingAvatarUrl(result.url);
-        showNotification("success", "Berhasil", "Karakter avatar WhatsApp berhasil diunggah.");
+        const percentSaved = Math.round(compressed.ratio * 100);
+        showNotification(
+          "success",
+          "Berhasil",
+          percentSaved > 0
+            ? `Avatar berhasil dikompres ke WebP (${percentSaved}% lebih hemat) & diunggah!`
+            : "Karakter avatar WhatsApp berhasil diunggah."
+        );
       }
     } catch (err) {
-      showNotification("error", "Upload Gagal", "Terjadi kesalahan.");
+      showNotification("error", "Upload Gagal", "Terjadi kesalahan kompresi atau upload.");
     } finally {
       setUploadingAvatar(false);
     }
@@ -165,8 +183,25 @@ export default function ContactsClient() {
          waChannelUrl
       };
 
-      const { error } = await supabase.from('tenants').update({ theme_config: updatedConfig }).eq('id', tenantId);
-      if (error) throw error;
+      const res = await saveContactSettings({
+        whatsapp,
+        instagram,
+        tiktok,
+        youtube,
+        email,
+        operationalHours,
+        footerBannerUrl,
+        waFloatingActive,
+        waFloatingAvatarUrl,
+        waFloatingText,
+        waDefaultMessage,
+        waChannelActive,
+        waChannelUrl,
+      });
+
+      if (!res.success) {
+        throw new Error(res.message);
+      }
       
       setThemeConfig(updatedConfig);
       showNotification("success", "Tersimpan", "Informasi kontak, footer, dan WhatsApp berhasil diperbarui.");

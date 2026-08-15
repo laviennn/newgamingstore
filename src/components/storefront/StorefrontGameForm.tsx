@@ -10,10 +10,12 @@ import { validatePromoCode, getAvailablePromos } from "@/components/storefront/p
 import { createOrder } from "@/components/storefront/checkoutActions";
 import { checkUsername } from "@/app/actions/usernameValidator";
 import { useNotification } from "@/components/ui/notification";
+import { getDictionary } from "@/lib/dictionary";
+import { formatCurrency } from "@/lib/currencyUtils";
 
 // Helper for angled number badge
 const NumberBadge = ({ num }: { num: number }) => (
-  <div className="relative flex items-center justify-center w-10 h-10 overflow-hidden rounded-l-md rounded-br-2xl bg-gradient-to-br from-blue-700 to-blue-900 shrink-0 transform -skew-x-12 ml-2 border border-blue-500/50 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
+  <div className="relative flex items-center justify-center w-10 h-10 overflow-hidden rounded-l-md rounded-br-2xl bg-gradient-to-br from-theme-primary to-black/40 shrink-0 transform -skew-x-12 ml-2 border border-theme-primary/50 shadow-[0_0_15px_var(--accent-glow)]">
     <span className="text-white font-black italic text-lg transform skew-x-12">{num}</span>
   </div>
 );
@@ -29,6 +31,8 @@ export function StorefrontGameForm({
   paymentChannels: any[],
   themeConfig: any
 }) {
+  const dict = getDictionary(themeConfig?.language || 'id');
+  const currency = themeConfig?.currency || (themeConfig?.language === 'ms' ? 'MYR' : 'IDR');
   const { showNotification, NotificationComponent } = useNotification();
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
@@ -233,9 +237,9 @@ export function StorefrontGameForm({
     <form onSubmit={handleCheckout} className="space-y-6 lg:mt-6 w-full relative pb-36 md:pb-0">
       {NotificationComponent}
       {/* 1. Account Detail */}
-      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-[#111111]">
-        <div className="border-b border-border/30 bg-[#0a0a0a] p-4 relative">
-          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-blue-600 rounded-l-xl"></div>
+      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-theme-card">
+        <div className="border-b border-border/30 bg-theme-background p-4 relative">
+          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-theme-primary rounded-l-xl"></div>
           <div className="flex items-center gap-4 pl-3">
             <NumberBadge num={1} />
             <h2 className="text-lg font-bold text-white tracking-wide">Masukkan Data Akun Kamu</h2>
@@ -248,12 +252,12 @@ export function StorefrontGameForm({
           {/* Panduan Modal - Moved to bottom of section 1 */}
           {game.guide_image_url && (
             <Dialog>
-              <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg w-fit h-10 px-4 mt-2 transition-colors">
-                <Info className="w-4 h-4 mr-2" /> Lihat Panduan Pengisian
+              <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap bg-theme-primary hover:bg-theme-primary brightness-90 text-white font-semibold rounded-lg w-fit h-10 px-4 mt-2 transition-colors">
+                <Info className="w-4 h-4 mr-2" /> {dict.game_guide_btn}
               </DialogTrigger>
               <DialogContent className="sm:max-w-md border-primary/20">
                 <DialogHeader>
-                  <DialogTitle className="font-bold text-xl">Panduan Pengisian</DialogTitle>
+                  <DialogTitle className="font-bold text-xl">{dict.game_guide_title}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
                   <div className="relative w-full h-[250px] rounded-xl overflow-hidden border-2 border-border bg-black/20">
@@ -272,9 +276,9 @@ export function StorefrontGameForm({
       </div>
 
       {/* 2. Nominal Top Up */}
-      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-[#111111]">
-        <div className="border-b border-border/30 bg-[#0a0a0a] p-4 relative">
-          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-blue-600 rounded-l-xl"></div>
+      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-theme-card">
+        <div className="border-b border-border/30 bg-theme-background p-4 relative">
+          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-theme-primary rounded-l-xl"></div>
           <div className="flex items-center gap-4 pl-3">
             <NumberBadge num={2} />
             <h2 className="text-lg font-bold text-white tracking-wide">Pilih Nominal Top Up</h2>
@@ -283,7 +287,7 @@ export function StorefrontGameForm({
 
         <div className="p-6">
           {hasVariants && (
-            <div className="flex flex-wrap items-center gap-2 mb-6 bg-[#0a0a0a] p-1.5 rounded-xl border border-border/20 w-fit">
+            <div className="flex flex-wrap items-center gap-2 mb-6 bg-theme-background p-1.5 rounded-xl border border-border/20 w-fit">
               {variants.map((v) => (
                 <button
                   key={v}
@@ -292,7 +296,7 @@ export function StorefrontGameForm({
                     setSelectedVariant(v);
                     setSelectedProduct(null); // Reset product selection on tab change
                   }}
-                  className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${selectedVariant === v ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                  className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${selectedVariant === v ? 'bg-theme-primary text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                 >
                   {v}
                 </button>
@@ -313,7 +317,7 @@ export function StorefrontGameForm({
                     <div
                       key={p.id}
                       onClick={() => setSelectedProduct(p)}
-                      className={`rounded-xl overflow-hidden cursor-pointer transition-all border-2 flex flex-col justify-between group ${isSelected ? 'border-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)] bg-blue-500/10' : 'border-border/30 bg-[#1c1d21] hover:border-blue-500/50 hover:bg-[#25262b]'}`}
+                      className={`rounded-xl overflow-hidden cursor-pointer transition-all border-2 flex flex-col justify-between group ${isSelected ? 'border-theme-primary shadow-[0_0_15px_var(--accent-glow)] bg-[var(--accent-glow)]' : 'border-border/30 bg-theme-card hover:border-theme-primary/50 hover:bg-[#25262b]'}`}
                     >
                       {/* Top Grey Area */}
                       <div className={`p-4 flex flex-col items-center justify-center flex-1 transition-colors ${isSelected ? 'bg-transparent' : 'bg-[#313338]/50 group-hover:bg-transparent'}`}>
@@ -331,17 +335,17 @@ export function StorefrontGameForm({
                             />
                           </div>
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30 mt-auto">
-                            <ShoppingCart className="w-6 h-6 text-blue-400" />
+                          <div className="w-12 h-12 rounded-full bg-[var(--accent-glow)] flex items-center justify-center border border-theme-primary/30 mt-auto">
+                            <ShoppingCart className="w-6 h-6 text-theme-primary opacity-90" />
                           </div>
                         )}
                       </div>
 
                       {/* Bottom Dark Area */}
-                      <div className={`p-3 text-center border-t border-border/20 ${isSelected ? 'bg-blue-600' : 'bg-[#151618] group-hover:bg-[#1a1b1e]'}`}>
-                        <p className="text-xs text-white/50 mb-0.5">Harga</p>
+                      <div className={`p-3 text-center border-t border-border/20 ${isSelected ? 'bg-theme-primary' : 'bg-[#151618] group-hover:bg-[#1a1b1e]'}`}>
+                        <p className="text-xs text-white/50 mb-0.5">{dict.game_price_label}</p>
                         <p className={`font-extrabold text-sm md:text-base ${isSelected ? 'text-white' : 'text-white'}`}>
-                          Rp {p.price.toLocaleString('id-ID')}
+                          {formatCurrency(p.price, currency)}
                         </p>
                       </div>
                     </div>
@@ -350,7 +354,7 @@ export function StorefrontGameForm({
               </div>
             ) : (
               <div className="py-12 text-center text-muted-foreground border-2 border-dashed rounded-xl border-border/20 bg-black/20">
-                <p>Belum ada produk top-up yang tersedia.</p>
+                <p>{dict.game_empty_products}</p>
               </div>
             );
           })()}
@@ -358,16 +362,16 @@ export function StorefrontGameForm({
       </div>
 
       {/* 3. Metode Pembayaran */}
-      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-[#111111]">
-        <div className="border-b border-border/30 bg-[#0a0a0a] p-4 relative">
-          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-blue-600 rounded-l-xl"></div>
+      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-theme-card">
+        <div className="border-b border-border/30 bg-theme-background p-4 relative">
+          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-theme-primary rounded-l-xl"></div>
           <div className="flex items-center gap-4 pl-3">
             <NumberBadge num={3} />
             <h2 className="text-lg font-bold text-white tracking-wide">Pilih Pembayaran</h2>
           </div>
         </div>
 
-        <div className="p-4 space-y-4 bg-[#111111]">
+        <div className="p-4 space-y-4 bg-theme-card">
           {/* Info Box */}
 
           {/* Wallet Payment Channel (Khusus Member) */}
@@ -386,11 +390,11 @@ export function StorefrontGameForm({
                       if (isDisabled) return;
                       setSelectedPayment(pc);
                     }}
-                    className={`relative rounded-xl border-2 transition-all overflow-hidden ${isDisabled ? 'opacity-50 cursor-not-allowed border-transparent bg-[#25262b]' : 'cursor-pointer'} ${isSelected && !isDisabled ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(37,99,235,0.15)]' : !isDisabled ? 'border-blue-500/30 bg-[#25262b] hover:border-blue-500/60 hover:bg-[#2a2b30]' : ''}`}
+                    className={`relative rounded-xl border-2 transition-all overflow-hidden ${isDisabled ? 'opacity-50 cursor-not-allowed border-transparent bg-[#25262b]' : 'cursor-pointer'} ${isSelected && !isDisabled ? 'border-theme-primary bg-[var(--accent-glow)] shadow-[0_0_15px_var(--accent-glow)]' : !isDisabled ? 'border-theme-primary/30 bg-[#25262b] hover:border-theme-primary/60 hover:bg-[#2a2b30]' : ''}`}
                   >
                     {/* Tooltip / Badge */}
-                    <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-blue-400 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-lg z-10 tracking-widest uppercase">
-                      Khusus Member
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-theme-primary to-theme-primary/70 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-lg z-10 tracking-widest uppercase">
+                      {dict.game_member_only}
                     </div>
                     {/* Primary Row */}
                     <div className="p-4 flex items-center gap-4">
@@ -404,14 +408,14 @@ export function StorefrontGameForm({
                       <div className="flex-1">
                         <p className="font-bold text-sm md:text-base text-white/95">{pc.name}</p>
                         {selectedProduct && (
-                          <p className="text-sm font-semibold text-blue-400 mt-1">Rp {totalPrice.toLocaleString('id-ID')}</p>
+                          <p className="text-sm font-semibold text-theme-primary opacity-90 mt-1">{formatCurrency(totalPrice, currency)}</p>
                         )}
                         <p className={`text-xs mt-1 font-bold ${isWalletInsufficient ? 'text-red-400' : 'text-green-400'}`}>
-                          Saldo Anda: Rp {(walletBalance || 0).toLocaleString('id-ID')}
-                          {isWalletInsufficient && ` (Kurang Rp ${(totalPrice - (walletBalance || 0)).toLocaleString('id-ID')})`}
+                          Saldo Anda: {formatCurrency(walletBalance || 0, currency)}
+                          {isWalletInsufficient && ` (Kurang ${formatCurrency(totalPrice - (walletBalance || 0), currency)})`}
                         </p>
                       </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-blue-500' : 'border-muted-foreground'}`}>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-theme-primary' : 'border-muted-foreground'}`}>
                         {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
                       </div>
                     </div>
@@ -428,17 +432,17 @@ export function StorefrontGameForm({
                 const items = groupedPayments[category];
 
                 return (
-                  <div key={category} className="rounded-xl overflow-hidden shadow-md border border-border/30 bg-[#1c1d21]">
+                  <div key={category} className="rounded-xl overflow-hidden shadow-md border border-border/30 bg-theme-card">
                     {/* Accordion Header */}
                     <div
                       onClick={() => setOpenCategory(isOpen ? null : category)}
-                      className="bg-blue-600 p-4 cursor-pointer flex items-center justify-between transition-colors hover:bg-blue-700"
+                      className="bg-theme-primary p-4 cursor-pointer flex items-center justify-between transition-colors hover:bg-theme-primary brightness-90"
                     >
                       <div className="flex items-center gap-2">
                         <h3 className="font-bold text-white text-base md:text-lg tracking-wide">{category}</h3>
                         {category === "QRIS" && (
                           <span className="text-[10px] md:text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-bold">
-                            Bebas Biaya Admin
+                            {dict.game_free_admin_fee}
                           </span>
                         )}
                       </div>
@@ -468,7 +472,7 @@ export function StorefrontGameForm({
                               <div
                                 key={pc.id}
                                 onClick={() => setSelectedPayment(pc)}
-                                className={`rounded-xl border-2 transition-all overflow-hidden cursor-pointer ${isSelected ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(37,99,235,0.15)]' : 'border-transparent bg-[#25262b] hover:border-blue-500/40 hover:bg-[#2a2b30]'}`}
+                                className={`rounded-xl border-2 transition-all overflow-hidden cursor-pointer ${isSelected ? 'border-theme-primary bg-[var(--accent-glow)] shadow-[0_0_15px_var(--accent-glow)]' : 'border-transparent bg-[#25262b] hover:border-theme-primary/40 hover:bg-[#2a2b30]'}`}
                               >
                                 {/* Primary Row */}
                                 <div className="p-4 flex items-center gap-4">
@@ -482,10 +486,10 @@ export function StorefrontGameForm({
                                   <div className="flex-1">
                                     <p className="font-bold text-sm md:text-base text-white/95">{pc.name}</p>
                                     {selectedProduct && (
-                                      <p className="text-sm font-semibold text-blue-400 mt-1">Rp {totalPrice.toLocaleString('id-ID')}</p>
+                                      <p className="text-sm font-semibold text-theme-primary opacity-90 mt-1">{formatCurrency(totalPrice, currency)}</p>
                                     )}
                                   </div>
-                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-blue-500' : 'border-muted-foreground'}`}>
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'border-theme-primary' : 'border-muted-foreground'}`}>
                                     {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
                                   </div>
                                 </div>
@@ -503,7 +507,7 @@ export function StorefrontGameForm({
                                       {pc.account_number && (
                                         <div>
                                           <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Nomor Rekening</p>
-                                          <p className="font-mono font-bold text-blue-400 text-sm bg-blue-500/10 w-fit px-2 py-0.5 rounded">{pc.account_number}</p>
+                                          <p className="font-mono font-bold text-theme-primary opacity-90 text-sm bg-[var(--accent-glow)] w-fit px-2 py-0.5 rounded">{pc.account_number}</p>
                                         </div>
                                       )}
                                     </div>
@@ -521,45 +525,45 @@ export function StorefrontGameForm({
             </div>
           ) : (
             <div className="py-8 text-center text-muted-foreground border-2 border-dashed rounded-xl border-border/20 bg-black/20">
-              <p>Belum ada metode pembayaran yang tersedia.</p>
+              <p>{dict.game_empty_payments}</p>
             </div>
           )}
         </div>
       </div>
 
       {/* 4. Detail Kontak */}
-      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-[#111111]">
-        <div className="border-b border-border/30 bg-[#0a0a0a] p-4 relative">
-          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-blue-600 rounded-l-xl"></div>
+      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-theme-card">
+        <div className="border-b border-border/30 bg-theme-background p-4 relative">
+          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-theme-primary rounded-l-xl"></div>
           <div className="flex items-center gap-4 pl-3">
             <NumberBadge num={4} />
             <h2 className="text-lg font-bold text-white tracking-wide">Detail Kontak</h2>
           </div>
         </div>
-        <div className="p-4 bg-[#111111]">
+        <div className="p-4 bg-theme-card">
           <div className="space-y-2">
             <label className="text-sm font-medium text-white">No. WhatsApp</label>
             <div className="flex items-center rounded-xl bg-[#d1d5db] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
               <div className="flex items-center justify-center px-4 border-r border-gray-400 bg-[#d1d5db]">
-                <span className="text-xl">🇮🇩</span>
+                <span className="text-xl">{(themeConfig?.language === 'ms' || currency === 'MYR') ? '🇲🇾' : '🇮🇩'}</span>
               </div>
               <input
                 type="tel"
                 required
-                pattern="^(08|62|\+62)\d{8,13}$"
+                pattern={(themeConfig?.language === 'ms' || currency === 'MYR') ? "^(\\+?60|60|01)\\d{7,11}$" : "^(08|62|\\+62)\\d{8,13}$"}
                 value={waNumber}
                 onChange={(e) => setWaNumber(e.target.value)}
-                placeholder="628"
+                placeholder={dict.game_wa_placeholder}
                 className="flex h-12 flex-1 border-none bg-transparent px-4 py-2 text-sm text-black placeholder:text-gray-600 font-medium focus-visible:outline-none"
               />
             </div>
             <p className="text-[11px] text-muted-foreground italic mt-1">
-              *Contoh: 62821xxxxxxxxx (No WhatsApp wajib diisi)
+              {dict.game_wa_note}
             </p>
             <div className="mt-4 flex items-center gap-2 rounded-lg bg-[#eef2ff] px-3 py-2.5 border border-blue-200 shadow-sm">
-              <Info className="w-5 h-5 text-blue-600 shrink-0" />
+              <Info className="w-5 h-5 text-theme-primary shrink-0" />
               <p className="text-sm text-blue-800 font-medium">
-                <span className="font-bold">Informasi:</span> Bukti transaksi akan kami kirim ke WhatsApp atau email yang kamu isi di atas.
+                {dict.game_wa_info}
               </p>
             </div>
           </div>
@@ -567,15 +571,15 @@ export function StorefrontGameForm({
       </div>
 
       {/* 5. Kode Promo */}
-      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-[#111111]">
-        <div className="border-b border-border/30 bg-[#0a0a0a] p-4 relative">
-          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-blue-600 rounded-l-xl"></div>
+      <div className="border border-border/40 shadow-xl overflow-hidden rounded-xl bg-theme-card">
+        <div className="border-b border-border/30 bg-theme-background p-4 relative">
+          <div className="absolute top-0 left-0 bottom-0 w-[5px] bg-theme-primary rounded-l-xl"></div>
           <div className="flex items-center gap-4 pl-3">
             <NumberBadge num={5} />
             <h2 className="text-lg font-bold text-white tracking-wide">Kode Promo</h2>
           </div>
         </div>
-        <div className="p-4 bg-[#111111]">
+        <div className="p-4 bg-theme-card">
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-white">Kode Promo</label>
@@ -587,8 +591,8 @@ export function StorefrontGameForm({
                   placeholder="Masukkan Kode Promo Anda"
                   className="flex h-12 flex-1 rounded-xl border-none bg-[#d1d5db] px-4 py-2 text-sm text-black placeholder:text-gray-600 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 uppercase"
                 />
-                <Button type="button" onClick={handleCheckPromo} disabled={!promoCodeInput || isPromoChecking} className="bg-blue-700 hover:bg-blue-800 text-white font-bold h-12 px-6 rounded-xl shrink-0 transition-colors">
-                  {isPromoChecking ? 'Cek...' : 'Gunakan'}
+                <Button type="button" onClick={handleCheckPromo} disabled={!promoCodeInput || isPromoChecking} className="bg-theme-primary brightness-90 hover:bg-theme-primary brightness-75 text-white font-bold h-12 px-6 rounded-xl shrink-0 transition-colors">
+                  {isPromoChecking ? dict.game_promo_checking : dict.game_promo_btn_check}
                 </Button>
               </div>
             </div>
@@ -598,7 +602,7 @@ export function StorefrontGameForm({
               </p>
             )}
             <Button type="button" onClick={handleOpenPromoModal} className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold h-11 px-5 rounded-xl flex items-center gap-2 w-fit transition-colors shadow-lg">
-              <Ticket className="w-5 h-5" /> Cek Promo Yang Tersedia
+              <Ticket className="w-5 h-5" /> {dict.game_promo_avail_btn}
             </Button>
           </div>
         </div>
@@ -614,25 +618,25 @@ export function StorefrontGameForm({
                 <div className="flex items-baseline gap-2">
                   {appliedPromo && (
                     <p className="text-[10px] font-bold text-muted-foreground line-through decoration-red-500">
-                      Rp {selectedProduct.price.toLocaleString('id-ID')}
+                      {formatCurrency(selectedProduct.price, currency)}
                     </p>
                   )}
-                  <p className="text-sm font-black text-blue-400">Rp {totalPrice.toLocaleString('id-ID')}</p>
+                  <p className="text-sm font-black text-theme-primary opacity-90">{formatCurrency(totalPrice, currency)}</p>
                 </div>
               </>
             ) : (
               <div className="flex items-center gap-2 text-muted-foreground">
-                <ShoppingCart className="w-4 h-4 text-blue-400 shrink-0" />
-                <p className="text-xs font-medium text-white/70">Pilih Nominal & Pembayaran</p>
+                <ShoppingCart className="w-4 h-4 text-theme-primary opacity-90 shrink-0" />
+                <p className="text-xs font-medium text-white/70">{dict.game_bar_select_prompt}</p>
               </div>
             )}
           </div>
           <Button
             type="submit"
             disabled={!selectedProduct || !selectedPayment || isCheckingUsername}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 h-10 text-xs rounded-xl shadow-lg shadow-blue-600/30 shrink-0 disabled:opacity-50"
+            className="bg-theme-primary hover:bg-theme-primary brightness-90 text-white font-bold px-5 h-10 text-xs rounded-xl shadow-lg shadow-[var(--accent-glow)] shrink-0 disabled:opacity-50"
           >
-            {isCheckingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pesan Sekarang!"}
+            {isCheckingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : dict.game_order_now}
           </Button>
         </div>
       </div>
@@ -641,7 +645,7 @@ export function StorefrontGameForm({
       <div className="hidden md:flex flex-col sticky bottom-6 z-40 mt-6 gap-3">
         {selectedProduct ? (
           <>
-            <div className="bg-[#0a0a0a] border border-dashed border-border/40 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
+            <div className="bg-theme-background border border-dashed border-border/40 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
               {game.image_url && (
                 <div className="w-16 h-16 relative shrink-0 rounded-xl overflow-hidden border border-border/20 shadow-md">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -652,13 +656,13 @@ export function StorefrontGameForm({
                 <p className="font-bold text-white text-base mb-1">{game.name}</p>
                 <div className="flex items-center text-sm font-semibold mb-1">
                   {appliedPromo && (
-                    <span className="text-muted-foreground line-through decoration-red-500 mr-2 text-xs">Rp. {selectedProduct.price.toLocaleString('id-ID')}</span>
+                    <span className="text-muted-foreground line-through decoration-red-500 mr-2 text-xs">{formatCurrency(selectedProduct.price, currency)}</span>
                   )}
-                  <span className="text-[#facc15]">Rp. {totalPrice.toLocaleString('id-ID')}</span>
+                  <span className="text-[#facc15]">{formatCurrency(totalPrice, currency)}</span>
                   <span className="text-white mx-2">-</span>
                   <span className="text-white">{selectedPayment?.name || "Pilih Pembayaran"}</span>
                 </div>
-                <p className="text-xs text-muted-foreground italic">**Waktu proses instan</p>
+                <p className="text-xs text-muted-foreground italic">{dict.game_sticky_instant}</p>
               </div>
             </div>
             <Button
@@ -668,38 +672,38 @@ export function StorefrontGameForm({
               className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold h-12 text-base rounded-xl transition-all shadow-lg"
             >
               {isCheckingUsername ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShoppingCart className="w-5 h-5 mr-2" />}
-              {isCheckingUsername ? "Mengecek..." : "Pesan Sekarang!"}
+              {isCheckingUsername ? dict.game_sticky_checking : dict.game_order_now}
             </Button>
           </>
         ) : (
-          <div className="bg-[#0a0a0a] border border-dashed border-border/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 shadow-xl">
+          <div className="bg-theme-background border border-dashed border-border/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 shadow-xl">
             <ShoppingCart className="w-8 h-8 text-muted-foreground opacity-50" />
-            <p className="text-sm font-medium text-muted-foreground">Silakan pilih nominal Top Up dan Pembayaran terlebih dahulu.</p>
+            <p className="text-sm font-medium text-muted-foreground">{dict.game_sticky_empty}</p>
           </div>
         )}
       </div>
 
       <Dialog open={isPromoModalOpen} onOpenChange={setIsPromoModalOpen}>
-        <DialogContent className="bg-[#111111] border-border/40 text-white max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-theme-card border-border/40 text-white max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Promo Tersedia</DialogTitle>
+            <DialogTitle>{dict.game_promo_modal_title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             {availablePromos.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">Tidak ada promo yang tersedia saat ini.</p>
+              <p className="text-muted-foreground text-center py-4">{dict.game_promo_modal_empty}</p>
             ) : (
               availablePromos.map(p => (
                 <div key={p.code} className="border border-border/40 rounded-xl p-4 bg-[#1a1b1e] flex items-center justify-between">
                   <div>
-                    <p className="font-bold text-blue-400 text-lg">{p.code}</p>
+                    <p className="font-bold text-theme-primary opacity-90 text-lg">{p.code}</p>
                     <p className="text-sm text-white/80">
-                      Diskon {p.discount_type === 'percentage' ? `${p.discount_value}%` : `Rp ${p.discount_value.toLocaleString('id-ID')}`}
+                      Diskon {p.discount_type === 'percentage' ? `${p.discount_value}%` : `${formatCurrency(p.discount_value, currency)}`}
                     </p>
                   </div>
                   <Button type="button" size="sm" onClick={() => {
                     setPromoCodeInput(p.code);
                     setIsPromoModalOpen(false);
-                  }} className="bg-blue-600 hover:bg-blue-700 text-xs">Pilih</Button>
+                  }} className="bg-theme-primary hover:bg-theme-primary brightness-90 text-xs">{dict.game_promo_select}</Button>
                 </div>
               ))
             )}
@@ -709,14 +713,14 @@ export function StorefrontGameForm({
 
       {/* Confirmation Modal */}
       <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
-        <DialogContent className="bg-[#1c1d21] border-border/20 text-white sm:max-w-md p-0 overflow-hidden">
+        <DialogContent className="bg-theme-card border-border/20 text-white sm:max-w-md p-0 overflow-hidden">
           <div className="p-6 flex flex-col items-center text-center pb-4">
             <div className="w-16 h-16 bg-[#0fa770] rounded-full flex items-center justify-center mb-4 shadow-lg shadow-[#0fa770]/20">
               <CheckCircle2 className="w-10 h-10 text-white" />
             </div>
-            <h2 className="text-xl font-bold mb-2 tracking-wide">Buat Pesanan</h2>
+            <h2 className="text-xl font-bold mb-2 tracking-wide">{dict.game_confirm_title}</h2>
             <p className="text-sm text-white/80">
-              Pastikan data akun Anda dan produk yang Anda pilih valid dan sesuai.
+              {dict.game_confirm_sub}
             </p>
           </div>
 
@@ -726,7 +730,7 @@ export function StorefrontGameForm({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-1 bg-white rounded-full"></div>
-                  <h3 className="font-bold text-white text-base">Data Player</h3>
+                  <h3 className="font-bold text-white text-base">{dict.game_confirm_player}</h3>
                 </div>
                 <div className="space-y-2">
                   {accountData.map((data, idx) => (
@@ -761,7 +765,7 @@ export function StorefrontGameForm({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-1 bg-white rounded-full"></div>
-                  <h3 className="font-bold text-white text-base">Ringkasan Pembelian</h3>
+                  <h3 className="font-bold text-white text-base">{dict.game_confirm_summary}</h3>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-start justify-between text-sm">
@@ -774,7 +778,7 @@ export function StorefrontGameForm({
                   </div>
                   <div className="flex items-start justify-between text-sm">
                     <span className="text-white/70">Price</span>
-                    <span className="font-bold text-white text-right max-w-[60%]">Rp. {totalPrice.toLocaleString('id-ID')}</span>
+                    <span className="font-bold text-white text-right max-w-[60%]">{formatCurrency(totalPrice, currency)}</span>
                   </div>
                   <div className="flex items-start justify-between text-sm">
                     <span className="text-white/70">Payment</span>
@@ -791,7 +795,7 @@ export function StorefrontGameForm({
                 disabled={isSubmitting}
                 className="bg-[#4caf50] hover:bg-[#43a047] text-white font-bold h-12 rounded-xl text-base"
               >
-                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Pesan Sekarang'}
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : dict.game_confirm_btn}
               </Button>
               <Button
                 type="button"
@@ -799,7 +803,7 @@ export function StorefrontGameForm({
                 disabled={isSubmitting}
                 className="bg-[#f44336] hover:bg-[#e53935] text-white font-bold h-12 rounded-xl text-base"
               >
-                Batalkan
+                {dict.game_confirm_cancel}
               </Button>
             </div>
           </div>

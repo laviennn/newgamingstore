@@ -10,30 +10,137 @@ export default async function PrivacyPage({
   const { domain } = await params;
   const supabase = await createClient();
 
-  let tenantName = "Yowanastore";
-  let tenantDomain = "yowanastore.com";
+  let tenantName = "NewGamingStore";
+  let tenantDomain = "newgamingstore.com";
+  let language = "id";
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     let { data: tenantData } = await supabase
       .from("tenants")
-      .select("name, domain")
+      .select("name, domain, theme_config")
       .eq("domain", domain)
       .maybeSingle();
 
     if (!tenantData) {
-      const res = await supabase.from("tenants").select("name, domain").limit(1).maybeSingle();
+      const res = await supabase.from("tenants").select("name, domain, theme_config").limit(1).maybeSingle();
       if (res.data) tenantData = res.data;
     }
 
     if (tenantData) {
       tenantName = tenantData.name || tenantName;
       tenantDomain = tenantData.domain || tenantDomain;
+      language = tenantData.theme_config?.language || "id";
     }
   }
 
   const currentDate = new Date();
   const year = currentDate.getFullYear() >= 2025 ? currentDate.getFullYear() : 2025;
-  const lastUpdated = `1 November ${year}`;
+  const isEn = language === "ms";
+  const lastUpdated = isEn ? `November 1, ${year}` : `1 November ${year}`;
+
+  if (isEn) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-4xl text-gray-300 leading-relaxed">
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Privacy Policy for {tenantName}</h1>
+        <p className="text-sm text-gray-400 mb-8 border-b border-gray-800 pb-4">Last Updated: {lastUpdated}</p>
+
+        <div className="space-y-6">
+          <p>
+            This Privacy Policy describes how {tenantName} ("We", "Us", "Site", or "Company") collects, uses, discloses, and protects your personal information ("Personal Data") when you use our game top-up and voucher services through the website {tenantName}.
+          </p>
+          <p>
+            By using our services, you consent to the information collection and usage practices described in this Privacy Policy. We are committed to protecting your privacy and data security.
+          </p>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">1. Personal Data We Collect</h2>
+            <p className="text-sm md:text-base">We collect several types of information to provide and improve our service to you.</p>
+
+            <div className="space-y-4 text-sm md:text-base mt-2">
+              <div>
+                <h3 className="font-semibold text-white mb-1">A. Data Provided Directly by Users:</h3>
+                <p className="mb-2">This data is collected when you place a transaction or register an account:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong className="text-white">Basic Identity Info:</strong> Full name, email address, phone/WhatsApp number.</li>
+                  <li><strong className="text-white">Transaction Data:</strong> Information required to complete top-ups, such as Game User ID (UID), in-game nickname, or voucher service account ID.</li>
+                  <li><strong className="text-white">Payment Information:</strong> Payment confirmations, including transfer proofs or details related to your chosen payment method. We do not store sensitive credit/debit card numbers; payment data is securely handled by accredited payment service providers.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white mb-1">B. Data Collected Automatically:</h3>
+                <p className="mb-2">This data is collected automatically when you access and use the Site:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong className="text-white">Device Data:</strong> Internet Protocol (IP) address, browser type, browser version, device type (desktop/mobile), and operating system.</li>
+                  <li><strong className="text-white">Usage Data:</strong> Pages visited on our Site, duration of visit, time and date of access, and interactions (clicks) performed.</li>
+                  <li><strong className="text-white">Cookies and Tracking Technologies:</strong> We use cookies and similar tracking technologies to monitor activity on the Site and hold certain information. You can instruct your browser to refuse all cookies, though some features may not function properly without them.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">2. Use of Your Personal Data</h2>
+            <p className="text-sm md:text-base">We use the collected Personal Data for various purposes, including:</p>
+            <ul className="list-disc pl-5 space-y-2 text-sm md:text-base">
+              <li><strong className="text-white">Processing and Fulfilling Transactions:</strong> To fulfill requested game top-ups and voucher purchases, and send transaction-related notifications.</li>
+              <li><strong className="text-white">Improving Services:</strong> To analyze usage trends, test new features, and enhance website functionality.</li>
+              <li><strong className="text-white">Communication:</strong> To respond to your requests, inquiries, or complaints via email, phone, or live chat.</li>
+              <li><strong className="text-white">Marketing (Optional):</strong> To deliver promotions, discounts, or updates about new products that may interest you. You may opt out/unsubscribe at any time.</li>
+              <li><strong className="text-white">Security & Fraud Prevention:</strong> To detect, prevent, and address fraud, abuse, or unauthorized activities.</li>
+              <li><strong className="text-white">Legal Compliance:</strong> To comply with applicable legal obligations and regulations.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">3. Sharing and Disclosure of Personal Data</h2>
+            <p className="text-sm md:text-base mb-2">We do not sell or rent your Personal Data to third parties. We only share your Personal Data under the following circumstances:</p>
+            <ul className="list-disc pl-5 space-y-2 text-sm md:text-base">
+              <li><strong className="text-white">Third-Party Service Providers:</strong> We employ third-party companies or individuals to facilitate our service (e.g. payment gateway providers, product suppliers, website hosting). These parties only have access to your Personal Data to perform these tasks and are contractually obligated not to disclose or use it for any other purpose.</li>
+              <li><strong className="text-white">Game/Voucher Partners:</strong> We share Transaction Data (such as User ID and top-up quantity) with relevant game publishers or voucher suppliers to complete the fulfillment process.</li>
+              <li><strong className="text-white">Legal Compliance:</strong> We may disclose your Personal Data if required to do so by law or in response to valid requests by public authorities.</li>
+              <li><strong className="text-white">Business Transfers:</strong> If we are involved in a merger, acquisition, or asset sale, your Personal Data may be transferred as part of that transaction.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">4. Data Security</h2>
+            <p className="text-sm md:text-base">
+              The security of your Personal Data is important to us. We implement reasonable physical, technical, and managerial security measures to protect your Personal Data against unauthorized access, disclosure, alteration, or destruction.
+            </p>
+            <p className="text-sm md:text-base">
+              However, please remember that no method of transmission over the Internet or method of electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your Personal Data, we cannot guarantee its absolute security.
+            </p>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">5. Data Retention</h2>
+            <p className="text-sm md:text-base">
+              We will retain your Personal Data only for as long as necessary for the purposes set out in this Privacy Policy. We will also retain and use your Personal Data to the extent necessary to comply with our legal obligations, resolve disputes, and enforce our legal agreements.
+            </p>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">6. Your Privacy Rights</h2>
+            <p className="text-sm md:text-base mb-2">Subject to applicable law, you may have certain rights regarding your Personal Data, including the right to:</p>
+            <ul className="list-disc pl-5 space-y-1 text-sm md:text-base mb-2">
+              <li><strong className="text-white">Access:</strong> Request a copy of the Personal Data we hold about you.</li>
+              <li><strong className="text-white">Rectify:</strong> Request correction of inaccurate or incomplete Personal Data.</li>
+              <li><strong className="text-white">Delete:</strong> Request deletion of your Personal Data from our systems, subject to certain legal obligations requiring retention.</li>
+            </ul>
+            <p className="text-sm md:text-base">To exercise these rights, please contact us using the details provided on our website.</p>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">7. Changes to This Privacy Policy</h2>
+            <p className="text-sm md:text-base">
+              We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date at the top. You are advised to review this Privacy Policy periodically for any changes.
+            </p>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl text-gray-300 leading-relaxed">

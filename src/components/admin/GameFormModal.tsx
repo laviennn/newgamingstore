@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { saveGame } from "@/app/admin/(authenticated)/games/actions";
 import { uploadFile } from "@/app/actions/upload";
+import { compressImageClient } from "@/lib/client-image-compressor";
 import { useNotification } from "@/components/ui/notification";
 import { Loader2, UploadCloud } from "lucide-react";
 import Image from "next/image";
@@ -132,13 +133,14 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     
-    // Handle Main Image
+    // Handle Main Image (Preset: icon)
     const file = formData.get("image_file") as File;
     let finalImageUrl = formData.get("image_url_input") as string || game?.image_url || "";
 
     if (file && file.size > 0) {
+       const compressed = await compressImageClient(file, "icon");
        const uploadFormData = new FormData();
-       uploadFormData.append("file", file);
+       uploadFormData.append("file", compressed.file);
        const uploadResult = await uploadFile(uploadFormData);
        if (uploadResult.error) {
          showNotification("error", "Icon Upload Failed", uploadResult.error);
@@ -148,13 +150,14 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
        if (uploadResult.url) finalImageUrl = uploadResult.url;
     }
     
-    // Handle Background Image
+    // Handle Background Image (Preset: banner)
     const bgFile = formData.get("background_image_file") as File;
     let finalBgUrl = formData.get("background_image_url") as string || game?.background_image || "";
 
     if (bgFile && bgFile.size > 0) {
+       const compressedBg = await compressImageClient(bgFile, "banner");
        const uploadBgData = new FormData();
-       uploadBgData.append("file", bgFile);
+       uploadBgData.append("file", compressedBg.file);
        const uploadBgResult = await uploadFile(uploadBgData);
        if (uploadBgResult.error) {
          showNotification("error", "Background Upload Failed", uploadBgResult.error);
@@ -163,13 +166,15 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
        }
        if (uploadBgResult.url) finalBgUrl = uploadBgResult.url;
     }
-    // Handle Guide Image
+
+    // Handle Guide Image (Preset: guide)
     const guideFile = formData.get("guide_image_file") as File;
     let finalGuideUrl = formData.get("guide_image_url") as string || game?.guide_image_url || "";
 
     if (guideFile && guideFile.size > 0) {
+       const compressedGuide = await compressImageClient(guideFile, "guide");
        const uploadGuideData = new FormData();
-       uploadGuideData.append("file", guideFile);
+       uploadGuideData.append("file", compressedGuide.file);
        const uploadGuideResult = await uploadFile(uploadGuideData);
        if (uploadGuideResult.error) {
          showNotification("error", "Guide Image Upload Failed", uploadGuideResult.error);

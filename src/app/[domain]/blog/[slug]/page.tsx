@@ -3,10 +3,6 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, Calendar, User } from "lucide-react";
-import { Header } from "@/components/storefront/Header";
-import { Footer } from "@/components/storefront/Footer";
-import { FloatingWhatsapp } from "@/components/storefront/FloatingWhatsapp";
-import { MobileBottomBar } from "@/components/storefront/MobileBottomBar";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +18,9 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
   
   const supabase = await createClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let tenantConfig: any = {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let paymentChannels: any[] = [];
-
-  let { data: tenantData } = await supabase.from('tenants').select('id, theme_config').eq('domain', domain).maybeSingle();
+  let { data: tenantData } = await supabase.from('tenants').select('id').eq('domain', domain).maybeSingle();
   if (!tenantData) {
-    const res = await supabase.from('tenants').select('id, theme_config').limit(1).maybeSingle();
+    const res = await supabase.from('tenants').select('id').limit(1).maybeSingle();
     if (res.data) tenantData = res.data;
   }
   
@@ -37,7 +28,6 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
      return notFound();
   }
 
-  if (tenantData && tenantData.theme_config) tenantConfig = tenantData.theme_config;
   const tenantId = tenantData.id;
 
   const { data: article, error } = await supabase
@@ -52,20 +42,8 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
     return notFound();
   }
 
-  const { data: paymentsData } = await supabase
-    .from('payment_channels')
-    .select('*')
-    .eq("tenant_id", tenantId)
-    .eq('is_active', true)
-    .order('created_at', { ascending: true });
-  if (paymentsData) paymentChannels = paymentsData;
-
-  const logoUrl = tenantConfig.logoUrl ? fixUrl(tenantConfig.logoUrl) : null;
-
   return (
-    <div className="flex min-h-screen flex-col bg-[#050810] text-foreground">
-      <Header logoUrl={logoUrl} domain={domain} />
-
+    <div className="relative min-h-screen">
       {/* Hero Background */}
       {article.image_url && (
         <div className="absolute top-0 inset-x-0 h-[60vh] w-full -z-10 overflow-hidden opacity-30 blur-2xl pointer-events-none">
@@ -74,8 +52,8 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
         </div>
       )}
 
-      <main className="container max-w-4xl mx-auto px-4 py-12 relative z-10 flex-1">
-        <Link href="/blog" className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2 mb-8">
+      <div className="container max-w-4xl mx-auto px-4 py-12 relative z-10 flex-1">
+        <Link href="/blog" className="text-theme-primary opacity-90 hover:text-blue-300 transition-colors flex items-center gap-2 mb-8">
           <ChevronLeft className="w-5 h-5" /> Daftar Artikel
         </Link>
         
@@ -113,25 +91,11 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
 
           {/* Article Content */}
           <div 
-            className="p-6 md:p-12 prose prose-invert prose-blue max-w-none text-slate-300 leading-relaxed font-sans prose-headings:font-bold prose-headings:text-white prose-a:text-blue-400 hover:prose-a:text-blue-300"
+            className="p-6 md:p-12 prose prose-invert prose-blue max-w-none text-slate-300 leading-relaxed font-sans prose-headings:font-bold prose-headings:text-white prose-a:text-theme-primary opacity-90 hover:prose-a:text-blue-300"
             dangerouslySetInnerHTML={{ __html: article.content || "Tidak ada konten." }}
           />
         </article>
-      </main>
-
-      <Footer domain={domain} themeConfig={tenantConfig || {}} paymentChannels={paymentChannels} />
-
-      <FloatingWhatsapp 
-        whatsapp={tenantConfig.whatsapp} 
-        active={tenantConfig.waFloatingActive ?? true} 
-        avatarUrl={tenantConfig.waFloatingAvatarUrl} 
-        text={tenantConfig.waFloatingText} 
-        customMessage={tenantConfig.waDefaultMessage}
-      />
-      <MobileBottomBar 
-          waChannelActive={tenantConfig.waChannelActive ?? false}
-          waChannelUrl={tenantConfig.waChannelUrl || "#"}
-      />
+      </div>
     </div>
   );
 }

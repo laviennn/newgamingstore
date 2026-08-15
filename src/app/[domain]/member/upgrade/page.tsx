@@ -63,6 +63,8 @@ export default async function MemberUpgradePage({
       paymentChannels={paymentChannels || []}
       tenantConfig={tenantConfig}
       tenantId={tenantId}
+      language={tenantConfig.language || 'id'}
+      currency={tenantConfig.currency || (tenantConfig.language === 'ms' ? 'MYR' : 'IDR')}
     />
   );
 }

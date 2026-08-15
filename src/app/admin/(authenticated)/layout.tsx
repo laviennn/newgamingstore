@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { TenantSelector } from "@/components/admin/TenantSelector";
 import { AdminUserMenu } from "@/components/admin/AdminUserMenu";
-import { LayoutDashboard, Users, Gamepad2, ShoppingCart, FileText, Settings, Menu, Layers, BookOpen, HelpCircle, Contact, CreditCard, Palette, Tag, ChevronDown, Folder, Globe, Shield, Crown, UserCheck, Activity } from "lucide-react";
+import { LayoutDashboard, Users, Gamepad2, ShoppingCart, FileText, Settings, Menu, Layers, BookOpen, HelpCircle, Contact, CreditCard, Palette, Tag, ChevronDown, Folder, Globe, Shield, Crown, UserCheck, Activity, History } from "lucide-react";
 import { getAdminSession, setAdminTenantCookie, getActiveAdminTenantId } from "@/app/admin/actions";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -19,9 +19,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const hasPerm = (p: string) => isSuperAdmin || permissions.includes(p);
   
   const supabase = await createClient();
-  const { data: tenants } = await supabase.from('tenants').select('id, name').order('created_at', { ascending: true });
+  const { data: tenants } = await supabase.from('tenants').select('id, name, theme_config').order('created_at', { ascending: true });
   
   const currentTenantId = await getActiveAdminTenantId();
+  const currentTenant = tenants?.find((t) => t.id === currentTenantId);
 
   return (
     <div className="flex min-h-screen w-full bg-muted/40">
@@ -185,6 +186,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                     <UserCheck className="h-4 w-4" /> Operators
                   </Link>
                 )}
+                {(isSuperAdmin || hasPerm("manage_activity_logs")) && (
+                  <Link href="/activity-logs" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:text-primary hover:bg-muted/30">
+                    <History className="h-4 w-4" /> Activity Logs
+                  </Link>
+                )}
               </div>
             </details>
             )}
@@ -204,6 +210,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="flex items-center gap-4">
              {isSuperAdmin && tenants && currentTenantId && (
                 <TenantSelector tenants={tenants} currentTenantId={currentTenantId} />
+             )}
+             {!isSuperAdmin && currentTenant && (
+                <div className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs ${
+                  (currentTenant.theme_config?.currency === 'MYR' || currentTenant.theme_config?.language === 'ms')
+                    ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                    : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                }`}>
+                  <span className="text-sm leading-none">
+                    {(currentTenant.theme_config?.currency === 'MYR' || currentTenant.theme_config?.language === 'ms') ? '🇲🇾' : '🇮🇩'}
+                  </span>
+                  <span>
+                    {(currentTenant.theme_config?.currency === 'MYR' || currentTenant.theme_config?.language === 'ms') ? 'MYR (RM)' : 'IDR (Rp)'}
+                  </span>
+                </div>
              )}
              <AdminUserMenu 
                email={adminSession.email || ""} 

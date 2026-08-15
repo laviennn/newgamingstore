@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { MobileSidebar } from "@/components/storefront/MobileSidebar";
 import { GlobalSearch } from "@/components/storefront/GlobalSearch";
+import { getDictionary, Language } from "@/lib/dictionary";
 
 import { UserDropdown } from "@/components/storefront/UserDropdown";
 import { User } from "@supabase/supabase-js";
@@ -20,6 +21,7 @@ interface HeaderProps {
   authMode?: AuthMode;
   waChannelActive?: boolean;
   waChannelUrl?: string;
+  language?: Language;
 }
 
 export function Header({
@@ -30,9 +32,11 @@ export function Header({
   authMode = "email",
   waChannelActive,
   waChannelUrl,
+  language = "id",
 }: HeaderProps) {
   const isLoggedIn = !!user || !!memberSession;
   const showRegister = authMode === "email";
+  const dict = getDictionary(language);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
@@ -48,10 +52,10 @@ export function Header({
         </Link>
         
         <nav className="hidden lg:flex items-center space-x-6 text-sm font-medium">
-          <Link href="/" className="text-foreground/80 hover:text-foreground transition-colors">Beranda</Link>
-          <Link href="/track" className="text-foreground/80 hover:text-foreground transition-colors">Cek Transaksi</Link>
-          <Link href="/prices" className="text-foreground/80 hover:text-foreground transition-colors">Daftar Harga</Link>
-          <Link href="/blog" className="text-foreground/80 hover:text-foreground transition-colors">Blog</Link>
+          <Link href="/" className="text-foreground/80 hover:text-foreground transition-colors">{dict.nav_home}</Link>
+          <Link href="/track" className="text-foreground/80 hover:text-foreground transition-colors">{dict.nav_check_invoice}</Link>
+          <Link href="/prices" className="text-foreground/80 hover:text-foreground transition-colors">{dict.nav_price_list}</Link>
+          <Link href="/blog" className="text-foreground/80 hover:text-foreground transition-colors">{dict.nav_blog}</Link>
         </nav>
         
         <div className="flex-1" />
@@ -62,15 +66,15 @@ export function Header({
 
         <div className="hidden md:flex items-center justify-end space-x-1 md:space-x-3 shrink-0">
           {isLoggedIn ? (
-            <UserDropdown user={user} memberSession={memberSession} authMode={authMode} />
+            <UserDropdown user={user} memberSession={memberSession} authMode={authMode} language={language} />
           ) : (
             <>
               <Link href="/login">
-                <Button variant="ghost" className="font-semibold px-2 md:px-4 text-xs md:text-sm hover:bg-white/10 hover:text-white transition-colors">Masuk</Button>
+                <Button variant="ghost" className="font-semibold px-2 md:px-4 text-xs md:text-sm hover:bg-white/10 hover:text-white transition-colors">{dict.btn_login}</Button>
               </Link>
               {showRegister && (
                 <Link href="/register">
-                  <Button className="bg-white text-black hover:bg-gray-200 font-bold px-3 py-1 h-8 md:h-10 md:px-6 text-xs md:text-sm rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all">Daftar</Button>
+                  <Button className="bg-white text-black hover:bg-gray-200 font-bold px-3 py-1 h-8 md:h-10 md:px-6 text-xs md:text-sm rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all">{dict.btn_register}</Button>
                 </Link>
               )}
             </>
@@ -82,7 +86,7 @@ export function Header({
              <GlobalSearch />
           </div>
           {isLoggedIn && (
-            <UserDropdown user={user} memberSession={memberSession} authMode={authMode} />
+            <UserDropdown user={user} memberSession={memberSession} authMode={authMode} language={language} />
           )}
           <MobileSidebar 
             user={user}
@@ -90,6 +94,7 @@ export function Header({
             authMode={authMode}
             waChannelActive={waChannelActive}
             waChannelUrl={waChannelUrl}
+            language={language}
           />
         </div>
       </div>

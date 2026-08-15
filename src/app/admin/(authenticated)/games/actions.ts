@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
+import { logActivity, calculateDiffs } from "@/lib/activity-logger";
 
 export async function saveGame(formData: FormData, id?: string) {
   const name = formData.get("name") as string;
@@ -56,19 +57,75 @@ export async function saveGame(formData: FormData, id?: string) {
     return { error: "No active tenant selected." };
   }
 
+  const gameData = {
+    name,
+    slug,
+    image_url,
+    form_fields,
+    developer,
+    background_image,
+    category_id,
+    is_popular,
+    topup_instructions,
+    guide_image_url,
+    guide_text,
+    has_username_validator,
+    validator_provider,
+    validator_game_code,
+    sort_order,
+  };
+
   try {
     if (id) {
+      // Fetch previous state for diff calculation
+      const { data: previousGame } = await supabase
+        .from("games")
+        .select("*")
+        .eq("id", id)
+        .eq("tenant_id", tenant_id)
+        .maybeSingle();
+
       const { error } = await supabase
         .from("games")
-        .update({ name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text, has_username_validator, validator_provider, validator_game_code, sort_order })
+        .update(gameData)
         .eq("id", id)
         .eq("tenant_id", tenant_id);
       if (error) throw error;
+
+      const diffResult = calculateDiffs(previousGame, gameData);
+      await logActivity({
+        action: "UPDATE",
+        entity: "game",
+        entityId: id,
+        tenantId: tenant_id,
+        description: `Memperbarui detail game "${name}" (${diffResult.diffs.length} atribut diubah)`,
+        payload: {
+          game_id: id,
+          game_name: name,
+          previous: diffResult.previous,
+          updated: diffResult.updated,
+          diffs: diffResult.diffs,
+        },
+      });
     } else {
-      const { error } = await supabase
+      const { data: newGame, error } = await supabase
         .from("games")
-        .insert([{ tenant_id, name, slug, image_url, form_fields, developer, background_image, category_id, is_popular, topup_instructions, guide_image_url, guide_text, has_username_validator, validator_provider, validator_game_code, sort_order }]);
+        .insert([{ tenant_id, ...gameData }])
+        .select()
+        .single();
       if (error) throw error;
+
+      await logActivity({
+        action: "CREATE",
+        entity: "game",
+        entityId: newGame?.id,
+        tenantId: tenant_id,
+        description: `Menambahkan game baru "${name}" ke katalog`,
+        payload: {
+          game_id: newGame?.id,
+          ...gameData,
+        },
+      });
     }
 
     revalidatePath("/");
@@ -86,12 +143,33 @@ export async function toggleGamePopular(id: string, is_popular: boolean) {
   if (!tenant_id) return { error: "No active tenant selected." };
 
   try {
+    const { data: game } = await supabase
+      .from("games")
+      .select("name")
+      .eq("id", id)
+      .eq("tenant_id", tenant_id)
+      .maybeSingle();
+
     const { error } = await supabase
       .from("games")
       .update({ is_popular })
       .eq("id", id)
       .eq("tenant_id", tenant_id);
     if (error) throw error;
+
+    await logActivity({
+      action: "TOGGLE_STATUS",
+      entity: "game",
+      entityId: id,
+      tenantId: tenant_id,
+      description: `Mengubah status populer game "${game?.name || id}" menjadi ${is_popular ? "Populer ⭐" : "Biasa"}`,
+      payload: {
+        game_id: id,
+        game_name: game?.name,
+        is_popular,
+      },
+    });
+
     revalidatePath("/admin/games");
     revalidatePath("/");
     return { success: true };
@@ -106,8 +184,27 @@ export async function deleteGame(id: string) {
   if (!tenant_id) return { error: "No active tenant selected." };
 
   try {
+    const { data: game } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", id)
+      .eq("tenant_id", tenant_id)
+      .maybeSingle();
+
     const { error } = await supabase.from("games").delete().eq("id", id).eq("tenant_id", tenant_id);
     if (error) throw error;
+
+    await logActivity({
+      action: "DELETE",
+      entity: "game",
+      entityId: id,
+      tenantId: tenant_id,
+      description: `Menghapus game "${game?.name || id}" beserta produk terkait`,
+      payload: {
+        deleted_game: game || { id },
+      },
+    });
+
     revalidatePath("/admin/games");
     revalidatePath("/admin/products");
     return { success: true };
@@ -133,6 +230,17 @@ export async function updateGamesOrder(orderedIds: string[]) {
     const results = await Promise.all(updates);
     const firstError = results.find(r => r.error)?.error;
     if (firstError) throw firstError;
+
+    await logActivity({
+      action: "REORDER",
+      entity: "game",
+      tenantId: tenant_id,
+      description: `Mengubah urutan tampilan katalog (${orderedIds.length} game)`,
+      payload: {
+        total_games_reordered: orderedIds.length,
+        ordered_ids: orderedIds,
+      },
+    });
 
     revalidatePath("/");
     revalidatePath("/admin/games");

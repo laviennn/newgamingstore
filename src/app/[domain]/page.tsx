@@ -11,7 +11,7 @@ import { CategorySection } from "@/components/storefront/CategorySection";
 import { SnowfallEffect } from "@/components/storefront/SnowfallEffect";
 import { LatestArticlesSection } from "@/components/storefront/LatestArticlesSection";
 import { FaqSection } from "@/components/storefront/FaqSection";
-import { hexToHsl } from "@/lib/utils";
+import { getDictionary } from "@/lib/dictionary";
 
 export const dynamic = "force-dynamic";
 
@@ -183,32 +183,16 @@ export default async function StorefrontPage({
   const promoHeadline = tenantConfig.promoHeadline || "";
   const promoCode = tenantConfig.promoCode || "";
   const heroBackgroundUrl = fixUrl(tenantConfig.heroBackgroundUrl);
+  const language = tenantConfig.language || 'id';
+  const dict = getDictionary(language);
 
-  const colors = tenantConfig.colors || {};
-  const primaryColor = colors.primary ? hexToHsl(colors.primary) : null;
-  const backgroundColor = colors.background ? hexToHsl(colors.background) : null;
-  const cardColor = colors.card ? hexToHsl(colors.card) : null;
-  const textColor = colors.text ? hexToHsl(colors.text) : null;
+
 
   return (
     <>
       <h1 className="sr-only">Home - {tenantConfig.seoTitle || "Gaming Store"}</h1>
 
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          :root, .dark {
-            ${primaryColor ? `--primary: ${primaryColor};` : ''}
-            ${primaryColor ? `--ring: ${primaryColor};` : ''}
-            ${backgroundColor ? `--background: ${backgroundColor};` : ''}
-            ${cardColor ? `--card: ${cardColor};` : ''}
-            ${textColor ? `--foreground: ${textColor};` : ''}
-            ${textColor ? `--card-foreground: ${textColor};` : ''}
-            ${cardColor ? `--popover: ${cardColor};` : ''}
-            ${textColor ? `--popover-foreground: ${textColor};` : ''}
-            ${cardColor ? `--muted: ${cardColor};` : ''}
-          }
-        `
-      }} />
+
 
       {/* Global Background Layer (Full Page) */}
       <div className="fixed inset-0 w-full h-full -z-20 pointer-events-none bg-background">
@@ -230,14 +214,14 @@ export default async function StorefrontPage({
         >
           {/* Content (Slider) */}
           <div className="container relative z-10 mx-auto px-4 group">
-            <HeroSlider sliders={sliders} domain={domain} />
+            <HeroSlider sliders={sliders} domain={domain} language={language} />
           </div>
         </section>
 
         {/* Flash Sale Section */}
         {flashSaleProducts.length > 0 && (
           <section className="container mx-auto px-4 -mt-4 relative z-20">
-            <FlashSaleSection products={flashSaleProducts} />
+            <FlashSaleSection products={flashSaleProducts} language={language} />
           </section>
         )}
 
@@ -247,11 +231,11 @@ export default async function StorefrontPage({
             <div className="rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-background px-6 py-6 border border-primary/20 shadow-[0_0_30px_rgba(var(--primary),0.1)] flex flex-col md:flex-row items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">{promoHeadline}</h2>
-                <p className="text-sm text-muted-foreground mt-1">Dapatkan diskon spesial untuk top-up pertamamu!</p>
+                <p className="text-sm text-muted-foreground mt-1">{dict.home_promo_desc}</p>
               </div>
               {promoCode && (
                 <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/10">
-                  <span className="text-sm text-muted-foreground">Gunakan Kode:</span>
+                  <span className="text-sm text-muted-foreground">{dict.home_promo_code_label}</span>
                   <span className="font-bold text-primary tracking-wider text-lg">{promoCode}</span>
                 </div>
               )}
@@ -265,9 +249,9 @@ export default async function StorefrontPage({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <span className="text-xl md:text-2xl">🔥</span>
-                <h2 className="text-xl md:text-2xl font-black tracking-tight text-white uppercase">POPULER!</h2>
+                <h2 className="text-xl md:text-2xl font-black tracking-tight text-white uppercase">{dict.home_popular_title}</h2>
               </div>
-              <p className="text-sm md:text-base text-muted-foreground">Beberapa produk yang paling populer saat ini.</p>
+              <p className="text-sm md:text-base text-muted-foreground">{dict.home_popular_desc}</p>
             </div>
           </div>
 
@@ -295,7 +279,7 @@ export default async function StorefrontPage({
                         {game.image_url ? (
                           <Image src={fixUrl(game.image_url)} alt={game.name} fill sizes="80px" className="object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground font-medium">Cover</div>
+                          <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground font-medium">{dict.home_popular_cover}</div>
                         )}
                       </div>
 
@@ -305,7 +289,7 @@ export default async function StorefrontPage({
                           {game.name}
                         </h3>
                         <p className="text-[13px] text-muted-foreground truncate mt-0.5">
-                          {game.developer || "Developer"}
+                          {game.developer || dict.home_popular_dev}
                         </p>
                       </div>
                     </div>
@@ -339,21 +323,21 @@ export default async function StorefrontPage({
         {/* Categories Section */}
         {categories.length > 0 && allGames.length > 0 && (
           <section className="container mx-auto px-4 py-8 relative z-20">
-            <CategorySection categories={categories} games={allGames} />
+            <CategorySection categories={categories} games={allGames} language={language} />
           </section>
         )}
 
         {/* Latest Articles Section */}
         {articles.length > 0 && (
           <section className="container mx-auto px-4 py-12 relative z-20">
-            <LatestArticlesSection articles={articles} />
+            <LatestArticlesSection articles={articles} language={language} />
           </section>
         )}
 
         {/* FAQ Section */}
         {faqs.length > 0 && (
           <section className="container mx-auto px-4 pb-12 md:pb-20 relative z-20">
-            <FaqSection faqs={faqs} />
+            <FaqSection faqs={faqs} language={language} />
           </section>
         )}
 

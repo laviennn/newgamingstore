@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { DashboardHistoryClient } from './DashboardHistoryClient';
 import { getUnifiedSession } from '@/lib/tenantAuth';
+import { getDictionary } from '@/lib/dictionary';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -42,6 +43,8 @@ export default async function MemberDashboardPage({
     .select('theme_config')
     .eq('domain', domain)
     .maybeSingle();
+
+  const language = tenantData?.theme_config?.language || 'id';
 
   if (tenantData?.theme_config) {
     waChannelActive = tenantData.theme_config.waChannelActive ?? false;
@@ -103,10 +106,7 @@ export default async function MemberDashboardPage({
     return false;
   });
 
-  // Fallback for dev / guest orders: If no order matched email/phone specifically, show recent orders
-  if (orders.length === 0 && allOrders && allOrders.length > 0) {
-    orders = allOrders;
-  }
+  // Removed fallback dev logic to prevent data leaks for new users
 
   // Filter Deposits
   let deposits = (allDeposits || []).filter((d) => {
@@ -129,9 +129,7 @@ export default async function MemberDashboardPage({
     return false;
   });
 
-  if (deposits.length === 0 && allDeposits && allDeposits.length > 0) {
-    deposits = allDeposits; // fallback dev
-  }
+  // Removed fallback dev logic to prevent data leaks for new users
 
   // Merge & Sort History
   const mergedHistory = [...orders, ...deposits].sort(
@@ -171,6 +169,8 @@ export default async function MemberDashboardPage({
     .substring(0, 2)
     .toUpperCase();
 
+  const dict = getDictionary(language);
+
   return (
     <div className='space-y-6'>
       {/* 1. Banner Upgrade Level */}
@@ -180,37 +180,35 @@ export default async function MemberDashboardPage({
         <div className='bg-[#121212] border border-white/5 rounded-2xl p-6 flex flex-col items-start gap-4'>
           <div>
             <h2 className='text-lg font-bold text-white mb-1.5'>
-              Tingkatkan{' '}
-              <span className='text-blue-500'>Level Membership Anda</span>
+              {dict.member_upgrade_banner_t}
             </h2>
             <p className='text-gray-400 text-sm'>
-              Anda saat ini berada di Level{' '}
-              <strong className='text-white uppercase'>{level}</strong>. Upgrade
-              sekarang!
+              {dict.member_upgrade_banner_d}{' '}
+              <strong className='text-white uppercase'>{level}</strong>.
             </p>
           </div>
           <Link
             href='/member/upgrade'
             className='bg-blue-500 hover:bg-blue-400 text-white font-bold px-6 py-2.5 rounded-full transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-500/20'>
-            <span>Upgrade Membership</span>
+            <span>{dict.member_upgrade_btn}</span>
             <ArrowRight className='w-4 h-4' />
           </Link>
         </div>
       ) : (
-        <div className='bg-[#121212] border border-blue-500/20 rounded-2xl p-6 flex flex-col items-start gap-4'>
+        <div className='bg-[#121212] border border-theme-primary/20 rounded-2xl p-6 flex flex-col items-start gap-4'>
           <div>
             <h2 className='text-lg font-bold text-white mb-1.5'>
-              Membership Anda{' '}
-              <span className='text-blue-400 uppercase'>{level}</span>
+              {dict.member_active_banner_t}{' '}
+              <span className='text-theme-primary opacity-90 uppercase'>{level}</span>
             </h2>
             <p className='text-gray-400 text-sm'>
-              Nikmati berbagai benefit khusus untuk level Anda.
+              {dict.member_active_banner_d}
             </p>
           </div>
           <Link
             href='/member/upgrade'
             className='bg-[#1a1a1a] border border-gray-800 hover:border-gray-600 text-white font-bold px-6 py-2.5 rounded-full transition-all flex items-center justify-center gap-2 text-sm'>
-            <span>Lihat Paket Lain</span>
+            <span>{dict.member_active_btn}</span>
             <ArrowRight className='w-4 h-4' />
           </Link>
         </div>
@@ -235,19 +233,18 @@ export default async function MemberDashboardPage({
                 </svg>
               </div>
               <h3 className='text-lg font-bold text-white'>
-                Gabung Channel WhatsApp
+                {dict.member_wa_channel_t}
               </h3>
             </div>
             <p className='text-gray-400 text-sm mb-5 pr-8'>
-              Dapatkan info promo, kode voucher, dan update terbaru langsung di
-              WhatsApp.
+              {dict.member_wa_channel_d}
             </p>
             <a
               href={waChannelUrl}
               target='_blank'
               rel='noopener noreferrer'
               className='bg-[#25D366] hover:bg-[#1fbd58] text-white font-bold px-6 py-2.5 rounded-full transition-all text-sm inline-block shadow-lg shadow-[#25D366]/20'>
-              Gabung Sekarang
+              {dict.member_wa_channel_btn}
             </a>
           </div>
         </div>
@@ -262,7 +259,7 @@ export default async function MemberDashboardPage({
               <div className='flex items-center gap-2'>
                 <User className='w-4 h-4 text-gray-400' />
                 <span className='text-xs font-bold text-gray-400 tracking-wider'>
-                  MEMBER ID
+                  {dict.member_card_id}
                 </span>
               </div>
               {!user.isUsernameMode && (
@@ -270,7 +267,7 @@ export default async function MemberDashboardPage({
                   href='/member/profile'
                   className='bg-blue-500 hover:bg-blue-400 text-white font-semibold px-4 py-1.5 rounded-full text-xs flex items-center gap-1.5 transition-colors shadow-lg shadow-blue-500/20'>
                   <Settings className='w-3.5 h-3.5' />
-                  <span>Atur Profil</span>
+                  <span>{dict.member_card_setting}</span>
                 </Link>
               )}
             </div>
@@ -288,7 +285,7 @@ export default async function MemberDashboardPage({
               <div>
                 <div className='flex items-center gap-2 mb-1'>
                   <h3 className='text-xl font-bold text-white'>{name}</h3>
-                  <BadgeCheck className='w-5 h-5 text-blue-500' />
+                  <BadgeCheck className='w-5 h-5 text-theme-primary' />
                 </div>
                 {/* Email: hanya tampil di mode email. Username mode pakai email sintetis — sembunyikan */}
                 {user.isUsernameMode ? (
@@ -304,7 +301,7 @@ export default async function MemberDashboardPage({
                 )}
                 <div className='flex items-center gap-2 text-xs text-gray-400'>
                   <Calendar className='w-3.5 h-3.5 opacity-70' />
-                  <span>Member sejak: {createdAtFormatted}</span>
+                  <span>{dict.member_since} {createdAtFormatted}</span>
                 </div>
               </div>
             </div>
@@ -323,8 +320,8 @@ export default async function MemberDashboardPage({
           <div>
             <div className='flex items-center justify-between mb-6'>
               <div className='flex items-center gap-2'>
-                <Wallet className='w-5 h-5 text-blue-400' />
-                <h3 className='font-bold text-white text-lg'>Dompet Anda</h3>
+                <Wallet className='w-5 h-5 text-theme-primary opacity-90' />
+                <h3 className='font-bold text-white text-lg'>{dict.member_wallet_title}</h3>
               </div>
               <div className='flex items-center gap-2'>
                 <button className='w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors border border-white/10'>
@@ -333,14 +330,14 @@ export default async function MemberDashboardPage({
                 <Link
                   href='/member/deposit'
                   className='bg-blue-500 hover:bg-blue-400 text-white font-bold px-5 py-2 rounded-full text-sm transition-colors shadow-lg shadow-blue-500/20'>
-                  Deposit
+                  {dict.member_nav_deposit}
                 </Link>
               </div>
             </div>
 
             <div className='mt-8'>
               <span className='text-xs font-bold text-gray-500 tracking-wider'>
-                SALDO AKUN
+                {dict.member_wallet_balance}
               </span>
               <div className='text-4xl font-black text-white mt-1'>
                 <span className='text-gray-400 font-bold text-2xl mr-1'>
@@ -356,7 +353,7 @@ export default async function MemberDashboardPage({
       {/* 4. Statistik Transaksi Hari Ini */}
       <div>
         <h3 className='text-lg font-bold text-white mb-4'>
-          Statistik Transaksi Hari Ini
+          {dict.member_stats_title}
         </h3>
 
         <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-4'>
@@ -365,16 +362,16 @@ export default async function MemberDashboardPage({
               {pendingCount}
             </div>
             <div className='text-xs font-bold tracking-wider text-amber-500 uppercase'>
-              MENUNGGU
+              {dict.member_stat_waiting}
             </div>
           </div>
 
           <div className='bg-[#121212] border border-white/5 rounded-2xl p-4 text-center'>
-            <div className='text-3xl font-black text-blue-500 mb-1'>
+            <div className='text-3xl font-black text-theme-primary mb-1'>
               {processCount}
             </div>
-            <div className='text-xs font-bold tracking-wider text-blue-500 uppercase'>
-              DALAM PROSES
+            <div className='text-xs font-bold tracking-wider text-theme-primary uppercase'>
+              {dict.member_stat_processed}
             </div>
           </div>
 
@@ -383,7 +380,7 @@ export default async function MemberDashboardPage({
               {successCount}
             </div>
             <div className='text-xs font-bold tracking-wider text-emerald-500 uppercase'>
-              SUKSES
+              {dict.member_stat_success}
             </div>
           </div>
 
@@ -392,7 +389,7 @@ export default async function MemberDashboardPage({
               {failedCount}
             </div>
             <div className='text-xs font-bold tracking-wider text-rose-500 uppercase'>
-              GAGAL
+              {dict.member_stat_failed}
             </div>
           </div>
         </div>
@@ -403,7 +400,7 @@ export default async function MemberDashboardPage({
               {totalTransactions}
             </div>
             <div className='text-xs font-medium text-gray-400 mt-0.5'>
-              Total Transaksi
+              {dict.member_stat_total_trx}
             </div>
           </div>
 
@@ -412,14 +409,14 @@ export default async function MemberDashboardPage({
               Rp {totalSpent.toLocaleString('id-ID')}
             </div>
             <div className='text-xs font-medium text-gray-400 mt-0.5'>
-              Total Penjualan
+              {dict.member_stat_total_sale}
             </div>
           </div>
         </div>
       </div>
 
       {/* 5. Riwayat Transaksi Terbaru Table */}
-      <DashboardHistoryClient mergedHistory={mergedHistory} />
+      <DashboardHistoryClient mergedHistory={mergedHistory} language={language} />
     </div>
   );
 }

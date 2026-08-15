@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
 import { createSafeAction } from "@/lib/safe-action";
 import { UpdateProductSchema } from "@/schemas/transaction.schema";
+import { logActivity, calculateDiffs } from "@/lib/activity-logger";
 
 export const saveProductAction = createSafeAction(
   UpdateProductSchema,
@@ -22,41 +23,70 @@ export const saveProductAction = createSafeAction(
       variant_type,
     } = data;
 
+    const productPayload = {
+      game_id,
+      name,
+      price,
+      active,
+      image_url: image_url || "",
+      is_flash_sale,
+      original_price: is_flash_sale ? original_price : null,
+      flash_sale_stock: is_flash_sale ? flash_sale_stock : 0,
+      variant_type: variant_type || null,
+    };
+
     if (id) {
+      const { data: previousProd } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+
       const { error } = await supabase
         .from("products")
-        .update({
-          game_id,
-          name,
-          price,
-          active,
-          image_url: image_url || "",
-          is_flash_sale,
-          original_price: is_flash_sale ? original_price : null,
-          flash_sale_stock: is_flash_sale ? flash_sale_stock : 0,
-          variant_type: variant_type || null,
-        })
+        .update(productPayload)
         .eq("id", id)
         .eq("tenant_id", tenantId);
 
       if (error) throw error;
-    } else {
-      const { error } = await supabase.from("products").insert([
-        {
-          tenant_id: tenantId,
+
+      const diffResult = calculateDiffs(previousProd, productPayload);
+      await logActivity({
+        action: "UPDATE",
+        entity: "product",
+        entityId: id,
+        tenantId,
+        description: `Memperbarui produk "${name}" (${diffResult.diffs.length} perubahan)`,
+        payload: {
+          product_id: id,
+          product_name: name,
           game_id,
-          name,
-          price,
-          active,
-          image_url: image_url || "",
-          is_flash_sale,
-          original_price: is_flash_sale ? original_price : null,
-          flash_sale_stock: is_flash_sale ? flash_sale_stock : 0,
-          variant_type: variant_type || null,
+          previous: diffResult.previous,
+          updated: diffResult.updated,
+          diffs: diffResult.diffs,
         },
-      ]);
+      });
+    } else {
+      const { data: newProd, error } = await supabase
+        .from("products")
+        .insert([{ tenant_id: tenantId, ...productPayload }])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      await logActivity({
+        action: "CREATE",
+        entity: "product",
+        entityId: newProd?.id,
+        tenantId,
+        description: `Menambahkan produk baru "${name}" (Harga: ${price})`,
+        payload: {
+          product_id: newProd?.id,
+          ...productPayload,
+        },
+      });
     }
 
     revalidatePath("/admin/products");
@@ -102,8 +132,27 @@ export async function deleteProduct(id: string) {
   if (!tenant_id) return { error: "No active tenant selected." };
 
   try {
+    const { data: prod } = await supabase
+      .from("products")
+      .select("*")
+      .eq("id", id)
+      .eq("tenant_id", tenant_id)
+      .maybeSingle();
+
     const { error } = await supabase.from("products").delete().eq("id", id).eq("tenant_id", tenant_id);
     if (error) throw error;
+
+    await logActivity({
+      action: "DELETE",
+      entity: "product",
+      entityId: id,
+      tenantId: tenant_id,
+      description: `Menghapus produk "${prod?.name || id}"`,
+      payload: {
+        deleted_product: prod || { id },
+      },
+    });
+
     revalidatePath("/admin/products");
     return { success: true };
   } catch (err: unknown) {
@@ -132,11 +181,28 @@ export async function duplicateProduct(id: string) {
     const { id: _, created_at: __, ...productWithoutId } = product;
     productWithoutId.name = `${productWithoutId.name} (Copy)`;
 
-    const { error: insertError } = await supabase
+    const { data: clonedProd, error: insertError } = await supabase
       .from("products")
-      .insert([productWithoutId]);
+      .insert([productWithoutId])
+      .select()
+      .single();
 
     if (insertError) throw insertError;
+
+    await logActivity({
+      action: "DUPLICATE",
+      entity: "product",
+      entityId: clonedProd?.id || id,
+      tenantId: tenant_id,
+      description: `Menduplikasi produk "${product.name}" menjadi "${productWithoutId.name}"`,
+      payload: {
+        source_product_id: id,
+        cloned_product_id: clonedProd?.id,
+        source_product_name: product.name,
+        new_product_name: productWithoutId.name,
+        attributes: productWithoutId,
+      },
+    });
 
     revalidatePath("/admin/products");
     return { success: true };
@@ -151,12 +217,33 @@ export async function toggleProductStatus(id: string, active: boolean) {
   if (!tenant_id) return { error: "No active tenant selected." };
 
   try {
+    const { data: prod } = await supabase
+      .from("products")
+      .select("name")
+      .eq("id", id)
+      .eq("tenant_id", tenant_id)
+      .maybeSingle();
+
     const { error } = await supabase
       .from("products")
       .update({ active })
       .eq("id", id)
       .eq("tenant_id", tenant_id);
     if (error) throw error;
+
+    await logActivity({
+      action: "TOGGLE_STATUS",
+      entity: "product",
+      entityId: id,
+      tenantId: tenant_id,
+      description: `Mengubah status produk "${prod?.name || id}" menjadi ${active ? "Aktif ✅" : "Non-aktif ❌"}`,
+      payload: {
+        product_id: id,
+        product_name: prod?.name,
+        active,
+      },
+    });
+
     revalidatePath("/admin/products");
     return { success: true };
   } catch (err: unknown) {

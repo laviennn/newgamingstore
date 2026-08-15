@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { Flame } from "lucide-react";
+import { getDictionary, Language } from "@/lib/dictionary";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
 export interface FlashSaleProduct {
   id: string;
@@ -22,7 +24,8 @@ export interface FlashSaleProduct {
   stockRemaining: number;
 }
 
-function Countdown() {
+function Countdown({ language = 'id' }: { language?: Language }) {
+  const dict = getDictionary(language);
   const [timeLeft, setTimeLeft] = React.useState({
     days: 0,
     hours: 9,
@@ -67,28 +70,29 @@ function Countdown() {
     <div className="flex items-center gap-2 text-white font-bold text-xl md:text-2xl tracking-widest ml-0 md:ml-4">
       <div className="flex items-baseline gap-1">
         <span>{formatNumber(timeLeft.days)}</span>
-        <span className="text-[10px] text-gray-400 font-normal">HARI</span>
+        <span className="text-[10px] text-gray-400 font-normal">{dict.home_flash_days}</span>
       </div>
       <span className="text-gray-500">:</span>
       <div className="flex items-baseline gap-1">
         <span>{formatNumber(timeLeft.hours)}</span>
-        <span className="text-[10px] text-gray-400 font-normal">JAM</span>
+        <span className="text-[10px] text-gray-400 font-normal">{dict.home_flash_hours}</span>
       </div>
       <span className="text-gray-500">:</span>
       <div className="flex items-baseline gap-1">
         <span>{formatNumber(timeLeft.minutes)}</span>
-        <span className="text-[10px] text-gray-400 font-normal">MNT</span>
+        <span className="text-[10px] text-gray-400 font-normal">{dict.home_flash_mins}</span>
       </div>
       <span className="text-gray-500">:</span>
       <div className="flex items-baseline gap-1">
         <span>{formatNumber(timeLeft.seconds)}</span>
-        <span className="text-[10px] text-gray-400 font-normal">DTK</span>
+        <span className="text-[10px] text-gray-400 font-normal">{dict.home_flash_secs}</span>
       </div>
     </div>
   );
 }
 
-export function FlashSaleSection({ products }: { products: FlashSaleProduct[] }) {
+export function FlashSaleSection({ products, language = 'id', currency = 'IDR' }: { products: FlashSaleProduct[]; language?: Language; currency?: Currency }) {
+  const dict = getDictionary(language);
   const plugin = React.useRef(
     Autoplay({ delay: 3500, stopOnInteraction: false })
   );
@@ -111,11 +115,11 @@ export function FlashSaleSection({ products }: { products: FlashSaleProduct[] })
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
         <div className="flex flex-col leading-none">
-          <span className="text-[#ffb13b] font-black text-2xl italic tracking-tighter" style={{ textShadow: "2px 2px 0 #cc2900" }}>SPECIAL</span>
-          <span className="text-[#ffb13b] font-black text-2xl italic tracking-tighter -mt-1" style={{ textShadow: "2px 2px 0 #cc2900" }}>PROMO</span>
+          <span className="text-[#ffb13b] font-black text-2xl italic tracking-tighter" style={{ textShadow: "2px 2px 0 #cc2900" }}>{dict.home_flash_special}</span>
+          <span className="text-[#ffb13b] font-black text-2xl italic tracking-tighter -mt-1" style={{ textShadow: "2px 2px 0 #cc2900" }}>{dict.home_flash_promo}</span>
         </div>
 
-        <Countdown />
+        <Countdown language={language} />
       </div>
 
       <div className="w-full h-[1px] bg-white/5 mb-6" />
@@ -164,11 +168,10 @@ export function FlashSaleSection({ products }: { products: FlashSaleProduct[] })
 
                       <div className="mt-auto pb-1">
                         <div className="flex items-baseline gap-1">
-                          <span className="text-[11px] text-[#FFC107] font-bold">Rp</span>
-                          <span className="text-xl text-[#FFC107] font-black tracking-tight">{item.discountPrice.toLocaleString('id-ID')}</span>
+                          <span className="text-xl text-[#FFC107] font-black tracking-tight">{formatCurrency(item.discountPrice, currency)}</span>
                         </div>
                         <div className="text-gray-500 text-xs line-through font-semibold -mt-1">
-                          Rp {item.originalPrice.toLocaleString('id-ID')}
+                          {formatCurrency(item.originalPrice, currency)}
                         </div>
                       </div>
                     </div>
@@ -179,7 +182,7 @@ export function FlashSaleSection({ products }: { products: FlashSaleProduct[] })
                     <div className="absolute left-0 top-0 bottom-0 bg-primary" style={{ width: '40%' }} />
                     <div className="relative z-10 flex items-center gap-1.5 text-white text-[10px] font-bold tracking-wider">
                       <Flame className="w-3.5 h-3.5 text-[#ff5722] fill-[#ff5722]" />
-                      {item.stockRemaining} TERSISA
+                      {item.stockRemaining} {dict.home_flash_stock_left}
                     </div>
                   </div>
                 </div>

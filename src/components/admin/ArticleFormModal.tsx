@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { saveArticle } from "@/app/admin/(authenticated)/articles/actions";
 import { uploadFile } from "@/app/actions/upload";
+import { compressImageClient } from "@/lib/client-image-compressor";
 import { useNotification } from "@/components/ui/notification";
 import { Loader2, UploadCloud } from "lucide-react";
 import Image from "next/image";
@@ -52,13 +53,14 @@ export function ArticleFormModal({ isOpen, onClose, article }: { isOpen: boolean
 
     const formData = new FormData(e.currentTarget);
     
-    // Handle Image Upload to R2
+    // Handle Image Upload to R2 with Auto-Compression (Preset: banner)
     const file = formData.get("image_file") as File;
     let finalImageUrl = formData.get("image_url_input") as string || article?.image_url || "";
 
     if (file && file.size > 0) {
+       const compressed = await compressImageClient(file, "banner");
        const uploadFormData = new FormData();
-       uploadFormData.append("file", file);
+       uploadFormData.append("file", compressed.file);
        const uploadResult = await uploadFile(uploadFormData);
        if (uploadResult.error) {
          showNotification("error", "Upload Gagal", uploadResult.error);

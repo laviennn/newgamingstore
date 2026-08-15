@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { getDictionary, Language } from "@/lib/dictionary";
 
-export function GameDescriptionAccordion({ description }: { description: string }) {
+export function GameDescriptionAccordion({ description, language = "id" }: { description: string, language?: Language }) {
+  const dict = getDictionary(language);
   const [isOpen, setIsOpen] = useState(true); // Open by default
 
   return (
@@ -12,7 +14,7 @@ export function GameDescriptionAccordion({ description }: { description: string 
         onClick={() => setIsOpen(!isOpen)}
         className="flex cursor-pointer items-center justify-between bg-primary/5 px-5 py-4 font-bold transition-colors hover:bg-primary/10"
       >
-        Deskripsi dan cara melakukan transaksi
+        {dict.game_guide_btn.replace('Lihat ', '')}
         {isOpen ? (
           <ChevronUp className="h-5 w-5 text-primary" />
         ) : (

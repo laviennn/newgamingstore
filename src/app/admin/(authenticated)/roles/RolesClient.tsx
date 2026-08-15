@@ -34,6 +34,7 @@ const AVAILABLE_PERMISSIONS = [
     { id: "manage_theme", label: "Theme & Branding" },
     { id: "manage_roles", label: "Manage Roles & Perms" },
     { id: "manage_operators", label: "Manage Operators" },
+    { id: "manage_activity_logs", label: "Activity Logs" },
   ]},
 ];
 

@@ -3,8 +3,11 @@
 import { useState, useMemo } from "react";
 import { Search, ChevronDown, Download, RefreshCcw, LayoutGrid, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
+import { getDictionary, Language } from "@/lib/dictionary";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
-export function PricesClient({ initialGames, initialProducts }: { initialGames: any[], initialProducts: any[] }) {
+export function PricesClient({ initialGames, initialProducts, language = 'id', currency = 'IDR' }: { initialGames: any[], initialProducts: any[], language?: Language, currency?: Currency }) {
+  const dict = getDictionary(language);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -44,10 +47,7 @@ export function PricesClient({ initialGames, initialProducts }: { initialGames: 
     return result;
   }, [initialProducts, selectedGameId, searchQuery]);
 
-  // Format currency
-  const formatIDR = (price: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(price);
-  };
+
 
   // Simulate refresh
   const handleRefresh = () => {
@@ -60,10 +60,10 @@ export function PricesClient({ initialGames, initialProducts }: { initialGames: 
       {/* Hero Section */}
       <div className="pt-20 pb-12 px-4 text-center max-w-3xl mx-auto space-y-4">
         <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-          Daftar Harga Layanan
+          {dict.prices_title}
         </h1>
         <p className="text-gray-400 text-sm md:text-base">
-          Temukan harga terbaik untuk semua game favorit Anda. Kami menawarkan berbagai level keanggotaan dengan diskon eksklusif yang menguntungkan.
+          {dict.prices_desc}
         </p>
       </div>
 
@@ -74,18 +74,18 @@ export function PricesClient({ initialGames, initialProducts }: { initialGames: 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <LayoutGrid className="w-5 h-5 text-blue-500" />
-                <h2 className="text-xl font-bold text-white">Filter Game</h2>
+                <LayoutGrid className="w-5 h-5 text-theme-primary" />
+                <h2 className="text-xl font-bold text-white">{dict.prices_filter_game}</h2>
               </div>
-              <p className="text-sm text-gray-500">Pilih kategori game untuk menyaring tabel.</p>
+              <p className="text-sm text-gray-500">{dict.prices_filter_desc}</p>
             </div>
             
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Cari game favoritmu..."
-                className="w-full bg-white/5 border border-white/10 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                placeholder={dict.search_placeholder}
+                className="w-full bg-white/5 border border-white/10 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-theme-primary transition-colors"
                 onChange={(e) => {
                   // This is just a visual search for games if we wanted to filter the game list
                   // But for simplicity, we'll keep the UI identical to the reference
@@ -100,10 +100,10 @@ export function PricesClient({ initialGames, initialProducts }: { initialGames: 
               onClick={() => setSelectedGameId(null)}
               className={`snap-start shrink-0 flex flex-col items-center gap-2 group w-24`}
             >
-              <div className={`w-20 h-20 rounded-2xl flex items-center justify-center transition-all ${selectedGameId === null ? 'bg-blue-600 border-2 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-gray-800 border border-gray-700 group-hover:border-gray-500'}`}>
+              <div className={`w-20 h-20 rounded-2xl flex items-center justify-center transition-all ${selectedGameId === null ? 'bg-theme-primary border-2 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-gray-800 border border-gray-700 group-hover:border-gray-500'}`}>
                 <LayoutGrid className={`w-8 h-8 ${selectedGameId === null ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
               </div>
-              <span className={`text-[10px] font-bold tracking-wider ${selectedGameId === null ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`}>SEMUA</span>
+              <span className={`text-[10px] font-bold tracking-wider ${selectedGameId === null ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`}>{dict.prices_cat_all.toUpperCase()}</span>
             </button>
 
             {/* Game List */}
@@ -141,16 +141,16 @@ export function PricesClient({ initialGames, initialProducts }: { initialGames: 
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Cari Layanan/SKU..."
+                placeholder={dict.prices_search_sku}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-theme-primary transition-colors"
               />
             </div>
             
             <div className="relative w-full sm:w-48">
-              <select className="w-full bg-white/5 border border-white/10 rounded-lg pl-4 pr-10 py-2 text-sm text-white appearance-none focus:outline-none focus:border-blue-500 cursor-pointer">
-                <option value="all">Semua Kategori</option>
+              <select className="w-full bg-white/5 border border-white/10 rounded-lg pl-4 pr-10 py-2 text-sm text-white appearance-none focus:outline-none focus:border-theme-primary cursor-pointer">
+                <option value="all">{dict.prices_cat_all}</option>
                 {/* Mock Categories */}
                 <option value="topup">Top Up Instant</option>
                 <option value="voucher">Voucher Game</option>
@@ -192,18 +192,18 @@ export function PricesClient({ initialGames, initialProducts }: { initialGames: 
         <p className="text-sm text-gray-400 font-medium">Excel CSV</p>
 
         {/* Table */}
-        <div className="bg-[#111111] border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+        <div className="bg-theme-card border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-[#1a1a1a] border-b border-gray-800 text-gray-300 text-sm">
-                  <th className="py-4 px-6 font-bold">Kode / SKU</th>
-                  <th className="py-4 px-6 font-bold">Nama Layanan</th>
-                  <th className="py-4 px-6 font-bold text-gray-400">Harga Tamu</th>
-                  <th className="py-4 px-6 font-bold">Member</th>
-                  <th className="py-4 px-6 font-bold">Platinum</th>
-                  <th className="py-4 px-6 font-bold">Gold</th>
-                  <th className="py-4 px-6 font-bold text-center">Status</th>
+                  <th className="py-4 px-6 font-bold">{dict.prices_th_sku}</th>
+                  <th className="py-4 px-6 font-bold">{dict.prices_th_service}</th>
+                  <th className="py-4 px-6 font-bold text-gray-400">{dict.prices_th_guest}</th>
+                  <th className="py-4 px-6 font-bold">{dict.prices_th_member}</th>
+                  <th className="py-4 px-6 font-bold">{dict.prices_th_platinum}</th>
+                  <th className="py-4 px-6 font-bold">{dict.prices_th_gold}</th>
+                  <th className="py-4 px-6 font-bold text-center">{dict.prices_th_status}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50">
@@ -224,13 +224,13 @@ export function PricesClient({ initialGames, initialProducts }: { initialGames: 
                         </span>
                       </td>
                       <td className="py-3 px-6 text-gray-300 font-medium">{product.name}</td>
-                      <td className="py-3 px-6 text-gray-500 font-mono">{formatIDR(price)}</td>
-                      <td className="py-3 px-6 text-white font-bold font-mono">{formatIDR(memberPrice)}</td>
-                      <td className="py-3 px-6 text-[#38bdf8] font-bold font-mono">{formatIDR(platinumPrice)}</td>
-                      <td className="py-3 px-6 text-[#fbbf24] font-bold font-mono">{formatIDR(goldPrice)}</td>
+                      <td className="py-3 px-6 text-gray-500 font-mono">{formatCurrency(price, currency)}</td>
+                      <td className="py-3 px-6 text-white font-bold font-mono">{formatCurrency(memberPrice, currency)}</td>
+                      <td className="py-3 px-6 text-[#38bdf8] font-bold font-mono">{formatCurrency(platinumPrice, currency)}</td>
+                      <td className="py-3 px-6 text-[#fbbf24] font-bold font-mono">{formatCurrency(goldPrice, currency)}</td>
                       <td className="py-3 px-6 text-center">
                         <span className="inline-flex items-center justify-center gap-1 bg-[#123123] text-[#4ade80] border border-[#4ade80]/20 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider">
-                          <CheckCircle2 className="w-3 h-3" /> READY
+                          <CheckCircle2 className="w-3 h-3" /> {dict.prices_status_ready}
                         </span>
                       </td>
                     </tr>
@@ -240,7 +240,7 @@ export function PricesClient({ initialGames, initialProducts }: { initialGames: 
                 {filteredProducts.length === 0 && (
                   <tr>
                     <td colSpan={7} className="py-12 text-center text-gray-500">
-                      Tidak ada layanan yang sesuai dengan filter/pencarian Anda.
+                      {dict.prices_empty}
                     </td>
                   </tr>
                 )}
@@ -250,12 +250,12 @@ export function PricesClient({ initialGames, initialProducts }: { initialGames: 
           
           {/* Pagination Footer */}
           {filteredProducts.length > 0 && (
-            <div className="bg-[#0a0a0a] border-t border-gray-800 p-4 flex items-center justify-between text-sm text-gray-400">
-              <p>Menampilkan {Math.min(filteredProducts.length, rowsPerPage)} dari {filteredProducts.length} layanan</p>
+            <div className="bg-theme-background border-t border-gray-800 p-4 flex items-center justify-between text-sm text-gray-400">
+              <p>{dict.prices_pagination_showing.replace('{start}', Math.min(filteredProducts.length, rowsPerPage).toString()).replace('{total}', filteredProducts.length.toString())}</p>
               <div className="flex gap-1">
-                <button className="px-3 py-1 border border-gray-800 rounded bg-[#111111] hover:bg-white/5 transition-colors disabled:opacity-50" disabled>Prev</button>
-                <button className="px-3 py-1 border border-blue-500/30 rounded bg-blue-500/10 text-blue-400 font-bold">1</button>
-                <button className="px-3 py-1 border border-gray-800 rounded bg-[#111111] hover:bg-white/5 transition-colors disabled:opacity-50" disabled={filteredProducts.length <= rowsPerPage}>Next</button>
+                <button className="px-3 py-1 border border-gray-800 rounded bg-theme-card hover:bg-white/5 transition-colors disabled:opacity-50" disabled>Prev</button>
+                <button className="px-3 py-1 border border-theme-primary/30 rounded bg-[var(--accent-glow)] text-theme-primary opacity-90 font-bold">1</button>
+                <button className="px-3 py-1 border border-gray-800 rounded bg-theme-card hover:bg-white/5 transition-colors disabled:opacity-50" disabled={filteredProducts.length <= rowsPerPage}>Next</button>
               </div>
             </div>
           )}

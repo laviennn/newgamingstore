@@ -18,6 +18,8 @@ import {
 import { useNotification } from "@/components/ui/notification";
 import { createUpgradeOrder } from "@/components/storefront/upgradeActions";
 import { useRouter } from "next/navigation";
+import { getDictionary, Language } from "@/lib/dictionary";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
 // Hardcoded Starter Package (as requested by user)
 const STARTER_PACKAGE = {
@@ -35,11 +37,13 @@ const STARTER_PACKAGE = {
   ],
 };
 
-function formatPriceDisplay(price: number, periodLabel: string) {
-  if (price === 0) return "Gratis";
-  if (price === 550000) return `550k ${periodLabel}`;
-  if (price === 1500000) return `1,5 Juta ${periodLabel}`;
-  return `Rp ${price.toLocaleString("id-ID")} ${periodLabel}`;
+function formatPriceDisplay(price: number, periodLabel: string, lang: Language, currency: Currency) {
+  if (price === 0) return lang === "ms" ? "Percuma" : "Gratis";
+  if (currency === 'IDR') {
+    if (price === 550000) return `550k ${periodLabel}`;
+    if (price === 1500000) return `1,5 Juta ${periodLabel}`;
+  }
+  return `${formatCurrency(price, currency)} ${periodLabel}`;
 }
 
 export function UpgradeClient({
@@ -49,6 +53,8 @@ export function UpgradeClient({
   paymentChannels,
   tenantConfig,
   tenantId,
+  language = "id",
+  currency = "IDR",
 }: {
   user: UnifiedSessionUser;
   currentLevel: string;
@@ -56,7 +62,10 @@ export function UpgradeClient({
   paymentChannels: any[];
   tenantConfig: any;
   tenantId: string;
+  language?: Language;
+  currency?: Currency;
 }) {
+  const dict = getDictionary(language);
   const { showNotification, NotificationComponent } = useNotification();
   const router = useRouter();
 
@@ -99,10 +108,20 @@ export function UpgradeClient({
   const currentRole = currentLevel.toUpperCase();
 
   const allPackages = [
-    STARTER_PACKAGE,
+    {
+      ...STARTER_PACKAGE,
+      priceDisplay: formatPriceDisplay(0, "", language, currency),
+      benefits: language === "ms" ? [
+        "Harga Awam (Standard)",
+        "Ganjaran Mata per Transaksi",
+        "Kaedah Pembayaran Lengkap",
+        "Khidmat Pelanggan via Chat",
+        "Sejarah Transaksi 30 Hari",
+      ] : STARTER_PACKAGE.benefits,
+    },
     ...dynamicPackages.map(pkg => ({
       ...pkg,
-      priceDisplay: formatPriceDisplay(Number(pkg.price), pkg.period_label || "/Tahun"),
+      priceDisplay: formatPriceDisplay(Number(pkg.price), pkg.period_label || "/Tahun", language, currency),
       benefits: Array.isArray(pkg.benefits) ? pkg.benefits : [],
     })),
   ];
@@ -111,12 +130,12 @@ export function UpgradeClient({
 
   const handleProcessUpgrade = async () => {
     if (activeSelectedPkg.id === "starter") {
-      showNotification("info", "Informasi", "Anda sudah menggunakan paket Starter (Bawaan/Gratis).");
+      showNotification("info", dict.upgrade_info, dict.upgrade_already_starter);
       return;
     }
 
     if (!selectedPaymentId) {
-      showNotification("warning", "Pilih Pembayaran", "Harap pilih metode pembayaran terlebih dahulu.");
+      showNotification("warning", dict.upgrade_choose_payment, dict.upgrade_choose_payment_desc);
       return;
     }
 
@@ -132,13 +151,13 @@ export function UpgradeClient({
       });
 
       if (res.success && res.invoiceId) {
-        showNotification("success", "Invoice Dibuat", "Mengarahkan ke halaman invoice checkout...");
+        showNotification("success", dict.upgrade_invoice_created, dict.upgrade_invoice_redirect);
         router.push(`/deposit-checkout/${res.invoiceId}`);
       } else {
-        showNotification("error", "Gagal", res.message || "Gagal membuat pesanan upgrade.");
+        showNotification("error", dict.upgrade_fail, res.message || dict.upgrade_fail_desc);
       }
     } catch (err: any) {
-      showNotification("error", "Kesalahan Sistem", err.message || "Terjadi kesalahan sistem.");
+      showNotification("error", dict.upgrade_system_err, err.message || dict.upgrade_system_err_desc);
     } finally {
       setIsSubmitting(false);
     }
@@ -158,13 +177,13 @@ export function UpgradeClient({
         
         {/* Header Section */}
         <div className="flex flex-col items-center text-center space-y-4 pt-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[11px] font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-glow)] border border-theme-primary/30 text-theme-primary opacity-90 text-[11px] font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(59,130,246,0.2)]">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
             SUBSCRIPTION
           </div>
 
           <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">
-            Upgrade <span className="text-blue-500">Membership</span>
+            Upgrade <span className="text-theme-primary">Membership</span>
           </h1>
 
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#151515] border border-white/10 text-xs text-gray-300 font-medium">
@@ -178,7 +197,7 @@ export function UpgradeClient({
         {/* Package Selection Section */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase">PILIH PAKET</h2>
+            <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase">{dict.upgrade_select_package}</h2>
             
             {/* View Mode Toggle */}
             <div className="flex items-center bg-[#151515] border border-white/10 p-1 rounded-xl gap-1">
@@ -211,7 +230,7 @@ export function UpgradeClient({
                   onClick={() => setSelectedPkgId(pkg.id)}
                   className={`relative rounded-3xl p-6 sm:p-8 cursor-pointer transition-all duration-300 flex flex-col justify-between ${
                     isSelected
-                      ? "bg-blue-900/10 border-2 border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.15)]"
+                      ? "bg-blue-900/10 border-2 border-theme-primary shadow-[0_0_30px_rgba(59,130,246,0.15)]"
                       : "bg-[#121212] border border-white/5 hover:border-white/20"
                   }`}
                 >
@@ -225,7 +244,7 @@ export function UpgradeClient({
                   <div>
                     {/* Package Icon */}
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${
-                      isStarter ? "bg-white/5 border border-white/10 text-gray-300" : "bg-blue-500/10 border border-blue-500/30 text-blue-400"
+                      isStarter ? "bg-white/5 border border-white/10 text-gray-300" : "bg-[var(--accent-glow)] border border-theme-primary/30 text-theme-primary opacity-90"
                     }`}>
                       {isStarter ? <Rocket className="w-6 h-6" /> : (pkg.name.toLowerCase().includes("gold") ? <Crown className="w-6 h-6" /> : <Shield className="w-6 h-6" />)}
                     </div>
@@ -240,7 +259,7 @@ export function UpgradeClient({
                     <ul className="space-y-3 text-sm text-gray-300">
                       {pkg.benefits.map((benefit: string, idx: number) => (
                         <li key={idx} className="flex items-start gap-3">
-                          <Check className={`w-4 h-4 mt-0.5 shrink-0 ${isStarter ? "text-gray-500" : "text-blue-500"}`} />
+                          <Check className={`w-4 h-4 mt-0.5 shrink-0 ${isStarter ? "text-gray-500" : "text-theme-primary"}`} />
                           <span className="text-xs sm:text-sm font-medium">{benefit}</span>
                         </li>
                       ))}
@@ -248,9 +267,9 @@ export function UpgradeClient({
                   </div>
 
                   <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-semibold text-gray-400">
-                    <span>{isStarter ? "Bawaan Akun" : "Perpanjangan Otomatis"}</span>
-                    <span className={isSelected ? "text-blue-400" : "text-gray-500"}>
-                      {isSelected ? "Terpilih" : "Pilih Paket"}
+                    <span>{isStarter ? dict.upgrade_default_account : dict.upgrade_auto_renewal}</span>
+                    <span className={isSelected ? "text-theme-primary opacity-90" : "text-gray-500"}>
+                      {isSelected ? dict.upgrade_selected : dict.upgrade_select}
                     </span>
                   </div>
                 </div>
@@ -262,7 +281,7 @@ export function UpgradeClient({
         {/* Payment Channels Section */}
         {activeSelectedPkg.id !== "starter" && (
           <div className="space-y-6 pt-6 border-t border-white/10">
-            <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase">METODE PEMBAYARAN</h2>
+            <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase">{dict.upgrade_payment_method}</h2>
 
             {/* Wallet Payment Channel (Khusus Member) */}
             {walletChannel && (
@@ -284,18 +303,18 @@ export function UpgradeClient({
                         isDisabled 
                           ? "opacity-50 cursor-not-allowed bg-[#121212] border-transparent" 
                           : isChannelSelected
-                            ? "bg-blue-500/10 border-blue-500 text-white shadow-md shadow-blue-500/20 cursor-pointer"
-                            : "bg-[#121212] border-blue-500/30 hover:border-blue-500/60 text-gray-300 cursor-pointer"
+                            ? "bg-[var(--accent-glow)] border-theme-primary text-white shadow-md shadow-blue-500/20 cursor-pointer"
+                            : "bg-[#121212] border-theme-primary/30 hover:border-theme-primary/60 text-gray-300 cursor-pointer"
                       }`}
                     >
                       {/* Badge Khusus Member */}
-                      <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-blue-400 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-lg z-10 tracking-widest uppercase">
-                        Khusus Member
+                      <div className="absolute top-0 right-0 bg-gradient-to-r from-theme-primary to-theme-primary/70 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl shadow-lg z-10 tracking-widest uppercase">
+                        {dict.upgrade_member_only}
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden shrink-0 border border-white/5">
                           {channel.code ? (
-                            <span className="text-xs font-black text-blue-400 uppercase">{channel.code}</span>
+                            <span className="text-xs font-black text-theme-primary opacity-90 uppercase">{channel.code}</span>
                           ) : (
                             <Wallet className="w-5 h-5 text-gray-400" />
                           )}
@@ -303,12 +322,12 @@ export function UpgradeClient({
                         <div>
                           <p className="font-bold text-sm text-white">{channel.name}</p>
                           <p className={`text-[10px] font-bold mt-0.5 ${isWalletInsufficient ? 'text-red-400' : 'text-green-400'}`}>
-                            Saldo: Rp {(walletBalance || 0).toLocaleString('id-ID')}
-                            {isWalletInsufficient && ` (Kurang Rp ${(Number(activeSelectedPkg.price) - (walletBalance || 0)).toLocaleString('id-ID')})`}
+                            {dict.upgrade_balance}: {formatCurrency(walletBalance || 0, currency)}
+                            {isWalletInsufficient && ` (${dict.upgrade_short} ${formatCurrency(Number(activeSelectedPkg.price) - (walletBalance || 0), currency)})`}
                           </p>
                         </div>
                       </div>
-                      {isChannelSelected && !isDisabled && <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />}
+                      {isChannelSelected && !isDisabled && <CheckCircle2 className="w-5 h-5 text-theme-primary shrink-0" />}
                     </div>
                   );
                 })()}
@@ -340,24 +359,24 @@ export function UpgradeClient({
                             onClick={() => setSelectedPaymentId(channel.id)}
                             className={`p-4 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${
                               isChannelSelected
-                                ? "bg-blue-500/10 border-blue-500 text-white shadow-md shadow-blue-500/20"
+                                ? "bg-[var(--accent-glow)] border-theme-primary text-white shadow-md shadow-blue-500/20"
                                 : "bg-[#121212] border-white/5 hover:border-white/20 text-gray-300"
                             }`}
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden shrink-0 border border-white/5">
                                 {channel.code ? (
-                                  <span className="text-xs font-black text-blue-400 uppercase">{channel.code}</span>
+                                  <span className="text-xs font-black text-theme-primary opacity-90 uppercase">{channel.code}</span>
                                 ) : (
                                   <Wallet className="w-5 h-5 text-gray-400" />
                                 )}
                               </div>
                               <div>
                                 <p className="font-bold text-sm text-white">{channel.name}</p>
-                                <p className="text-[10px] text-gray-400">Proses Otomatis</p>
+                                <p className="text-[10px] text-gray-400">{dict.upgrade_auto_process}</p>
                               </div>
                             </div>
-                            {isChannelSelected && <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />}
+                            {isChannelSelected && <CheckCircle2 className="w-5 h-5 text-theme-primary shrink-0" />}
                           </div>
                         );
                       })}
@@ -380,11 +399,11 @@ export function UpgradeClient({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Memproses Invoice...</span>
+                  <span>{dict.upgrade_processing_invoice}</span>
                 </>
               ) : (
                 <>
-                  <span>Proses Upgrade Sekarang</span>
+                  <span>{dict.upgrade_process_now}</span>
                   <ChevronRight className="w-5 h-5" />
                 </>
               )}

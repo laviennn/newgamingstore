@@ -12,6 +12,9 @@ export async function createOrder(orderData: any) {
     const tenantName = orderData.tenantName || "NewGamingStore";
     const invoiceId = generateInvoiceId(tenantName);
 
+    const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', orderData.tenantId).single();
+    const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
+
     // Calculate total price with promo
     let originalPrice = orderData.productPrice;
     let totalPrice = originalPrice;
@@ -71,7 +74,8 @@ export async function createOrder(orderData: any) {
        status: isWalletPayment ? 'Processed' : 'Pending',
        payment_status: isWalletPayment ? 'PAID' : 'UNPAID',
        customer_email: currentUser?.email || orderData.waNumber || 'no-email@test.com', // use member email if logged in
-       form_data: orderData.accountData // fallback for original schema
+       form_data: orderData.accountData, // fallback for original schema
+       currency: currency
     };
 
     const { data, error } = await supabase

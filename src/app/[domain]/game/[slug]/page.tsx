@@ -20,10 +20,9 @@ import {
   Zap,
   HeadphonesIcon,
   ShieldCheck,
-  ChevronDown,
-  Star,
 } from 'lucide-react';
 import { StorefrontGameForm } from '@/components/storefront/StorefrontGameForm';
+import { getDictionary } from '@/lib/dictionary';
 
 export default async function GameTopUpPage({
   params,
@@ -91,6 +90,9 @@ export default async function GameTopUpPage({
     .eq('is_active', true);
   const paymentChannels = channels || [];
 
+  const language = tenant?.theme_config?.language || 'id';
+  const dict = getDictionary(language);
+
   return (
     <div className='min-h-screen bg-background pb-20'>
       {/* Top Banner (Full Width) */}
@@ -136,14 +138,13 @@ export default async function GameTopUpPage({
                 {/* Badges */}
                 <div className='flex flex-col gap-2 mt-4'>
                   <div className='inline-flex items-center text-[11px] font-bold bg-green-500/20 text-green-400 px-3 py-1.5 rounded-full border border-green-500/30 w-fit backdrop-blur-sm'>
-                    <Zap className='w-3.5 h-3.5 mr-1.5' /> Proses Cepat
+                    <Zap className='w-3.5 h-3.5 mr-1.5' /> {dict.game_fast_process}
                   </div>
-                  <div className='inline-flex items-center text-[11px] font-bold bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full border border-blue-500/30 w-fit backdrop-blur-sm'>
-                    <HeadphonesIcon className='w-3.5 h-3.5 mr-1.5' /> Layanan
-                    Chat 24/7
+                  <div className='inline-flex items-center text-[11px] font-bold bg-[var(--accent-glow)] text-theme-primary opacity-90 px-3 py-1.5 rounded-full border border-theme-primary/30 w-fit backdrop-blur-sm'>
+                    <HeadphonesIcon className='w-3.5 h-3.5 mr-1.5' /> {dict.game_chat_support}
                   </div>
                   <div className='inline-flex items-center text-[11px] font-bold bg-purple-500/20 text-purple-400 px-3 py-1.5 rounded-full border border-purple-500/30 w-fit backdrop-blur-sm'>
-                    <ShieldCheck className='w-3.5 h-3.5 mr-1.5' /> Produk Resmi
+                    <ShieldCheck className='w-3.5 h-3.5 mr-1.5' /> {dict.game_official_product}
                   </div>
                 </div>
               </div>
@@ -151,7 +152,7 @@ export default async function GameTopUpPage({
 
             {/* Accordion Deskripsi */}
             {game.topup_instructions && (
-              <GameDescriptionAccordion description={game.topup_instructions} />
+              <GameDescriptionAccordion description={game.topup_instructions} language={language} />
             )}
           </div>
 

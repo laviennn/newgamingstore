@@ -12,13 +12,16 @@ import Autoplay from "embla-carousel-autoplay";
 import { Button } from "@/components/ui/button";
 
 import Image from "next/image";
+import { getDictionary, Language } from "@/lib/dictionary";
 
 interface HeroSliderProps {
   sliders: string[];
   domain: string;
+  language?: Language;
 }
 
-export function HeroSlider({ sliders, domain }: HeroSliderProps) {
+export function HeroSlider({ sliders, domain, language = "id" }: HeroSliderProps) {
+  const dict = getDictionary(language);
   const plugin = React.useRef(
     Autoplay({ delay: 3000, stopOnInteraction: false })
   );
@@ -47,12 +50,12 @@ export function HeroSlider({ sliders, domain }: HeroSliderProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-background flex items-center px-8 md:px-16">
                  <div className="max-w-lg space-y-4">
                    <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl text-white">
-                     Welcome to {domain}
+                     {dict.home_hero_welcome} {domain}
                    </h2>
                    <p className="text-lg text-white/80">
-                     Get your favorite game credits instantly. Best prices guaranteed!
+                     {dict.home_hero_subtitle}
                    </p>
-                   <Button size="lg" className="mt-4 shadow-xl text-primary bg-white hover:bg-zinc-200">Top Up Now</Button>
+                   <Button size="lg" className="mt-4 shadow-xl text-primary bg-white hover:bg-zinc-200">{dict.home_hero_topup_btn}</Button>
                  </div>
               </div>
             </div>

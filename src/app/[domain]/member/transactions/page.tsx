@@ -1,20 +1,34 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { RiwayatTransaksiClient } from "./RiwayatTransaksiClient";
+import { getDictionary } from "@/lib/dictionary";
+import { getUnifiedSession } from "@/lib/tenantAuth";
 
-export default async function MemberTransactionsHistoryPage() {
+export default async function MemberTransactionsHistoryPage({
+  params,
+}: {
+  params: Promise<{ domain: string }>;
+}) {
+  const { domain } = await params;
   const supabase = await createClient();
 
   // Authenticate user
-  const { data: authData } = await supabase.auth.getUser();
-  const user = authData?.user;
+  const user = await getUnifiedSession(domain);
 
   if (!user) {
     redirect("/login");
   }
 
+  const { data: tenantData } = await supabase
+    .from('tenants')
+    .select('theme_config')
+    .eq('domain', domain)
+    .maybeSingle();
+  const language = tenantData?.theme_config?.language || 'id';
+  const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
+
   const userEmail = (user.email || "").toLowerCase();
-  const userPhoneRaw = (user.user_metadata?.phone || "").replace(/[^0-9]/g, "");
+  const userPhoneRaw = (user.phone || "").replace(/[^0-9]/g, "");
   const userPhoneShort = userPhoneRaw.replace(/^(62|0)/, "");
 
   // Fetch all orders with games relation
@@ -49,19 +63,18 @@ export default async function MemberTransactionsHistoryPage() {
     return false;
   });
 
-  if (orders.length === 0 && allOrders && allOrders.length > 0) {
-    // fallback for dev/demo purposes if no exact match found
-    orders = allOrders;
-  }
+  // Removed fallback dev logic to prevent data leaks for new users
+
+  const dict = getDictionary(language);
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white mb-2">Riwayat Transaksi</h2>
-        <p className="text-gray-400 text-sm">Pantau daftar pesanan dan riwayat top up akun Anda.</p>
+        <h2 className="text-2xl font-bold text-white mb-2">{dict.user_transactions}</h2>
+        <p className="text-gray-400 text-sm">{dict.member_trx_desc}</p>
       </div>
 
-      <RiwayatTransaksiClient initialOrders={orders} />
+      <RiwayatTransaksiClient initialOrders={orders} language={language} currency={currency} />
     </div>
   );
 }

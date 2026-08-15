@@ -6,6 +6,7 @@ import { CheckCircle2, Loader2, Wallet } from "lucide-react";
 import { createDepositOrder } from "@/components/storefront/depositActions";
 import { useNotification } from "@/components/ui/notification";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getDictionary, Language } from "@/lib/dictionary";
 
 const NOMINAL_OPTIONS = [
   10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000
@@ -15,11 +16,14 @@ export function DepositForm({
   paymentChannels,
   waNumber,
   tenantId,
+  language = 'id',
 }: {
   paymentChannels: any[];
   waNumber: string;
   tenantId?: string;
+  language?: Language;
 }) {
+  const dict = getDictionary(language);
   const { showNotification, NotificationComponent } = useNotification();
   const [selectedNominal, setSelectedNominal] = useState<number | null>(null);
   const [customNominal, setCustomNominal] = useState<string>("");
@@ -41,8 +45,8 @@ export function DepositForm({
   }, {});
 
   const NumberBadge = ({ num }: { num: number }) => (
-    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-      <span className="text-blue-400 font-bold text-sm">{num}</span>
+    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--accent-glow)] border border-theme-primary/20 shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+      <span className="text-theme-primary opacity-90 font-bold text-sm">{num}</span>
     </div>
   );
 
@@ -88,7 +92,7 @@ export function DepositForm({
         <div className="border-b border-white/5 bg-[#161616] p-5">
           <div className="flex items-center gap-3">
             <NumberBadge num={1} />
-            <h2 className="text-lg font-bold text-white tracking-wide">Pilih Nominal Deposit</h2>
+            <h2 className="text-lg font-bold text-white tracking-wide">{dict.member_dep_step1}</h2>
           </div>
         </div>
 
@@ -102,7 +106,7 @@ export function DepositForm({
                   onClick={() => { setSelectedNominal(nom); setCustomNominal(""); }}
                   className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-2 group
                     ${isSelected 
-                      ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
+                      ? 'border-theme-primary bg-[var(--accent-glow)] shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
                       : 'border-white/10 bg-[#151515] hover:border-white/30 hover:bg-[#1a1a1a]'}`}
                 >
                   {isSelected && (
@@ -110,7 +114,7 @@ export function DepositForm({
                       <CheckCircle2 className="w-5 h-5" />
                     </div>
                   )}
-                  <Wallet className={`w-6 h-6 ${isSelected ? 'text-blue-400' : 'text-gray-400 group-hover:text-blue-400 transition-colors'}`} />
+                  <Wallet className={`w-6 h-6 ${isSelected ? 'text-theme-primary opacity-90' : 'text-gray-400 group-hover:text-theme-primary opacity-90 transition-colors'}`} />
                   <div className="text-center">
                     <div className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-gray-300'}`}>
                       Rp {nom.toLocaleString('id-ID')}
@@ -122,12 +126,12 @@ export function DepositForm({
           </div>
 
           <div className="flex flex-col space-y-2">
-            <label className="text-sm font-bold text-gray-300">Atau Masukkan Nominal Khusus (Min. Rp 10.000)</label>
+            <label className="text-sm font-bold text-gray-300">{dict.member_dep_custom_lbl}</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Rp</span>
               <input
                 type="text"
-                placeholder="Contoh: 150000"
+                placeholder={dict.member_dep_custom_ph}
                 value={customNominal}
                 onChange={(e) => {
                   let val = e.target.value.replace(/[^0-9]/g, "");
@@ -135,7 +139,7 @@ export function DepositForm({
                   setCustomNominal(val ? parseInt(val).toLocaleString('id-ID') : "");
                   setSelectedNominal(null);
                 }}
-                className="w-full bg-[#1a1a1a] border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white font-bold focus:border-theme-primary focus:ring-1 focus:ring-blue-500 transition-all outline-none"
               />
             </div>
           </div>
@@ -186,11 +190,11 @@ export function DepositForm({
                           onClick={() => setSelectedPayment(payment)}
                           className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex items-center gap-4
                             ${isSelected 
-                              ? 'border-blue-500 bg-blue-500/10' 
+                              ? 'border-theme-primary bg-[var(--accent-glow)]' 
                               : 'border-white/5 bg-[#151515] hover:border-white/20'}`}
                         >
                           {isSelected && (
-                            <div className="absolute top-2 right-2 text-blue-500">
+                            <div className="absolute top-2 right-2 text-theme-primary">
                               <CheckCircle2 className="w-5 h-5" />
                             </div>
                           )}
@@ -227,7 +231,7 @@ export function DepositForm({
                 <p className="text-[11px] font-medium text-white/70 truncate mb-0.5">
                   via {selectedPayment.name}
                 </p>
-                <p className="text-sm font-black text-blue-400">
+                <p className="text-sm font-black text-theme-primary opacity-90">
                   Rp {amount.toLocaleString('id-ID')}
                 </p>
               </>
@@ -240,7 +244,7 @@ export function DepositForm({
           <button
             type="submit"
             disabled={amount < 10000 || !selectedPayment || isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 h-10 text-xs rounded-xl shadow-lg shadow-blue-600/30 shrink-0 disabled:opacity-50 transition-colors flex items-center gap-2"
+            className="bg-theme-primary hover:bg-theme-primary brightness-90 text-white font-bold px-5 h-10 text-xs rounded-xl shadow-lg shadow-[var(--accent-glow)] shrink-0 disabled:opacity-50 transition-colors flex items-center gap-2"
           >
             {isSubmitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -256,7 +260,7 @@ export function DepositForm({
         <button
           type="submit"
           disabled={amount < 10000 || !selectedPayment || isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-[#1a1a1a] disabled:text-gray-500 text-white font-bold text-base h-12 rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-3"
+          className="w-full bg-theme-primary hover:bg-theme-primary brightness-90 disabled:bg-[#1a1a1a] disabled:text-gray-500 text-white font-bold text-base h-12 rounded-xl shadow-lg shadow-[var(--accent-glow)] transition-all flex items-center justify-center gap-3"
         >
           {isSubmitting ? (
             <>
@@ -281,9 +285,9 @@ export function DepositForm({
         <DialogContent className="sm:max-w-md bg-[#121212] border-white/10 p-0 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-900/40 to-[#121212] p-6 border-b border-white/10">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-white">Konfirmasi Deposit</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-white">{dict.member_dep_confirm_t}</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-gray-400 mt-2">Pastikan data berikut sudah benar sebelum melanjutkan.</p>
+            <p className="text-sm text-gray-400 mt-2">{dict.member_dep_confirm_sub}</p>
           </div>
           
           <div className="p-6 space-y-4">
@@ -294,7 +298,7 @@ export function DepositForm({
                </div>
                <div className="flex justify-between items-center py-2 border-b border-white/5">
                  <span className="text-gray-400 text-sm">Metode Pembayaran</span>
-                 <span className="text-blue-400 font-bold">{selectedPayment?.name}</span>
+                 <span className="text-theme-primary opacity-90 font-bold">{selectedPayment?.name}</span>
                </div>
                <div className="flex justify-between items-center py-2 border-b border-white/5">
                  <span className="text-gray-400 text-sm">Nomor WhatsApp</span>
@@ -315,7 +319,7 @@ export function DepositForm({
                 type="button"
                 onClick={confirmCheckout}
                 disabled={isSubmitting}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2"
+                className="flex-1 bg-theme-primary hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -323,7 +327,7 @@ export function DepositForm({
                     Memproses
                   </>
                 ) : (
-                  "Proses Deposit"
+                  dict.member_dep_submit_btn
                 )}
               </button>
             </div>

@@ -19,8 +19,10 @@ import { uploadFile, logUploadError } from "@/app/actions/upload";
 import { updateDepositProof } from "@/components/storefront/depositActions";
 import { useNotification } from "@/components/ui/notification";
 import Link from "next/link";
+import { formatCurrency } from "@/lib/currencyUtils";
 
 export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any, tenantConfig: any }) {
+  const currency = tenantConfig?.currency || (tenantConfig?.language === 'ms' ? 'MYR' : 'IDR');
   const { showNotification, NotificationComponent } = useNotification();
   const [timeLeft, setTimeLeft] = useState<{h: number, m: number, s: number} | null>(null);
   const [copied, setCopied] = useState(false);
@@ -177,13 +179,13 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
      const message = isUpgrade 
        ? `Halo Admin, saya ingin konfirmasi upgrade membership (${packageName}):
 - No. Invoice: *${deposit.invoice_id}*
-- Total Biaya: *Rp ${Number(deposit.amount).toLocaleString('id-ID')}*
+- Total Biaya: *${formatCurrency(deposit.amount, currency)}*
 - Bukti Transfer: ${fixUrl(paymentProofUrl)}
 
 Mohon segera diproses ya, terima kasih!`
        : `Halo Admin, saya ingin konfirmasi deposit saldo:
 - No. Invoice: *${deposit.invoice_id}*
-- Nominal Deposit: *Rp ${Number(deposit.amount).toLocaleString('id-ID')}*
+- Nominal Deposit: *${formatCurrency(deposit.amount, currency)}*
 - Bukti Transfer: ${fixUrl(paymentProofUrl)}
 
 Mohon segera diproses ya, terima kasih!`;
@@ -201,7 +203,7 @@ Mohon segera diproses ya, terima kasih!`;
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pt-24 pb-20 print:bg-white print:text-black">
+    <div className="min-h-screen bg-theme-background text-white pt-24 pb-20 print:bg-white print:text-black">
       <div className="container mx-auto px-4 max-w-6xl">
         
         {/* Progress Stepper */}
@@ -210,11 +212,11 @@ Mohon segera diproses ya, terima kasih!`;
           <div className="relative flex items-center justify-between">
             <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gray-800 -z-10 transform -translate-y-1/2"></div>
             {/* Active progress line (dummy calc based on step) */}
-            <div className={`absolute left-0 top-1/2 h-0.5 bg-blue-600 -z-10 transform -translate-y-1/2 transition-all duration-500`} style={{ width: status === 'Success' ? '100%' : '33%' }}></div>
+            <div className={`absolute left-0 top-1/2 h-0.5 bg-theme-primary -z-10 transform -translate-y-1/2 transition-all duration-500`} style={{ width: status === 'Success' ? '100%' : '33%' }}></div>
             
             {stepperStates.map((step, idx) => (
               <div key={idx} className="flex flex-col items-center w-1/4 text-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 bg-[#0a0a0a] ${step.active ? 'border-green-500 text-green-500' : 'border-gray-600 text-gray-500'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 bg-theme-background ${step.active ? 'border-green-500 text-green-500' : 'border-gray-600 text-gray-500'}`}>
                   <step.icon className="w-5 h-5" />
                 </div>
                 <div className="mt-3">
@@ -259,7 +261,7 @@ Mohon segera diproses ya, terima kasih!`;
             {/* Price Details */}
             <div className="bg-[#151515] rounded-2xl border border-gray-800 overflow-hidden print:border-gray-300">
               <div 
-                className="bg-[#1c1c1c] p-4 flex justify-between items-center cursor-pointer hover:bg-[#222]"
+                className="bg-theme-card p-4 flex justify-between items-center cursor-pointer hover:bg-[#222]"
                 onClick={() => setIsDetailsOpen(!isDetailsOpen)}
               >
                 <h3 className="font-bold text-sm text-gray-300">Rincian Pembayaran</h3>
@@ -270,12 +272,12 @@ Mohon segera diproses ya, terima kasih!`;
                   <div className="p-6 space-y-4 text-sm font-medium">
                     <div className="flex justify-between">
                       <span className="text-gray-400">{isUpgrade ? 'Biaya Upgrade' : 'Nominal Deposit'}</span>
-                      <span>Rp {Number(deposit.amount).toLocaleString('id-ID')}</span>
+                      <span>{formatCurrency(deposit.amount, currency)}</span>
                     </div>
                     <div className="border-b border-gray-800/50 pt-2 print:border-gray-300"></div>
                     <div className="flex justify-between text-base font-bold text-white print:text-black">
                       <span>Total Bayar</span>
-                      <span className="text-blue-500">Rp {Number(deposit.amount).toLocaleString('id-ID')}</span>
+                      <span className="text-theme-primary">{formatCurrency(deposit.amount, currency)}</span>
                     </div>
                   </div>
                 </div>
@@ -316,7 +318,7 @@ Mohon segera diproses ya, terima kasih!`;
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-400">{isUpgrade ? 'Status Upgrade' : 'Status Deposit'}</span>
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${status === 'Pending' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-blue-500/20 text-blue-500'}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${status === 'Pending' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-[var(--accent-glow)] text-theme-primary'}`}>
                     {status}
                   </span>
                 </div>
@@ -325,8 +327,8 @@ Mohon segera diproses ya, terima kasih!`;
               {/* Dynamic Payment Instructions */}
               <div className="pt-6">
                 {deposit.payment_channels?.category === "QRIS" ? (
-                   <div className="bg-[#1c1c1c] p-6 rounded-xl border border-blue-500/30 text-center shadow-[0_0_20px_rgba(37,99,235,0.15)] print:shadow-none print:border print:border-gray-300">
-                     <p className="text-sm font-bold text-blue-400 mb-2">SCAN UNTUK MEMBAYAR</p>
+                   <div className="bg-theme-card p-6 rounded-xl border border-theme-primary/30 text-center shadow-[0_0_20px_rgba(37,99,235,0.15)] print:shadow-none print:border print:border-gray-300">
+                     <p className="text-sm font-bold text-theme-primary opacity-90 mb-2">SCAN UNTUK MEMBAYAR</p>
                      
                      <div className="bg-white p-3 rounded-xl w-64 mx-auto mb-4 relative shadow-lg">
                        {deposit.payment_channels.qr_image_url ? (
@@ -338,10 +340,10 @@ Mohon segera diproses ya, terima kasih!`;
                        )}
                      </div>
 
-                     <div className="bg-blue-500/10 text-blue-400 text-xs p-3 rounded-lg mb-4 text-left border border-blue-500/20">
+                     <div className="bg-[var(--accent-glow)] text-theme-primary opacity-90 text-xs p-3 rounded-lg mb-4 text-left border border-theme-primary/20">
                        <span className="font-bold flex items-center gap-1 mb-1">⚠️ Perhatian Khusus QRIS Static:</span>
                        Saat memindai QRIS ini di aplikasi M-Banking/E-Wallet Anda, Anda <b>WAJIB MENGETIK NOMINAL TAGIHAN SECARA MANUAL</b>. <br/>
-                       Pastikan nominal transfer TEPAT: <b className="text-white text-sm">Rp {Number(deposit.amount).toLocaleString("id-ID")}</b>
+                       Pastikan nominal transfer TEPAT: <b className="text-white text-sm">{formatCurrency(deposit.amount, currency)}</b>
                      </div>
 
                      {deposit.payment_channels.qr_image_url && (
@@ -350,7 +352,7 @@ Mohon segera diproses ya, terima kasih!`;
                          download="QRIS_Payment.png"
                          target="_blank"
                          rel="noreferrer"
-                         className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all w-full sm:w-auto justify-center"
+                         className="inline-flex items-center gap-2 bg-theme-primary hover:bg-theme-primary brightness-90 text-white font-bold py-2.5 px-6 rounded-xl transition-all w-full sm:w-auto justify-center"
                        >
                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -360,10 +362,10 @@ Mohon segera diproses ya, terima kasih!`;
                      )}
                    </div>
                 ) : deposit.payment_channels?.account_number ? (
-                   <div className="bg-[#1c1c1c] p-6 rounded-xl border border-gray-800 text-center print:border-gray-300 print:bg-gray-50">
+                   <div className="bg-theme-card p-6 rounded-xl border border-gray-800 text-center print:border-gray-300 print:bg-gray-50">
                      <p className="text-sm text-gray-400 mb-2 print:text-gray-600">Silakan transfer pembayaran ke rekening berikut:</p>
                      <div className="flex items-center justify-center gap-3 mb-2">
-                       <h4 className="text-2xl font-black text-blue-500 tracking-wider">{deposit.payment_channels.account_number}</h4>
+                       <h4 className="text-2xl font-black text-theme-primary tracking-wider">{deposit.payment_channels.account_number}</h4>
                        <button onClick={() => {
                           navigator.clipboard.writeText(deposit.payment_channels.account_number);
                           showNotification("success", "Tersalin", "Nomor rekening berhasil disalin!");
@@ -395,7 +397,7 @@ Mohon segera diproses ya, terima kasih!`;
                     </p>
                     
                     {/* Upload Button */}
-                    <div className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all overflow-hidden ${paymentProofUrl ? 'border-green-500/50' : 'border-gray-700 hover:bg-gray-800/50 bg-[#1c1c1c]'}`}>
+                    <div className={`relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl transition-all overflow-hidden ${paymentProofUrl ? 'border-green-500/50' : 'border-gray-700 hover:bg-gray-800/50 bg-theme-card'}`}>
                       {paymentProofUrl ? (
                         <div className="relative w-full h-full group">
                           <img src={paymentProofUrl} alt="Bukti Transfer" className="w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity" />
@@ -407,7 +409,7 @@ Mohon segera diproses ya, terima kasih!`;
                       ) : (
                         <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                           {uploading ? (
-                            <Loader2 className="w-8 h-8 mb-3 text-blue-500 animate-spin" />
+                            <Loader2 className="w-8 h-8 mb-3 text-theme-primary animate-spin" />
                           ) : (
                             <UploadCloud className="w-8 h-8 mb-3 text-gray-400" />
                           )}
@@ -448,8 +450,8 @@ Mohon segera diproses ya, terima kasih!`;
 
               <div className="pt-2 pb-4 print:hidden">
                 <Link href="/member/dashboard">
-                  <Button className="w-full bg-[#111111] hover:bg-[#1a1a1a] text-white border border-gray-800 h-14 rounded-xl font-bold text-base shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
-                    <Navigation className="w-5 h-5 text-blue-500" /> Kembali ke Dashboard
+                  <Button className="w-full bg-theme-card hover:bg-[#1a1a1a] text-white border border-gray-800 h-14 rounded-xl font-bold text-base shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2">
+                    <Navigation className="w-5 h-5 text-theme-primary" /> Kembali ke Dashboard
                   </Button>
                 </Link>
               </div>

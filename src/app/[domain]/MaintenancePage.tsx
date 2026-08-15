@@ -23,7 +23,7 @@ export function MaintenancePage() {
         
         {/* Animated Icon */}
         <div className="relative inline-block mb-6 group">
-          <Settings className="w-24 h-24 md:w-32 md:h-32 text-blue-500 animate-[spin_4s_linear_infinite] drop-shadow-[0_0_20px_rgba(37,99,235,0.5)]" />
+          <Settings className="w-24 h-24 md:w-32 md:h-32 text-theme-primary animate-[spin_4s_linear_infinite] drop-shadow-[0_0_20px_rgba(37,99,235,0.5)]" />
         </div>
 
         {/* Text Details */}
@@ -42,7 +42,7 @@ export function MaintenancePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button 
               onClick={() => window.location.reload()} 
-              className="w-full sm:w-auto px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] transition-all"
+              className="w-full sm:w-auto px-8 py-3 rounded-xl bg-theme-primary hover:bg-blue-500 text-white font-bold flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] transition-all"
             >
               <RefreshCw className="w-5 h-5" />
               Coba Ulang (Refresh)
@@ -51,7 +51,7 @@ export function MaintenancePage() {
         </div>
 
         {/* Floating Text below card */}
-        <div className="mt-8 animate-pulse text-blue-400/60 font-semibold tracking-widest text-sm uppercase">
+        <div className="mt-8 animate-pulse text-theme-primary opacity-90/60 font-semibold tracking-widest text-sm uppercase">
           SYSTEM_UPGRADE_IN_PROGRESS_
         </div>
       </div>

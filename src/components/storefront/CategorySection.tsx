@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Gamepad2, Sparkles, Ticket, Wallet, Globe, Tv, Flame } from "lucide-react";
+import { getDictionary, Language } from "@/lib/dictionary";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   Gamepad2: <Gamepad2 className="w-4 h-4" />,
@@ -23,7 +24,8 @@ const fixUrl = (url: string | null) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function CategorySection({ categories, games }: { categories: any[], games: any[] }) {
+export function CategorySection({ categories, games, language = 'id' }: { categories: any[], games: any[], language?: Language }) {
+  const dict = getDictionary(language);
   const [activeCategoryId, setActiveCategoryId] = React.useState<string | null>(categories[0]?.id || null);
 
   const filteredGames = activeCategoryId 
@@ -77,7 +79,7 @@ export function CategorySection({ categories, games }: { categories: any[], game
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-slate-900">
                   <span className="font-bold text-white mb-2">{game.name}</span>
-                  <span className="text-xs text-muted-foreground">Cover Not Found</span>
+                  <span className="text-xs text-muted-foreground">{dict.home_category_cover_not_found}</span>
                 </div>
               )}
 
@@ -110,7 +112,7 @@ export function CategorySection({ categories, games }: { categories: any[], game
       
       {filteredGames.length === 0 && (
          <div className="text-center py-16 text-slate-400 bg-black/20 rounded-2xl border border-white/5">
-            Tidak ada game di kategori ini.
+            {dict.home_category_empty}
          </div>
       )}
     </div>

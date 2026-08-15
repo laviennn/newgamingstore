@@ -16,8 +16,8 @@ export async function getPromoCodes() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching promo codes:", error);
-    throw new Error(error.message);
+    console.error("Error fetching promo codes:", error.message || error);
+    throw new Error(error.message || "Failed to fetch promo codes");
   }
   return data;
 }

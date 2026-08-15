@@ -12,9 +12,10 @@ interface PackageFormModalProps {
   onClose: () => void;
   onSave: (pkgData: any) => Promise<void>;
   pkgToEdit?: any | null;
+  currency?: string;
 }
 
-export function PackageFormModal({ isOpen, onClose, onSave, pkgToEdit }: PackageFormModalProps) {
+export function PackageFormModal({ isOpen, onClose, onSave, pkgToEdit, currency = 'IDR' }: PackageFormModalProps) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState<number | "">(0);
   const [periodLabel, setPeriodLabel] = useState("/Tahun");
@@ -78,7 +79,16 @@ export function PackageFormModal({ isOpen, onClose, onSave, pkgToEdit }: Package
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{pkgToEdit ? "Edit Paket Membership" : "Tambah Paket Membership Baru"}</DialogTitle>
+          <DialogTitle className="flex items-center justify-between pr-6">
+            <span>{pkgToEdit ? "Edit Paket Membership" : "Tambah Paket Membership Baru"}</span>
+            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border shadow-2xs ${
+              currency === 'MYR' 
+                ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
+                : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+            }`}>
+              {currency === 'MYR' ? '🇲🇾 MYR (RM)' : '🇮🇩 IDR (Rp)'}
+            </span>
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -95,11 +105,14 @@ export function PackageFormModal({ isOpen, onClose, onSave, pkgToEdit }: Package
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="price">Harga (Rp)</Label>
+              <Label htmlFor="price">
+                Harga ({currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'})
+              </Label>
               <Input
                 id="price"
                 type="number"
-                placeholder="550000"
+                step="any"
+                placeholder={currency === "MYR" ? "50.00" : "550000"}
                 value={price}
                 onChange={(e) => setPrice(e.target.value === "" ? "" : Number(e.target.value))}
                 required

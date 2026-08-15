@@ -6,8 +6,10 @@ import { createClient } from "@/utils/supabase/client";
 import { useNotification } from "@/components/ui/notification";
 import { User as UserIcon, Lock, MonitorSmartphone, Loader2, MapPin, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getDictionary, Language } from "@/lib/dictionary";
 
-export function ProfileClient({ user, sessionData }: { user: User, sessionData: any }) {
+export function ProfileClient({ user, sessionData, language = "id" }: { user: User, sessionData: any, language?: Language }) {
+  const dict = getDictionary(language);
   const { showNotification, NotificationComponent } = useNotification();
   const supabase = createClient();
   const router = useRouter();
@@ -37,10 +39,10 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
 
       if (error) throw error;
       
-      showNotification("success", "Profil Diperbarui", "Data profil Anda berhasil disimpan.");
+      showNotification("success", dict.profile_success_title, dict.profile_success_desc);
       router.refresh();
     } catch (err: any) {
-      showNotification("error", "Gagal Disimpan", err.message || "Gagal memperbarui profil.");
+      showNotification("error", dict.profile_err_title, err.message || dict.profile_err_desc);
     } finally {
       setIsSavingProfile(false);
     }
@@ -48,12 +50,12 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
 
   const handleSavePassword = async () => {
     if (newPassword !== confirmPassword) {
-      showNotification("warning", "Sandi Tidak Cocok", "Konfirmasi sandi baru tidak sesuai.");
+      showNotification("warning", dict.profile_pwd_unmatch_title, dict.profile_pwd_unmatch_desc);
       return;
     }
 
     if (newPassword.length < 6) {
-      showNotification("warning", "Sandi Terlalu Lemah", "Kata sandi minimal 6 karakter.");
+      showNotification("warning", dict.profile_pwd_weak_title, dict.profile_pwd_weak_desc);
       return;
     }
 
@@ -66,12 +68,12 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
 
       if (error) throw error;
       
-      showNotification("success", "Sandi Diperbarui", "Kata sandi Anda berhasil diubah.");
+      showNotification("success", dict.profile_pwd_success_title, dict.profile_pwd_success_desc);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      showNotification("error", "Gagal Diubah", err.message || "Gagal mengubah kata sandi.");
+      showNotification("error", dict.profile_pwd_err_title, err.message || dict.profile_pwd_err_desc);
     } finally {
       setIsSavingPassword(false);
     }
@@ -91,36 +93,36 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
               <UserIcon className="w-5 h-5 text-gray-400" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Informasi Pribadi</h3>
-              <p className="text-xs text-gray-400">Perbarui data diri publik Anda.</p>
+              <h3 className="text-lg font-bold text-white">{dict.profile_personal_info}</h3>
+              <p className="text-xs text-gray-400">{dict.profile_personal_desc}</p>
             </div>
           </div>
 
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">NAMA LENGKAP</label>
+                <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.profile_fullname}</label>
                 <input 
                   type="text" 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[#1c1c1c] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-theme-card border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary transition-colors"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">USERNAME</label>
+                <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.profile_username}</label>
                 <input 
                   type="text" 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="@"
-                  className="w-full bg-[#1c1c1c] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-theme-card border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary transition-colors"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">ALAMAT EMAIL</label>
+              <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.profile_email}</label>
               <input 
                 type="email" 
                 value={user.email}
@@ -130,16 +132,16 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">NO. WHATSAPP</label>
+              <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.profile_whatsapp}</label>
               <input 
                 type="text" 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-[#1c1c1c] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full bg-theme-card border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary transition-colors"
               />
               <p className="text-[10px] font-semibold text-rose-500 mt-1">
-                NOTE: Sesuaikan kode negara di awal nomor. <br/>
-                <span className="text-gray-500">Contoh: Indonesia 628..., Malaysia 601... (sesuaikan dengan kode negara awalan).</span>
+                {dict.profile_whatsapp_note} <br/>
+                <span className="text-gray-500">{dict.profile_whatsapp_ex}</span>
               </p>
             </div>
 
@@ -149,7 +151,7 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
                 disabled={isSavingProfile}
                 className="bg-[#2B95FF] hover:bg-[#1E74D4] text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(43,149,255,0.2)] disabled:opacity-50 flex items-center justify-center min-w-[160px]"
               >
-                {isSavingProfile ? <Loader2 className="w-5 h-5 animate-spin" /> : "Simpan Perubahan"}
+                {isSavingProfile ? <Loader2 className="w-5 h-5 animate-spin" /> : dict.profile_btn_save}
               </button>
             </div>
           </div>
@@ -162,42 +164,42 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
               <Lock className="w-4 h-4 text-rose-500" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Keamanan</h3>
-              <p className="text-xs text-gray-400">Perbarui kata sandi Anda secara berkala.</p>
+              <h3 className="text-lg font-bold text-white">{dict.profile_sec_title}</h3>
+              <p className="text-xs text-gray-400">{dict.profile_sec_desc}</p>
             </div>
           </div>
 
           <div className="space-y-5">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">KATA SANDI SAAT INI</label>
+              <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.profile_pwd_curr}</label>
               <input 
                 type="password" 
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[#1c1c1c] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full bg-theme-card border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary transition-colors"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">KATA SANDI BARU</label>
+                <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.profile_pwd_new}</label>
                 <input 
                   type="password" 
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[#1c1c1c] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-theme-card border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary transition-colors"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">KONFIRMASI SANDI BARU</label>
+                <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.profile_pwd_confirm}</label>
                 <input 
                   type="password" 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-[#1c1c1c] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-theme-card border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary transition-colors"
                 />
               </div>
             </div>
@@ -208,7 +210,7 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
                 disabled={isSavingPassword || !newPassword}
                 className="bg-[#2B95FF] hover:bg-[#1E74D4] text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(43,149,255,0.2)] disabled:opacity-50 flex items-center justify-center min-w-[160px]"
               >
-                {isSavingPassword ? <Loader2 className="w-5 h-5 animate-spin" /> : "Simpan Perubahan"}
+                {isSavingPassword ? <Loader2 className="w-5 h-5 animate-spin" /> : dict.profile_btn_save}
               </button>
             </div>
           </div>
@@ -221,7 +223,7 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
         
         {/* Sesi Aktif */}
         <div className="bg-[#151515] border border-white/5 rounded-2xl p-6">
-          <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-4">SESI AKTIF</h3>
+          <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-4">{dict.profile_active_session}</h3>
           
           <div className="space-y-4">
             <div className="flex gap-4">
@@ -230,7 +232,7 @@ export function ProfileClient({ user, sessionData }: { user: User, sessionData: 
               </div>
               <div className="space-y-1 w-full">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-white">Perangkat Ini</span>
+                  <span className="text-sm font-semibold text-white">{dict.profile_this_device}</span>
                   <span className="text-[9px] font-bold bg-green-500/20 text-green-500 px-2 py-0.5 rounded uppercase">Online</span>
                 </div>
                 <div className="text-xs text-gray-400">{sessionData.device}</div>

@@ -1,20 +1,34 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { RiwayatDepositClient } from "./RiwayatDepositClient";
+import { getDictionary } from "@/lib/dictionary";
+import { getUnifiedSession } from "@/lib/tenantAuth";
 
-export default async function MemberDepositsHistoryPage() {
+export default async function MemberDepositsHistoryPage({
+  params,
+}: {
+  params: Promise<{ domain: string }>;
+}) {
+  const { domain } = await params;
   const supabase = await createClient();
 
   // Authenticate user
-  const { data: authData } = await supabase.auth.getUser();
-  const user = authData?.user;
+  const user = await getUnifiedSession(domain);
 
   if (!user) {
     redirect("/login");
   }
 
+  const { data: tenantData } = await supabase
+    .from('tenants')
+    .select('theme_config')
+    .eq('domain', domain)
+    .maybeSingle();
+  const language = tenantData?.theme_config?.language || 'id';
+  const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
+
   const userEmail = (user.email || "").toLowerCase();
-  const userPhoneRaw = (user.user_metadata?.phone || "").replace(/[^0-9]/g, "");
+  const userPhoneRaw = (user.phone || "").replace(/[^0-9]/g, "");
   const userPhoneShort = userPhoneRaw.replace(/^(62|0)/, "");
 
   // Fetch all deposits
@@ -34,19 +48,18 @@ export default async function MemberDepositsHistoryPage() {
     return false;
   });
 
-  if (deposits.length === 0 && allDeposits && allDeposits.length > 0) {
-    // fallback for dev/demo purposes if no exact match found
-    deposits = allDeposits;
-  }
+  // Removed fallback dev logic to prevent data leaks for new users
+
+  const dict = getDictionary(language);
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white mb-2">Riwayat Mutasi</h2>
-        <p className="text-gray-400 text-sm">Pantau pergerakan saldo dan riwayat deposit akun Anda.</p>
+        <h2 className="text-2xl font-bold text-white mb-2">{dict.user_deposits}</h2>
+        <p className="text-gray-400 text-sm">{dict.member_dep_history_desc}</p>
       </div>
 
-      <RiwayatDepositClient initialDeposits={deposits} />
+      <RiwayatDepositClient initialDeposits={deposits} language={language} currency={currency} />
     </div>
   );
 }

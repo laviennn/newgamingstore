@@ -2,12 +2,16 @@ import { createClient } from '@/utils/supabase/server';
 import { getMemberSession, type MemberPayload } from '@/utils/memberSession';
 import type { User } from '@supabase/supabase-js';
 
+import { Language } from '@/lib/dictionary';
+
 export type AuthMode = 'email' | 'username';
 
 export type TenantAuthConfig = {
   tenantId: string;
   authMode: AuthMode;
   whatsapp?: string;
+  language: Language;
+  currency: "IDR" | "MYR";
 };
 
 export type StorefrontSession =
@@ -57,12 +61,14 @@ export async function getTenantAuthConfig(
 
   if (!tenant) return null;
 
-  const themeConfig = tenant.theme_config as { whatsapp?: string } | null;
+  const themeConfig = tenant.theme_config as { whatsapp?: string; language?: Language; currency?: "IDR" | "MYR" } | null;
 
   return {
     tenantId: tenant.id,
     authMode: (tenant.auth_mode as AuthMode) || 'email',
     whatsapp: themeConfig?.whatsapp,
+    language: themeConfig?.language || 'id',
+    currency: themeConfig?.currency || (themeConfig?.language === 'ms' ? 'MYR' : 'IDR'),
   };
 }
 

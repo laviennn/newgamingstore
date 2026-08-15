@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Plus, Edit2, Trash2, Crown, CheckCircle2, Star } from "lucide-react";
 import { PackageFormModal } from "./PackageFormModal";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
-export function AdminMembershipsClient({ initialPackages, currentTenantId }: { initialPackages: any[], currentTenantId: string }) {
+export function AdminMembershipsClient({ initialPackages, currentTenantId, currency = 'IDR' }: { initialPackages: any[], currentTenantId: string, currency?: Currency }) {
   const { showNotification, NotificationComponent } = useNotification();
   const supabase = createClient();
   const [packages, setPackages] = useState(initialPackages);
@@ -119,7 +120,15 @@ export function AdminMembershipsClient({ initialPackages, currentTenantId }: { i
             <thead className="text-xs text-muted-foreground uppercase bg-muted/40 border-b">
               <tr>
                 <th className="px-4 py-3">Nama Paket</th>
-                <th className="px-4 py-3">Harga & Periode</th>
+                <th className="px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span>Harga</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">
+                      {currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'}
+                    </span>
+                    <span>& Periode</span>
+                  </div>
+                </th>
                 <th className="px-4 py-3">Keuntungan (Benefits)</th>
                 <th className="px-4 py-3 text-center">Status</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
@@ -169,7 +178,7 @@ export function AdminMembershipsClient({ initialPackages, currentTenantId }: { i
                     </td>
                     <td className="px-4 py-4">
                       <div className="font-bold text-primary">
-                        Rp {Number(pkg.price).toLocaleString("id-ID")}
+                        {formatCurrency(Number(pkg.price), currency)}
                         <span className="text-xs font-normal text-muted-foreground ml-1">{pkg.period_label}</span>
                       </div>
                     </td>
@@ -229,6 +238,7 @@ export function AdminMembershipsClient({ initialPackages, currentTenantId }: { i
         onClose={() => setIsModalOpen(false)}
         onSave={handleSavePackage}
         pkgToEdit={editingPkg}
+        currency={currency}
       />
 
       <ConfirmDeleteDialog

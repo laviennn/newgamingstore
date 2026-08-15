@@ -15,8 +15,9 @@ import { Plus, Edit2, Trash2 } from "lucide-react";
 import { savePromoCode, deletePromoCode } from "./actions";
 import { useNotification } from "@/components/ui/notification";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
-export function PromosClient({ initialPromos }: { initialPromos: any[] }) {
+export function PromosClient({ initialPromos, currency = 'IDR' }: { initialPromos: any[], currency?: Currency }) {
   const { showNotification, NotificationComponent } = useNotification();
   const [promos, setPromos] = useState(initialPromos);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -90,11 +91,21 @@ export function PromosClient({ initialPromos }: { initialPromos: any[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Promo Codes</h1>
-          <p className="text-muted-foreground mt-2">
-            Kelola kode promo untuk diskon pelanggan.
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">Promo Codes</h1>
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs ${
+              currency === 'MYR' 
+                ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
+                : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+            }`}>
+              <span className="text-sm leading-none">{currency === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+              <span>{currency === 'MYR' ? 'MYR (RM)' : 'IDR (Rp)'}</span>
+            </span>
+          </div>
+          <p className="text-muted-foreground mt-1">
+            Kelola kode promo untuk diskon pelanggan ({currency === 'MYR' ? 'Ringgit Malaysia - RM' : 'Rupiah Indonesia - Rp'}).
           </p>
         </div>
         <Button onClick={() => {
@@ -112,7 +123,7 @@ export function PromosClient({ initialPromos }: { initialPromos: any[] }) {
               <div>
                 <h3 className="font-bold text-xl">{promo.code}</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Diskon: {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : `Rp ${promo.discount_value.toLocaleString()}`}
+                  Diskon: {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : formatCurrency(promo.discount_value, currency)}
                   {promo.max_uses && ` | Maksimal Penggunaan: ${promo.used_count}/${promo.max_uses}`}
                 </p>
                 <div className={`mt-2 inline-flex text-xs px-2 py-1 rounded-full ${promo.is_active ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
@@ -135,7 +146,16 @@ export function PromosClient({ initialPromos }: { initialPromos: any[] }) {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{formData.id ? 'Edit Promo' : 'Tambah Promo'}</DialogTitle>
+            <DialogTitle className="flex items-center justify-between pr-6">
+              <span>{formData.id ? 'Edit Promo' : 'Tambah Promo'}</span>
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                currency === 'MYR' 
+                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
+                  : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+              }`}>
+                {currency === 'MYR' ? '🇲🇾 MYR (RM)' : '🇮🇩 IDR (Rp)'}
+              </span>
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4 mt-4">
             <div className="space-y-2">
@@ -146,12 +166,12 @@ export function PromosClient({ initialPromos }: { initialPromos: any[] }) {
               <Label>Tipe Diskon</Label>
               <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={formData.discount_type} onChange={e => setFormData({...formData, discount_type: e.target.value})}>
                 <option value="percentage">Persentase (%)</option>
-                <option value="fixed">Nominal Tetap (Rp)</option>
+                <option value="fixed">Nominal Tetap ({currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'})</option>
               </select>
             </div>
             <div className="space-y-2">
               <Label>Nilai Diskon</Label>
-              <Input type="number" required value={formData.discount_value} onChange={e => setFormData({...formData, discount_value: parseFloat(e.target.value)})} />
+              <Input type="number" step="any" required value={formData.discount_value} onChange={e => setFormData({...formData, discount_value: parseFloat(e.target.value)})} />
             </div>
             <div className="space-y-2">
               <Label>Batas Penggunaan (Opsional)</Label>

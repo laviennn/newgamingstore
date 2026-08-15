@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Eye, Loader2, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
-export function AdminDepositsClient({ initialDeposits }: { initialDeposits: any[] }) {
+export function AdminDepositsClient({ initialDeposits, currency = 'IDR' }: { initialDeposits: any[], currency?: Currency }) {
   const { showNotification, NotificationComponent } = useNotification();
   const supabase = createClient();
   const [deposits, setDeposits] = useState(initialDeposits);
@@ -73,7 +74,15 @@ export function AdminDepositsClient({ initialDeposits }: { initialDeposits: any[
             <tr>
               <th className="px-4 py-3">Invoice & Waktu</th>
               <th className="px-4 py-3">Kontak Member</th>
-              <th className="px-4 py-3">Nominal & Metode</th>
+              <th className="px-4 py-3">
+                <div className="flex items-center gap-1.5">
+                  <span>Nominal</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">
+                    {currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'}
+                  </span>
+                  <span>& Metode</span>
+                </div>
+              </th>
               <th className="px-4 py-3 text-center">Bukti Transfer</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Aksi</th>
@@ -107,8 +116,9 @@ export function AdminDepositsClient({ initialDeposits }: { initialDeposits: any[
                     <div className="text-xs text-muted-foreground mt-0.5">{dep.wa_number || "-"}</div>
                   </td>
                   <td className="px-4 py-4 border-b border-muted/20">
-                    <div className="font-bold text-green-500">
-                      Rp {Number(dep.amount).toLocaleString('id-ID')}
+                    <div className="font-bold text-green-500 flex items-center gap-1.5">
+                      <span className="text-xs">{(dep.currency || currency) === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+                      <span>{formatCurrency(Number(dep.amount), dep.currency || currency)}</span>
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {dep.payment_channels?.name || "Manual"}

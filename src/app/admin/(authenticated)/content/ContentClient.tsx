@@ -11,104 +11,7 @@ import { createClient } from "@/utils/supabase/client";
 import { uploadFile } from "@/app/actions/upload";
 import Image from "next/image";
 
-interface ImageUploadFieldProps {
-  label: string;
-  value: string;
-  onChange: (url: string) => void;
-  description?: React.ReactNode;
-  placeholder?: string;
-  previewHeight?: string;
-  previewClass?: string;
-}
-
-function ImageUploadField({
-  label,
-  value,
-  onChange,
-  description,
-  placeholder = "https://...",
-  previewHeight = "h-32",
-  previewClass = "object-contain",
-}: ImageUploadFieldProps) {
-  const { showNotification } = useNotification();
-  const [uploading, setUploading] = React.useState(false);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const result = await uploadFile(formData);
-
-      if (result.error) {
-        showNotification("error", "Gagal Unggah Gambar", result.error);
-      } else if (result.url) {
-        onChange(result.url);
-        showNotification(
-          "success",
-          "Unggah Berhasil",
-          "Gambar berhasil diunggah ke R2 Storage."
-        );
-      }
-    } catch (err: any) {
-      showNotification(
-        "error",
-        "Gagal Unggah",
-        err.message || "Terjadi kesalahan internal."
-      );
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-2 border border-border/40 rounded-xl p-3.5 bg-muted/10">
-      <label className="text-sm font-semibold">{label}</label>
-      <div className="flex items-center gap-3">
-        <label className="flex h-10 cursor-pointer items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors shrink-0 shadow-sm">
-          {uploading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <UploadCloud className="mr-2 h-4 w-4" />
-          )}
-          <span>{uploading ? "Uploading..." : "Upload File"}</span>
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={uploading}
-          />
-        </label>
-        <Input
-          placeholder={placeholder}
-          value={value}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
-          className="flex-1"
-        />
-      </div>
-      {value && (
-        <div
-          className={`mt-2 relative w-full ${previewHeight} rounded-lg overflow-hidden border bg-black/30 shadow-inner`}
-        >
-          <Image
-            src={value}
-            alt={label}
-            fill
-            sizes="600px"
-            className={previewClass}
-          />
-        </div>
-      )}
-      {description && (
-        <div className="text-xs text-muted-foreground mt-1">{description}</div>
-      )}
-    </div>
-  );
-}
+import { ImageUploadDropzone } from "@/components/admin/ImageUploadDropzone";
 
 export default function ContentClient() {
   const { showNotification, NotificationComponent } = useNotification();
@@ -121,6 +24,7 @@ export default function ContentClient() {
   const [tenantId, setTenantId] = React.useState<string | null>(null);
   const [tenantName, setTenantName] = React.useState<string>("");
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+  const [themeConfig, setThemeConfig] = React.useState<any>({});
 
   // State for homepage content
   const [logoUrl, setLogoUrl] = React.useState("");
@@ -171,6 +75,7 @@ export default function ContentClient() {
           setTenantName(data.name);
 
           const config = data.theme_config || {};
+          setThemeConfig(config);
           setTimeout(() => {
             setLogoUrl(config.logoUrl || "");
             setHeroBackgroundUrl(config.heroBackgroundUrl || "");
@@ -238,6 +143,7 @@ export default function ContentClient() {
     setSaving(true);
     try {
       const updatedConfig = {
+        ...themeConfig,
         logoUrl,
         heroBackgroundUrl,
         gameDetailBanner,
@@ -260,6 +166,8 @@ export default function ContentClient() {
         .eq("id", tenantId);
 
       if (error) throw error;
+
+      setThemeConfig(updatedConfig);
 
       showNotification(
         "success",
@@ -329,10 +237,11 @@ export default function ContentClient() {
             <CardTitle>Global Branding</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-2">
-            <ImageUploadField
+            <ImageUploadDropzone
               label="Store Logo"
               value={logoUrl}
               onChange={setLogoUrl}
+              preset="logo"
               previewHeight="h-24"
               previewClass="object-contain p-2"
               description={
@@ -343,19 +252,21 @@ export default function ContentClient() {
                 </>
               }
             />
-            <ImageUploadField
+            <ImageUploadDropzone
               label="Hero Background"
               value={heroBackgroundUrl}
               onChange={setHeroBackgroundUrl}
+              preset="banner"
               previewHeight="h-24"
               previewClass="object-cover"
               description="Background pattern atau gambar di belakang auto-slider."
             />
             <div className="md:col-span-2">
-              <ImageUploadField
+              <ImageUploadDropzone
                 label="Game Detail Banner"
                 value={gameDetailBanner}
                 onChange={setGameDetailBanner}
+                preset="banner"
                 previewHeight="h-32"
                 previewClass="object-cover"
                 description="Banner header panjang yang digunakan pada semua halaman detail game."
@@ -405,10 +316,11 @@ export default function ContentClient() {
             </div>
 
             <div className="space-y-4">
-              <ImageUploadField
+              <ImageUploadDropzone
                 label="Open Graph Image (Social Media)"
                 value={ogImage}
                 onChange={setOgImage}
+                preset="banner"
                 previewHeight="h-36"
                 previewClass="object-cover"
                 description={
@@ -478,10 +390,11 @@ export default function ContentClient() {
                 className="flex items-start gap-3 animate-in slide-in-from-bottom-2 fade-in duration-300"
               >
                 <div className="flex-1">
-                  <ImageUploadField
+                  <ImageUploadDropzone
                     label={`Slide ${index + 1} Image`}
                     value={sliderUrl}
                     onChange={(url) => handleSliderChange(index, url)}
+                    preset="slider"
                     previewHeight="h-28"
                     previewClass="object-cover"
                   />

@@ -3,8 +3,11 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { getDictionary, Language } from "@/lib/dictionary";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
-export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[] }) {
+export function RiwayatTransaksiClient({ initialOrders, language = "id", currency = "IDR" }: { initialOrders: any[], language?: Language, currency?: Currency }) {
+  const dict = getDictionary(language);
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -77,11 +80,11 @@ export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[]
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">STATUS</label>
+            <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.member_filter_status}</label>
             <select 
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 appearance-none transition-colors"
+              className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary appearance-none transition-colors"
             >
               <option value="" className="bg-[#121212]">Success, Pending...</option>
               <option value="Success" className="bg-[#121212]">Success</option>
@@ -92,27 +95,27 @@ export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[]
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">DARI TANGGAL</label>
+            <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.member_filter_date_from}</label>
             <input 
               type="date" 
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
+              className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary transition-colors [color-scheme:dark]"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">SAMPAI TANGGAL</label>
+            <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.member_filter_date_to}</label>
             <input 
               type="date" 
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 transition-colors [color-scheme:dark]"
+              className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary transition-colors [color-scheme:dark]"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">TAMPILKAN</label>
+            <label className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">{dict.member_show_label}</label>
             <div className="relative">
               <select 
                 value={limit}
@@ -121,11 +124,11 @@ export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[]
                   setCurrentPage(1);
                   setActiveFilters(prev => ({ ...prev, limit: Number(e.target.value) }));
                 }}
-                className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-blue-500 appearance-none transition-colors pr-10"
+                className="w-full bg-transparent border border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-300 focus:outline-none focus:border-theme-primary appearance-none transition-colors pr-10"
               >
-                <option value={5} className="bg-[#121212]">5 Baris</option>
-                <option value={10} className="bg-[#121212]">10 Baris</option>
-                <option value={50} className="bg-[#121212]">50 Baris</option>
+                <option value={5} className="bg-[#121212]">5 {dict.member_rows}</option>
+                <option value={10} className="bg-[#121212]">10 {dict.member_rows}</option>
+                <option value={50} className="bg-[#121212]">50 {dict.member_rows}</option>
               </select>
               <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
@@ -137,13 +140,13 @@ export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[]
             onClick={handleFilter}
             className="bg-blue-500 hover:bg-blue-400 text-white font-semibold text-sm px-6 py-2.5 rounded-full transition-all shadow-lg shadow-blue-500/20"
           >
-            Filter Data
+            {dict.member_btn_filter}
           </button>
           <button 
             onClick={handleReset}
             className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold text-sm px-6 py-2.5 rounded-full transition-colors"
           >
-            Reset
+            {dict.member_btn_reset}
           </button>
         </div>
       </div>
@@ -154,19 +157,19 @@ export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[]
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="border-b border-white/5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                <th className="py-4 px-6">NOMOR INVOICE</th>
-                <th className="py-4 px-6">ITEM / GAME</th>
-                <th className="py-4 px-6">TARGET</th>
-                <th className="py-4 px-6">TOTAL BAYAR</th>
-                <th className="py-4 px-6">TANGGAL</th>
-                <th className="py-4 px-6">STATUS</th>
+                <th className="py-4 px-6">{dict.member_trx_th_inv}</th>
+                <th className="py-4 px-6">{dict.member_trx_th_item}</th>
+                <th className="py-4 px-6">{dict.member_trx_th_target}</th>
+                <th className="py-4 px-6">{dict.member_trx_th_total}</th>
+                <th className="py-4 px-6">{dict.member_trx_th_date}</th>
+                <th className="py-4 px-6">{dict.member_trx_th_status}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {currentData.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 px-6 text-center text-gray-500 text-sm">
-                    Tidak ada riwayat transaksi yang ditemukan.
+                    {dict.member_empty_transactions}
                   </td>
                 </tr>
               ) : (
@@ -192,7 +195,7 @@ export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[]
                         {targetFormatted}
                       </td>
                       <td className="py-5 px-6 font-bold text-white text-sm">
-                        Rp {Number(order.total_price).toLocaleString('id-ID')}
+                        {formatCurrency(order.total_price, currency)}
                       </td>
                       <td className="py-5 px-6 text-gray-400 text-xs font-medium">
                         {formattedDate}
@@ -205,7 +208,7 @@ export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[]
                               : order.status === "Pending"
                               ? "bg-[#D9A32D]/10 text-[#D9A32D] border-[#D9A32D]/30"
                               : order.status === "Processed"
-                              ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                              ? "bg-[var(--accent-glow)] text-theme-primary opacity-90 border-theme-primary/30"
                               : "bg-rose-500/10 text-rose-400 border-rose-500/30"
                           }`}
                         >
@@ -225,7 +228,7 @@ export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[]
       {filteredData.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#121212] border border-white/5 rounded-2xl p-4">
           <div className="text-xs text-gray-400 font-medium">
-            Menampilkan <span className="text-white font-bold">{startIndex}</span> - <span className="text-white font-bold">{endIndex}</span> dari <span className="text-white font-bold">{filteredData.length}</span> data
+            {dict.member_showing_label} <span className="text-white font-bold">{startIndex}</span> - <span className="text-white font-bold">{endIndex}</span> {dict.member_of_label} <span className="text-white font-bold">{filteredData.length}</span> {dict.member_data_label}
           </div>
           
           <div className="flex items-center gap-2">
@@ -237,7 +240,7 @@ export function RiwayatTransaksiClient({ initialOrders }: { initialOrders: any[]
               <ChevronLeft className="w-4 h-4" />
             </button>
             <div className="text-xs font-bold text-gray-300 bg-white/5 border border-white/10 rounded-xl px-4 py-2">
-              Halaman {currentPage} dari {totalPages}
+              {dict.member_page_label} {currentPage} {dict.member_of_label} {totalPages}
             </div>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}

@@ -10,30 +10,174 @@ export default async function TermsPage({
   const { domain } = await params;
   const supabase = await createClient();
 
-  let tenantName = "Yowanastore";
-  let tenantDomain = "yowanastore.com";
+  let tenantName = "NewGamingStore";
+  let tenantDomain = "newgamingstore.com";
+  let language = "id";
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     let { data: tenantData } = await supabase
       .from("tenants")
-      .select("name, domain")
+      .select("name, domain, theme_config")
       .eq("domain", domain)
       .maybeSingle();
 
     if (!tenantData) {
-      const res = await supabase.from("tenants").select("name, domain").limit(1).maybeSingle();
+      const res = await supabase.from("tenants").select("name, domain, theme_config").limit(1).maybeSingle();
       if (res.data) tenantData = res.data;
     }
 
     if (tenantData) {
       tenantName = tenantData.name || tenantName;
       tenantDomain = tenantData.domain || tenantDomain;
+      language = tenantData.theme_config?.language || "id";
     }
   }
 
   const currentDate = new Date();
   const year = currentDate.getFullYear() >= 2025 ? currentDate.getFullYear() : 2025;
-  const lastUpdated = `1 November ${year}`;
+  const isEn = language === "ms";
+  const lastUpdated = isEn ? `November 1, ${year}` : `1 November ${year}`;
+
+  if (isEn) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-4xl text-gray-300 leading-relaxed">
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Terms and Conditions of Service for {tenantName}</h1>
+        <p className="text-sm text-gray-400 mb-8 border-b border-gray-800 pb-4">Last Updated: {lastUpdated}</p>
+
+        <div className="space-y-6">
+          <p>
+            Welcome to {tenantName}. These Terms and Conditions govern your access to and use of the website https://{tenantDomain} and all products and services available through this site (collectively referred to as the "Service").
+          </p>
+          <p>
+            By accessing or using our Service, you agree to be bound by these Terms and Conditions. If you disagree with any part of these terms, please do not use our Service.
+          </p>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">1. Definitions</h2>
+            <ul className="list-disc pl-5 space-y-2 text-sm md:text-base">
+              <li><strong className="text-white">{tenantName}/We/Us:</strong> Refers to the service provider and owner of the website https://{tenantDomain}.</li>
+              <li><strong className="text-white">User/You:</strong> Any individual or entity accessing or using our Service.</li>
+              <li><strong className="text-white">Digital Products:</strong> All vouchers, diamonds, cash, credits, top-ups, e-wallet balances, or other in-game items sold through the Service.</li>
+              <li><strong className="text-white">Account:</strong> A user account registered on the Site to access certain features.</li>
+              <li><strong className="text-white">Site:</strong> The website https://{tenantDomain}.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">2. General Terms of Service Usage</h2>
+            <div className="space-y-4 text-sm md:text-base">
+              <div>
+                <h3 className="font-semibold text-white mb-1">A. User Eligibility</h3>
+                <p>You represent and warrant that you are at least 18 (eighteen) years of age or have obtained parental/guardian consent and have full legal capacity to enter into these Terms and Conditions.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">B. User Account</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>You are solely responsible for maintaining the confidentiality of your Account username and password and for all activities that occur under your Account.</li>
+                  <li>You must immediately notify Us of any unauthorized use of your Account or any other security breach.</li>
+                  <li>We reserve the right to suspend or terminate your Account if there is any indication of suspicious activity, fraud, or violation of these Terms.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">3. Transaction & Digital Product Purchase Terms</h2>
+            <div className="space-y-4 text-sm md:text-base">
+              <div>
+                <h3 className="font-semibold text-white mb-1">A. Ordering</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Every order placed constitutes an offer by You to purchase Digital Products.</li>
+                  <li>You are solely responsible for ensuring that all order details, including Game User ID (UID), Nickname, or Target Voucher ID entered are accurate. {tenantName} is not responsible for top-up errors or delivery failures resulting from incorrect user input.</li>
+                  <li>All prices listed on the Site are final and inclusive of applicable taxes, unless stated otherwise.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">B. Payment</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Payments must be made through the available payment channels provided on the Site.</li>
+                  <li>Transactions will be processed once We receive valid payment confirmation and funds are fully received.</li>
+                  <li>Delays or failures in payment processing are the responsibility of third-party payment service providers.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">C. Product Processing and Delivery</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Delivery time for Digital Products varies depending on the product type and supplier system status. We will endeavor to process orders as quickly as possible (typically instant).</li>
+                  <li>Digital Products are deemed successfully delivered when: (a) For direct top-ups, the product has arrived at the target ID; or (b) For vouchers, the code is displayed on your screen or sent to your email/contact.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">4. Refund and Cancellation Policy</h2>
+            <div className="space-y-4 text-sm md:text-base">
+              <div>
+                <h3 className="font-semibold text-white mb-1">A. Customer Cancellation</h3>
+                <p>Once payment is confirmed and Digital Products are being processed, orders cannot be cancelled or recalled by the User.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">B. Refund Policy</h3>
+                <p className="mb-2">Refunds will only be processed if:</p>
+                <ul className="list-disc pl-5 space-y-1 mb-2">
+                  <li><strong className="text-white">System Failure:</strong> We fail to deliver Digital Products due to errors in Our system or supplier system after payment is received.</li>
+                  <li><strong className="text-white">Out of Stock:</strong> The ordered product is unavailable at the time payment is received.</li>
+                </ul>
+                <p className="mb-2">Refunds will not be issued if:</p>
+                <ul className="list-disc pl-5 space-y-1 mb-2">
+                  <li>The User incorrectly enters the User ID or target data.</li>
+                  <li>The User changes their mind after the transaction has been successfully processed.</li>
+                  <li>The voucher code has already been dispatched to the User.</li>
+                </ul>
+                <p>If a refund is approved, funds will be returned to the original payment method or User Account within 3-7 business days, minus applicable bank or admin fees.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">5. Liability and Warranties</h2>
+            <div className="space-y-4 text-sm md:text-base">
+              <div>
+                <h3 className="font-semibold text-white mb-1">A. Limitation of Liability</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>{tenantName} acts solely as a facilitator between Users and official game/voucher suppliers. We are not responsible for changes, suspensions, or service issues arising on the publisher's end (e.g. account bans, currency adjustments).</li>
+                  <li>We are not liable for any losses, damages, or claims arising from the use of Accounts, User IDs, or vouchers successfully delivered by Us.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">B. Product Guarantee</h3>
+                <p>We guarantee that all Digital Products sold are legal, original, and sourced from official channels. We do not sell illegal or fraudulent items.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">6. Intellectual Property</h2>
+            <p className="text-sm md:text-base">All content, logos, trademarks, designs, and software contained on the Site belong to {tenantName} or its licensors and are protected by intellectual property laws. Users are prohibited from using, reproducing, or distributing content without prior written permission.</p>
+          </section>
+
+          <section className="space-y-3 pt-4">
+            <h2 className="text-xl font-bold text-white">7. Miscellaneous</h2>
+            <div className="space-y-4 text-sm md:text-base">
+              <div>
+                <h3 className="font-semibold text-white mb-1">A. Governing Law</h3>
+                <p>These Terms and Conditions shall be governed by and construed in accordance with applicable laws.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">B. Dispute Resolution</h3>
+                <p>Any dispute arising out of these Terms shall be resolved amicably through mutual consultation. If a settlement cannot be reached, it shall be referred to the competent court.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">C. Amendments</h3>
+                <p>We reserve the right, at Our sole discretion, to modify or replace these Terms at any time. Continued access or use of our Service following any revisions constitutes your agreement to be bound by the updated Terms.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl text-gray-300 leading-relaxed">

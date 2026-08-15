@@ -1,10 +1,16 @@
-import { checkPermission, getActiveAdminTenantId } from "@/app/admin/actions";
+import { checkPermission, getActiveAdminTenantId, getAdminSession } from "@/app/admin/actions";
 import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { createClient } from "@/utils/supabase/server";
 import { ProductsClient } from "./ProductsClient";
+import { Currency } from "@/lib/currencyUtils";
+
+export const dynamic = 'force-dynamic';
 
 export default async function ProductsPage() {
-  if (!(await checkPermission("manage_products"))) {
+  const adminSession = await getAdminSession();
+  const permissions: string[] = adminSession?.admin_roles?.permissions || [];
+  
+  if (!adminSession?.is_superadmin && !permissions.includes("manage_products")) {
     return <UnauthorizedAccess permission="manage_products" />;
   }
 
@@ -12,6 +18,7 @@ export default async function ProductsPage() {
   let products: any[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let games: any[] = [];
+  let currency: Currency = 'IDR';
   
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -36,6 +43,12 @@ export default async function ProductsPage() {
           .order('name', { ascending: true });
           
         if (!gamesError && gamesData) games = gamesData;
+
+        const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', currentTenantId).single();
+        if (tenantData?.theme_config) {
+           const tLang = tenantData.theme_config.language || 'id';
+           currency = (tenantData.theme_config.currency || (tLang === 'ms' ? 'MYR' : 'IDR')) as Currency;
+        }
       }
     }
   } catch (err) {
@@ -44,7 +57,7 @@ export default async function ProductsPage() {
 
   return (
     <div className="space-y-6">
-       <ProductsClient initialProducts={products} games={games} />
+       <ProductsClient initialProducts={products} games={games} currency={currency} />
     </div>
   );
 }

@@ -65,11 +65,11 @@ export function MemberSidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
                 isActive
-                  ? "bg-white/10 text-white font-semibold shadow-inner border-l-2 border-blue-500"
+                  ? "bg-white/10 text-white font-semibold shadow-inner border-l-2 border-theme-primary"
                   : "text-gray-400 hover:text-white hover:bg-white/5"
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? "text-blue-400" : "text-gray-400"}`} />
+              <Icon className={`w-5 h-5 ${isActive ? "text-theme-primary opacity-90" : "text-gray-400"}`} />
               <span>{item.name}</span>
             </Link>
           );

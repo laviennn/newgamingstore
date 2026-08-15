@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { savePayment } from "@/app/admin/(authenticated)/payments/actions";
 import { uploadFile } from "@/app/actions/upload";
+import { compressImageClient } from "@/lib/client-image-compressor";
 import { useNotification } from "@/components/ui/notification";
 import { Loader2, UploadCloud } from "lucide-react";
 import Image from "next/image";
@@ -41,20 +42,35 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
     if (!file) return;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    const result = await uploadFile(formData);
-    
-    if (result.error) {
-      showNotification("error", "Upload Gagal", result.error);
-    } else if (result.url) {
-      if (isQr) {
-        setQrPreview(result.url);
-      } else {
-        setLogoPreview(result.url);
+    try {
+      const presetKey = isQr ? "qris" : "icon";
+      const compressed = await compressImageClient(file, presetKey);
+      const formData = new FormData();
+      formData.append("file", compressed.file);
+      const result = await uploadFile(formData);
+      
+      if (result.error) {
+        showNotification("error", "Upload Gagal", result.error);
+      } else if (result.url) {
+        if (isQr) {
+          setQrPreview(result.url);
+        } else {
+          setLogoPreview(result.url);
+        }
+        const percentSaved = Math.round(compressed.ratio * 100);
+        showNotification(
+          "success",
+          "Berhasil",
+          percentSaved > 0
+            ? `${isQr ? "QRIS" : "Logo"} terkonversi ke WebP (${percentSaved}% lebih hemat)!`
+            : "Gambar berhasil diunggah."
+        );
       }
+    } catch (err: any) {
+      showNotification("error", "Upload Gagal", err.message || "Gagal mengompres gambar.");
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

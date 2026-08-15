@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { getDictionary, Language } from "@/lib/dictionary";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function FaqSection({ faqs }: { faqs: any[] }) {
+export function FaqSection({ faqs, language = 'id' }: { faqs: any[], language?: Language }) {
+  const dict = getDictionary(language);
   const [openId, setOpenId] = useState<string | null>(null);
 
   if (!faqs || faqs.length === 0) return null;
@@ -17,10 +19,10 @@ export function FaqSection({ faqs }: { faqs: any[] }) {
     <div className="w-full py-8 md:py-12">
       <div className="text-center mb-12 max-w-2xl mx-auto space-y-4">
         <h2 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">
-          Sering <span className="bg-gradient-to-r from-rose-500 to-orange-500 bg-clip-text text-transparent">Ditanyakan</span>
+          {dict.home_faq_title_1} <span className="bg-gradient-to-r from-rose-500 to-orange-500 bg-clip-text text-transparent">{dict.home_faq_title_2}</span>
         </h2>
         <p className="text-sm md:text-base text-slate-400">
-          Punya pertanyaan? Kami punya jawabannya. Berikut adalah hal-hal yang sering ditanyakan oleh pengguna kami.
+          {dict.home_faq_desc}
         </p>
       </div>
 

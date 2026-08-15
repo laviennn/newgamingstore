@@ -14,14 +14,15 @@ import {
 import { createClient } from "@/utils/supabase/server";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
 import Link from "next/link";
+import { formatCurrency } from "@/lib/currencyUtils";
 
 export default async function AdminDashboardPage() {
   let stats = {
     totalOrders: 0,
     paidOrders: 0,
     pendingOrders: 0,
-    paidVolumeIdr: 0,
-    pendingVolumeIdr: 0,
+    paidVolumeByCurrency: {} as Record<string, number>,
+    pendingVolumeByCurrency: {} as Record<string, number>,
     members: 0,
     games: 0,
     products: 0,
@@ -30,6 +31,7 @@ export default async function AdminDashboardPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let recentOrders: any[] = [];
   let isConnected = false;
+  let currency: any = "IDR";
 
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -47,6 +49,7 @@ export default async function AdminDashboardPage() {
           paidPricesRes,
           pendingPricesRes,
           recentOrdersRes,
+          tenantConfigRes,
         ] = await Promise.all([
           supabase.from('games').select('*', { count: 'exact', head: true }).eq('tenant_id', currentTenantId),
           supabase.from('products').select('*', { count: 'exact', head: true }).eq('tenant_id', currentTenantId),
@@ -54,20 +57,34 @@ export default async function AdminDashboardPage() {
           supabase.from('orders').select('*', { count: 'exact', head: true }).eq('tenant_id', currentTenantId),
           supabase.from('orders').select('*', { count: 'exact', head: true }).eq('tenant_id', currentTenantId).eq('payment_status', 'PAID'),
           supabase.from('orders').select('*', { count: 'exact', head: true }).eq('tenant_id', currentTenantId).in('payment_status', ['PENDING', 'UNPAID']),
-          supabase.from('orders').select('total_price').eq('tenant_id', currentTenantId).eq('payment_status', 'PAID'),
-          supabase.from('orders').select('total_price').eq('tenant_id', currentTenantId).in('payment_status', ['PENDING', 'UNPAID']),
-          supabase.from('orders').select('*, games(name), products(name)').eq('tenant_id', currentTenantId).order('created_at', { ascending: false }).limit(6),
+          supabase.from('orders').select('total_price, currency').eq('tenant_id', currentTenantId).eq('payment_status', 'PAID'),
+          supabase.from('orders').select('total_price, currency').eq('tenant_id', currentTenantId).in('payment_status', ['PENDING', 'UNPAID']),
+          supabase.from('orders').select('*, games(name), products(name), payment_channels(name, category)').eq('tenant_id', currentTenantId).order('created_at', { ascending: false }).limit(6),
+          supabase.from('tenants').select('theme_config').eq('id', currentTenantId).single(),
         ]);
 
-        const paidSum = paidPricesRes.data ? paidPricesRes.data.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0) : 0;
-        const pendingSum = pendingPricesRes.data ? pendingPricesRes.data.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0) : 0;
+        const paidSumByCurrency: Record<string, number> = {};
+        if (paidPricesRes.data) {
+          paidPricesRes.data.forEach(item => {
+            const curr = item.currency || tenantConfigRes.data?.theme_config?.currency || (tenantConfigRes.data?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
+            paidSumByCurrency[curr] = (paidSumByCurrency[curr] || 0) + (Number(item.total_price) || 0);
+          });
+        }
+        
+        const pendingSumByCurrency: Record<string, number> = {};
+        if (pendingPricesRes.data) {
+          pendingPricesRes.data.forEach(item => {
+            const curr = item.currency || tenantConfigRes.data?.theme_config?.currency || (tenantConfigRes.data?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
+            pendingSumByCurrency[curr] = (pendingSumByCurrency[curr] || 0) + (Number(item.total_price) || 0);
+          });
+        }
 
         stats = {
           totalOrders: ordersTotalRes.count || 0,
           paidOrders: ordersPaidRes.count || 0,
           pendingOrders: ordersPendingRes.count || 0,
-          paidVolumeIdr: paidSum,
-          pendingVolumeIdr: pendingSum,
+          paidVolumeByCurrency: paidSumByCurrency,
+          pendingVolumeByCurrency: pendingSumByCurrency,
           members: membersRes.count || 0,
           games: gamesRes.count || 0,
           products: productsRes.count || 0,
@@ -76,6 +93,8 @@ export default async function AdminDashboardPage() {
         if (recentOrdersRes.data) {
           recentOrders = recentOrdersRes.data;
         }
+        
+        currency = tenantConfigRes.data?.theme_config?.currency || (tenantConfigRes.data?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
 
         isConnected = true;
       }
@@ -83,6 +102,26 @@ export default async function AdminDashboardPage() {
   } catch (err) {
     console.error("Dashboard fetch error:", err);
   }
+
+  const rawCurrencies = Array.from(
+    new Set([
+      ...Object.keys(stats.paidVolumeByCurrency),
+      ...Object.keys(stats.pendingVolumeByCurrency),
+      currency
+    ])
+  ).filter(Boolean);
+
+  const activeCurrenciesWithData = rawCurrencies.filter(
+    (c) => (stats.paidVolumeByCurrency[c] || 0) > 0 || (stats.pendingVolumeByCurrency[c] || 0) > 0
+  );
+
+  const displayCurrencies = activeCurrenciesWithData.length > 1 
+    ? activeCurrenciesWithData 
+    : (rawCurrencies.length > 1 && (stats.paidOrders > 0 || stats.pendingOrders > 0))
+    ? rawCurrencies
+    : [currency];
+
+  const isHeterogeneous = displayCurrencies.length > 1;
 
   return (
     <div className="space-y-8">
@@ -108,46 +147,147 @@ export default async function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Financial Overview (IDR Volumes) */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="relative overflow-hidden border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-card to-card shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold text-emerald-500 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" /> Total Omset Lunas (PAID)
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
-              <DollarSign className="h-5 w-5" />
+      {/* Financial Overview (Heterogeneous vs Single Currency) */}
+      {isHeterogeneous ? (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-muted/40 border border-border/60 rounded-2xl p-4">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                <DollarSign className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-foreground">Ringkasan Keuangan Multi-Mata Uang</h2>
+                  <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                    Heterogen ({displayCurrencies.join(" & ")})
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Terdeteksi transaksi dalam berbagai mata uang. Data dipisahkan per negara untuk akurasi pembukuan.
+                </p>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <div className="text-3xl font-extrabold text-foreground tracking-tight">
-              Rp {stats.paidVolumeIdr.toLocaleString('id-ID')}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Akumulasi nilai transaksi yang telah berhasil dibayar.
-            </p>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card className="relative overflow-hidden border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-card to-card shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold text-amber-500 flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Total Nominal Pending
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
-              <Clock className="h-5 w-5" />
-            </div>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <div className="text-3xl font-extrabold text-foreground tracking-tight">
-              Rp {stats.pendingVolumeIdr.toLocaleString('id-ID')}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Nilai transaksi yang masih menunggu konfirmasi / pembayaran.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {displayCurrencies.map((curr) => {
+              const isMYR = curr === "MYR";
+              const flag = isMYR ? "🇲🇾" : "🇮🇩";
+              const countryName = isMYR ? "Toko Malaysia" : "Toko Indonesia";
+              const currencySubtitle = isMYR ? "Mata Uang: Ringgit (MYR)" : "Mata Uang: Rupiah (IDR)";
+              const paidAmount = stats.paidVolumeByCurrency[curr] || 0;
+              const pendingAmount = stats.pendingVolumeByCurrency[curr] || 0;
+
+              return (
+                <Card 
+                  key={curr} 
+                  className={`relative overflow-hidden border shadow-sm ${
+                    isMYR 
+                      ? 'border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-card to-card' 
+                      : 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 via-card to-card'
+                  }`}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border/40">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl drop-shadow-sm">{flag}</span>
+                      <div>
+                        <CardTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+                          {countryName}
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground font-medium">{currencySubtitle}</p>
+                      </div>
+                    </div>
+                    <span className={`text-xs font-black px-3 py-1 rounded-full border ${
+                      isMYR 
+                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
+                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                    }`}>
+                      {curr}
+                    </span>
+                  </CardHeader>
+                  <CardContent className="pt-4 grid grid-cols-2 gap-4">
+                    {/* Paid Omset */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-500">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Total Omset (PAID)</span>
+                      </div>
+                      <div className="text-xl md:text-2xl font-black text-foreground tracking-tight">
+                        {formatCurrency(paidAmount, curr as any)}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">Berhasil terverifikasi</p>
+                    </div>
+
+                    {/* Pending Omset */}
+                    <div className="space-y-1 border-l border-border/40 pl-4">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
+                        <Clock className="w-4 h-4" />
+                        <span>Total Pending</span>
+                      </div>
+                      <div className="text-xl md:text-2xl font-black text-foreground tracking-tight">
+                        {formatCurrency(pendingAmount, curr as any)}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">Menunggu pembayaran</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="relative overflow-hidden border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-card to-card shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-semibold text-emerald-500 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" /> Total Omset Lunas (PAID)
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1">
+                  <span>{currency === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+                  <span>{currency === 'MYR' ? 'MYR' : 'IDR'}</span>
+                </span>
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="text-3xl font-extrabold text-foreground tracking-tight">
+                {formatCurrency(stats.paidVolumeByCurrency[currency] || 0, currency)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Akumulasi nilai transaksi yang telah berhasil dibayar.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="relative overflow-hidden border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-card to-card shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-semibold text-amber-500 flex items-center gap-2">
+                <Clock className="h-4 w-4" /> Total Nominal Pending
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center gap-1">
+                  <span>{currency === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+                  <span>{currency === 'MYR' ? 'MYR' : 'IDR'}</span>
+                </span>
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                  <Clock className="h-5 w-5" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="text-3xl font-extrabold text-foreground tracking-tight">
+                {formatCurrency(stats.pendingVolumeByCurrency[currency] || 0, currency)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Nilai transaksi yang masih menunggu konfirmasi / pembayaran.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Operational Metrics (Orders & Users) */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -286,15 +426,18 @@ export default async function AdminDashboardPage() {
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {o.games?.name || 'Game'} • {o.products?.name || 'Product'} {o.customer_email ? `(${o.customer_email})` : ''}
+                        {o.games?.name || 'Game'} • {o.products?.name || 'Product'} {o.payment_channel_id === '11111111-1111-1111-1111-111111111111' ? '• Saldo Akun' : (o.payment_channels?.name ? `• ${o.payment_channels.name}` : '')}
                       </p>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-4">
                       <div className="text-right">
-                        <span className="text-sm font-bold text-foreground">
-                          Rp {Number(o.total_price || 0).toLocaleString('id-ID')}
-                        </span>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <span className="text-xs">{(o.currency || currency) === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+                          <span className="text-sm font-bold text-foreground">
+                            {formatCurrency(Number(o.total_price || 0), o.currency || currency)}
+                          </span>
+                        </div>
                         <p className="text-[10px] text-muted-foreground">
                           {new Date(o.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </p>

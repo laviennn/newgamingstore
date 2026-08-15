@@ -16,13 +16,13 @@ import {
   type NotificationItem,
 } from '@/components/storefront/PurchaseNotification';
 import { MaintenanceView } from '@/components/storefront/MaintenanceView';
-import { hexToHsl } from '@/lib/utils';
 import {
   getTenantAuthConfig,
   getStorefrontSession,
   type AuthMode,
 } from '@/lib/tenantAuth';
 import type { MemberPayload } from '@/utils/memberSession';
+import { generateThemeCssVariables } from '@/lib/themeUtils';
 
 export async function generateMetadata({
   params,
@@ -271,17 +271,7 @@ export default async function StorefrontLayout({
     }
   }
 
-  let customStyle = '';
-  if (config.primaryColor) {
-    const hsl = hexToHsl(config.primaryColor);
-    if (hsl) {
-      customStyle = `
-        :root {
-          --primary: ${hsl};
-        }
-      `;
-    }
-  }
+  const customStyle = generateThemeCssVariables(config);
 
   return (
     <>
@@ -309,6 +299,7 @@ export default async function StorefrontLayout({
           user={user}
           memberSession={memberSession}
           authMode={authMode}
+          language={config.language || 'id'}
         />
 
         <main className='flex-1'>{children}</main>

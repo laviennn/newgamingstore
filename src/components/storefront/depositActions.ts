@@ -41,6 +41,9 @@ export async function createDepositOrder(depositData: any) {
 
     const invoiceId = generateInvoiceId("DEP");
 
+    const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', validData.tenantId).single();
+    const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
+
     const payload = {
        invoice_id: invoiceId,
        payment_channel_id: validData.paymentMethodId,
@@ -48,7 +51,8 @@ export async function createDepositOrder(depositData: any) {
        amount: validData.amount,
        status: 'Pending',
        customer_email: currentUser?.email || validData.customerEmail || validData.waNumber || 'no-email@test.com',
-       tenant_id: validData.tenantId
+       tenant_id: validData.tenantId,
+       currency: currency
     };
 
     const { data, error } = await supabase

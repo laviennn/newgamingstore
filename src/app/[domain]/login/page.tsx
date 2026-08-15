@@ -20,6 +20,7 @@ export default async function LoginPage({
         authMode={tenantConfig?.authMode || 'email'}
         tenantId={tenantConfig?.tenantId}
         whatsapp={tenantConfig?.whatsapp}
+        language={tenantConfig?.language}
       />
     </div>
   );

@@ -22,6 +22,8 @@ export default async function RegisterPage({
       <AuthCard
         mode='register'
         authMode='email'
+        whatsapp={tenantConfig?.whatsapp}
+        language={tenantConfig?.language}
       />
     </div>
   );

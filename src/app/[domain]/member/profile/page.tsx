@@ -22,6 +22,13 @@ export default async function MemberProfilePage({
   }
 
   const supabase = await createClient();
+  const { data: tenantData } = await supabase
+    .from('tenants')
+    .select('theme_config')
+    .eq('domain', domain)
+    .maybeSingle();
+  const language = tenantData?.theme_config?.language || 'id';
+
   const { data: authData } = await supabase.auth.getUser();
   const user = authData?.user;
 
@@ -57,6 +64,7 @@ export default async function MemberProfilePage({
           ip: ip,
           location: "Indonesia", // Mock location based on IP would be better but static for now
         }}
+        language={language}
       />
     </div>
   );

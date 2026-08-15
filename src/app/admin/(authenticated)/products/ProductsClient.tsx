@@ -11,9 +11,10 @@ import { Trash2, Edit, Copy } from "lucide-react";
 import { ProductFormModal } from "@/components/admin/ProductFormModal";
 
 import Image from "next/image";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function ProductsClient({ initialProducts, games }: { initialProducts: any[], games: any[] }) {
+export function ProductsClient({ initialProducts, games, currency = 'IDR' }: { initialProducts: any[], games: any[], currency?: Currency }) {
   const { showNotification, NotificationComponent } = useNotification();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,8 +80,23 @@ export function ProductsClient({ initialProducts, games }: { initialProducts: an
   return (
     <>
       {NotificationComponent}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Products & Prices</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">Products & Prices</h1>
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs ${
+              currency === 'MYR' 
+                ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
+                : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+            }`}>
+              <span className="text-sm leading-none">{currency === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+              <span>{currency === 'MYR' ? 'MYR (RM)' : 'IDR (Rp)'}</span>
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Kelola katalog produk, harga nominal ({currency === 'MYR' ? 'Ringgit Malaysia - RM' : 'Rupiah Indonesia - Rp'}), dan status aktif.
+          </p>
+        </div>
         <Button onClick={handleAdd}>Add Product</Button>
       </div>
 
@@ -90,7 +106,14 @@ export function ProductsClient({ initialProducts, games }: { initialProducts: an
             <tr className="border-b transition-colors hover:bg-muted/50">
               <th className="h-12 px-4 font-medium w-16">Game</th>
               <th className="h-12 px-4 font-medium">Product Name</th>
-              <th className="h-12 px-4 font-medium">Price</th>
+              <th className="h-12 px-4 font-medium">
+                <div className="flex items-center gap-1.5">
+                  <span>Price</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">
+                    {currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'}
+                  </span>
+                </div>
+              </th>
               <th className="h-12 px-4 font-medium">Status</th>
               <th className="h-12 px-4 font-medium text-right">Actions</th>
             </tr>
@@ -117,9 +140,9 @@ export function ProductsClient({ initialProducts, games }: { initialProducts: an
                 </td>
                 <td className="p-4 font-mono">
                   <div className="flex flex-col">
-                    <span>Rp {Number(p.price).toLocaleString('id-ID')}</span>
+                    <span>{formatCurrency(Number(p.price), currency)}</span>
                     {p.is_flash_sale && p.original_price && (
-                      <span className="text-xs text-muted-foreground line-through">Rp {Number(p.original_price).toLocaleString('id-ID')}</span>
+                      <span className="text-xs text-muted-foreground line-through">{formatCurrency(Number(p.original_price), currency)}</span>
                     )}
                   </div>
                 </td>
@@ -165,6 +188,7 @@ export function ProductsClient({ initialProducts, games }: { initialProducts: an
         onClose={() => setIsModalOpen(false)} 
         product={selectedProduct} 
         games={games}
+        currency={currency}
       />
 
       <ConfirmDeleteDialog 

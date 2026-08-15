@@ -94,7 +94,7 @@ export function PurchaseNotification({ tenantName, notifications }: PurchaseNoti
             {activeItem.itemName}
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <BadgeCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-500/20 shrink-0" />
+            <BadgeCheck className="w-3.5 h-3.5 text-theme-primary fill-blue-500/20 shrink-0" />
             <p className="text-[11px] md:text-xs text-gray-400 truncate">
               Verified by {tenantName || "Yowanastore"}
             </p>

@@ -17,6 +17,8 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { logoutStorefront } from '@/app/actions/auth';
+import { getDictionary, Language } from '@/lib/dictionary';
+import { formatCurrency, getCurrencyFromLanguage } from '@/lib/currencyUtils';
 
 import { createClient } from '@/utils/supabase/client';
 import type { AuthMode } from '@/lib/tenantAuth';
@@ -26,13 +28,16 @@ interface UserDropdownProps {
   user?: User | null;
   memberSession?: (MemberPayload & { phone?: string | null }) | null;
   authMode?: AuthMode;
+  language?: Language;
 }
 
 export function UserDropdown({
   user,
   memberSession,
   authMode = 'email',
+  language = 'id',
 }: UserDropdownProps) {
+  const dict = getDictionary(language);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isPending, startTransition] = useTransition();
@@ -111,7 +116,7 @@ export function UserDropdown({
           <div className='px-5 py-4'>
             <div className='flex items-center justify-between mb-3'>
               <span className='text-xs font-bold text-gray-400 tracking-wider'>
-                AKUN ANDA
+                {dict.user_account_header}
               </span>
               <div className='flex items-center gap-1.5 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full'>
                 <div className='w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]'></div>
@@ -121,7 +126,7 @@ export function UserDropdown({
 
             <div className='flex items-center gap-2 mb-2'>
               <h3 className='text-xl font-bold text-white'>{displayName}</h3>
-              <BadgeCheck className='w-5 h-5 text-blue-500' />
+              <BadgeCheck className='w-5 h-5 text-theme-primary' />
             </div>
 
             <div className='space-y-1.5'>
@@ -151,7 +156,7 @@ export function UserDropdown({
               onClick={() => setIsOpen(false)}
               className='flex items-center gap-4 px-3 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors'>
               <LayoutGrid className='w-5 h-5 text-gray-400' />
-              <span className='font-medium'>Dashboard Member</span>
+              <span className='font-medium'>{dict.user_dashboard}</span>
             </Link>
 
             <Link
@@ -160,11 +165,10 @@ export function UserDropdown({
               className='flex items-center justify-between px-3 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors'>
               <div className='flex items-center gap-4'>
                 <Wallet className='w-5 h-5 text-gray-400' />
-                <span className='font-medium'>Saldo Akun</span>
+                <span className='font-medium'>{dict.user_wallet_balance}</span>
               </div>
-              <div className='bg-black/50 border border-white/10 px-2.5 py-1 rounded-full text-xs font-bold'>
-                <span className='text-gray-500 mr-1'>Rp</span>{' '}
-                {balance.toLocaleString('id-ID')}
+              <div className='bg-black/50 border border-white/10 px-2.5 py-1 rounded-full text-xs font-bold text-theme-primary opacity-90'>
+                {formatCurrency(balance, getCurrencyFromLanguage(language))}
               </div>
             </Link>
 
@@ -173,7 +177,7 @@ export function UserDropdown({
               onClick={() => setIsOpen(false)}
               className='flex items-center gap-4 px-3 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors'>
               <History className='w-5 h-5 text-gray-400' />
-              <span className='font-medium'>Riwayat Transaksi</span>
+              <span className='font-medium'>{dict.user_transactions}</span>
             </Link>
 
             <Link
@@ -181,29 +185,27 @@ export function UserDropdown({
               onClick={() => setIsOpen(false)}
               className='flex items-center gap-4 px-3 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors'>
               <ListOrdered className='w-5 h-5 text-gray-400' />
-              <span className='font-medium'>Riwayat Deposit</span>
+              <span className='font-medium'>{dict.user_deposits}</span>
             </Link>
 
-            {/* Upgrade Membership */}
             <Link
               href='/member/upgrade'
               onClick={() => setIsOpen(false)}
               className='flex items-center justify-between px-3 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors group'>
               <div className='flex items-center gap-4'>
                 <Crown className='w-5 h-5 text-gray-400 group-hover:text-yellow-500 transition-colors' />
-                <span className='font-medium'>Upgrade Membership</span>
+                <span className='font-medium'>{dict.user_upgrade}</span>
               </div>
               <div className='w-2 h-2 bg-yellow-500 rounded-full shadow-[0_0_8px_rgba(234,179,8,0.6)]'></div>
             </Link>
 
-            {/* Profile Settings — hanya email mode */}
             {!isUsernameMember && (
               <Link
                 href='/member/profile'
                 onClick={() => setIsOpen(false)}
                 className='flex items-center gap-4 px-3 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors'>
                 <Settings className='w-5 h-5 text-gray-400' />
-                <span className='font-medium'>Pengaturan Profile</span>
+                <span className='font-medium'>{dict.user_settings}</span>
               </Link>
             )}
           </div>
@@ -217,7 +219,7 @@ export function UserDropdown({
               className='w-full flex items-center gap-4 px-3 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-50'>
               <LogOut className='w-5 h-5' />
               <span className='font-medium'>
-                {isPending ? 'Keluar...' : 'Keluar'}
+                {isPending ? dict.user_logout_pending : dict.user_logout}
               </span>
             </button>
           </div>

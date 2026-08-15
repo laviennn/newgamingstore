@@ -8,10 +8,12 @@ import { saveProduct } from "@/app/admin/(authenticated)/products/actions";
 import { useNotification } from "@/components/ui/notification";
 import { Loader2, UploadCloud } from "lucide-react";
 import { uploadFile } from "@/app/actions/upload";
+import { compressImageClient } from "@/lib/client-image-compressor";
 import Image from "next/image";
+import { Currency } from "@/lib/currencyUtils";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: boolean; onClose: () => void; product?: any; games: any[] }) {
+export function ProductFormModal({ isOpen, onClose, product, games, currency = 'IDR' }: { isOpen: boolean; onClose: () => void; product?: any; games: any[], currency?: Currency }) {
   const { showNotification, NotificationComponent } = useNotification();
   const [loading, setLoading] = React.useState(false);
   const [isFlashSale, setIsFlashSale] = React.useState(product?.is_flash_sale || false);
@@ -28,18 +30,31 @@ export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: 
     const file = e.target.files[0];
     
     setUploadingImage(true);
-    const formData = new FormData();
-    formData.append("file", file);
+    try {
+      const compressed = await compressImageClient(file, "icon");
+      const formData = new FormData();
+      formData.append("file", compressed.file);
 
-    const result = await uploadFile(formData);
-    
-    if (result.error) {
-      showNotification("error", "Gagal Unggah", result.error);
-    } else if (result.url) {
-      setImageUrl(result.url);
-      showNotification("success", "Unggah Berhasil", "Gambar produk berhasil diunggah.");
+      const result = await uploadFile(formData);
+      
+      if (result.error) {
+        showNotification("error", "Gagal Unggah", result.error);
+      } else if (result.url) {
+        setImageUrl(result.url);
+        const percentSaved = Math.round(compressed.ratio * 100);
+        showNotification(
+          "success",
+          "Unggah Berhasil",
+          percentSaved > 0
+            ? `Terkonversi ke WebP (${percentSaved}% lebih hemat)!`
+            : "Gambar produk berhasil diunggah."
+        );
+      }
+    } catch (err: any) {
+      showNotification("error", "Gagal Unggah", err.message || "Gagal mengompres gambar.");
+    } finally {
+      setUploadingImage(false);
     }
-    setUploadingImage(false);
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -66,7 +81,16 @@ export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: 
       <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{product ? "Edit Product" : "Add New Product"}</DialogTitle>
+          <DialogTitle className="flex items-center justify-between pr-6">
+            <span>{product ? "Edit Product" : "Add New Product"}</span>
+            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border shadow-2xs ${
+              currency === 'MYR' 
+                ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
+                : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+            }`}>
+              {currency === 'MYR' ? '🇲🇾 MYR (RM)' : '🇮🇩 IDR (Rp)'}
+            </span>
+          </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -139,13 +163,16 @@ export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: 
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="price" className="text-sm font-medium">Price (Rp)</label>
+            <label htmlFor="price" className="text-sm font-medium">
+              Price ({currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'})
+            </label>
             <Input 
               id="price" 
               name="price" 
               type="number"
+              step="any"
               min="0"
-              placeholder="e.g., 24000" 
+              placeholder={currency === "MYR" ? "e.g., 15.50" : "e.g., 24000"} 
               defaultValue={product?.price || ""}
               required 
             />
@@ -185,13 +212,16 @@ export function ProductFormModal({ isOpen, onClose, product, games }: { isOpen: 
           {isFlashSale && (
             <>
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                <label htmlFor="original_price" className="text-sm font-medium">Original Price (Rp)</label>
+                <label htmlFor="original_price" className="text-sm font-medium">
+                  Original Price ({currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'})
+                </label>
                 <Input 
                   id="original_price" 
                   name="original_price" 
                   type="number"
+                  step="any"
                   min="0"
-                  placeholder="e.g., 55000" 
+                  placeholder={currency === "MYR" ? "e.g., 25.00" : "e.g., 55000"} 
                   defaultValue={product?.original_price || ""}
                   required={isFlashSale}
                 />

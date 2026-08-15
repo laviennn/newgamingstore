@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { DepositForm } from '@/components/storefront/DepositForm';
 import { getUnifiedSession } from '@/lib/tenantAuth';
+import { getDictionary } from '@/lib/dictionary';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -26,17 +27,20 @@ export default async function MemberDepositPage({
   // Fetch tenant
   let { data: tenant } = await supabase
     .from('tenants')
-    .select('id')
+    .select('id, theme_config')
     .eq('domain', domain)
     .maybeSingle();
   if (!tenant) {
     const res = await supabase
       .from('tenants')
-      .select('id')
+      .select('id, theme_config')
       .limit(1)
       .maybeSingle();
     if (res.data) tenant = res.data;
   }
+  
+  const language = tenant?.theme_config?.language || 'id';
+  const dict = getDictionary(language);
 
   // Fetch active payment channels
   const { data: paymentChannels } = await supabase
@@ -66,9 +70,9 @@ export default async function MemberDepositPage({
           <ArrowLeft className='w-5 h-5' />
         </Link>
         <div>
-          <h2 className='text-xl font-bold text-white'>Deposit Saldo</h2>
+          <h2 className='text-xl font-bold text-white'>{dict.member_dep_title}</h2>
           <p className='text-sm text-gray-400'>
-            Isi saldo akun Anda untuk transaksi lebih cepat.
+            {dict.member_dep_desc}
           </p>
         </div>
       </div>
@@ -76,9 +80,9 @@ export default async function MemberDepositPage({
       {/* Saldo Saat Ini */}
       <div className='bg-[#121212] border border-white/10 rounded-2xl p-6 mb-6'>
         <div className='flex items-center gap-3 mb-2'>
-          <Wallet className='w-5 h-5 text-blue-400' />
+          <Wallet className='w-5 h-5 text-theme-primary opacity-90' />
           <span className='text-sm font-bold text-gray-400 tracking-wider'>
-            SALDO SAAT INI
+            {dict.member_dep_current_bal}
           </span>
         </div>
         <div className='text-3xl font-black text-white'>
@@ -87,11 +91,11 @@ export default async function MemberDepositPage({
         </div>
       </div>
 
-      {/* Form Deposit */}
       <DepositForm
         paymentChannels={paymentChannels || []}
         waNumber={user.phone || ''}
         tenantId={tenant?.id}
+        language={language}
       />
     </div>
   );

@@ -1,9 +1,18 @@
 import { createClient } from "@/utils/supabase/server";
 import { PricesClient } from "./PricesClient";
+import { getTenantAuthConfig } from "@/lib/tenantAuth";
 
 export const dynamic = "force-dynamic";
 
-export default async function PriceListPage() {
+export default async function PriceListPage({
+  params,
+}: {
+  params: Promise<{ domain: string }>;
+}) {
+  const { domain } = await params;
+  const tenantConfig = await getTenantAuthConfig(domain);
+  const language = tenantConfig?.language || 'id';
+
   let products: any[] = [];
   let games: any[] = [];
 
@@ -31,8 +40,8 @@ export default async function PriceListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <PricesClient initialGames={games} initialProducts={products} />
+    <div className="min-h-screen bg-theme-background text-white">
+      <PricesClient initialGames={games} initialProducts={products} language={language} />
     </div>
   );
 }

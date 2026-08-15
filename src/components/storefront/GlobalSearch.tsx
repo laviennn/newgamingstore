@@ -94,7 +94,7 @@ export function GlobalSearch() {
               className="flex-1 bg-transparent border-none focus:ring-0 text-base md:text-lg px-4 py-4 md:py-6 text-white placeholder-gray-600 outline-none w-full"
               autoFocus
             />
-            {loading && <Loader2 className="w-5 h-5 text-blue-500 animate-spin shrink-0" />}
+            {loading && <Loader2 className="w-5 h-5 text-theme-primary animate-spin shrink-0" />}
           </div>
 
           <div className="max-h-[60vh] overflow-y-auto p-2">
@@ -124,7 +124,7 @@ export function GlobalSearch() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-bold text-white text-sm md:text-base group-hover:text-blue-400 transition-colors">{game.name}</h4>
+                      <h4 className="font-bold text-white text-sm md:text-base group-hover:text-theme-primary opacity-90 transition-colors">{game.name}</h4>
                       <p className="text-xs text-gray-500">Top Up Instant</p>
                     </div>
                   </Link>

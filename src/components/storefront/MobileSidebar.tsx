@@ -24,6 +24,8 @@ import { createClient } from '@/utils/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import type { AuthMode } from '@/lib/tenantAuth';
 import type { MemberPayload } from '@/utils/memberSession';
+import { getDictionary, Language } from '@/lib/dictionary';
+import { formatCurrency, getCurrencyFromLanguage } from '@/lib/currencyUtils';
 
 interface MobileSidebarProps {
   user?: User | null;
@@ -31,6 +33,7 @@ interface MobileSidebarProps {
   authMode?: AuthMode;
   waChannelActive?: boolean;
   waChannelUrl?: string;
+  language?: Language;
 }
 
 export function MobileSidebar({
@@ -39,7 +42,9 @@ export function MobileSidebar({
   authMode = 'email',
   waChannelActive,
   waChannelUrl,
+  language = 'id',
 }: MobileSidebarProps) {
+  const dict = getDictionary(language);
   const [isPending, startTransition] = useTransition();
   const [balance, setBalance] = useState<number>(0);
 
@@ -96,7 +101,7 @@ export function MobileSidebar({
         side='right'
         className='w-[300px] sm:w-[350px] bg-background border-border p-0 flex flex-col h-full'>
         <SheetHeader className='p-4 border-b border-border/50 text-left'>
-          <SheetTitle className='text-lg font-bold'>Menu Utama</SheetTitle>
+          <SheetTitle className='text-lg font-bold'>{dict.mobile_menu_title}</SheetTitle>
         </SheetHeader>
 
         <div className='flex-1 overflow-y-auto p-4 space-y-6'>
@@ -113,9 +118,9 @@ export function MobileSidebar({
                   </p>
                   <p className='text-xs text-muted-foreground'>{subtitle}</p>
                   {!isUsernameMember && (
-                    <div className='mt-1 inline-flex items-center gap-1 bg-black/50 border border-white/10 px-2.5 py-0.5 rounded-full text-xs font-bold text-blue-400'>
-                      <span className='text-gray-400 font-medium'>Saldo:</span>{' '}
-                      Rp {balance.toLocaleString('id-ID')}
+                    <div className='mt-1 inline-flex items-center gap-1 bg-black/50 border border-white/10 px-2.5 py-0.5 rounded-full text-xs font-bold text-theme-primary opacity-90'>
+                      <span className='text-gray-400 font-medium'>{dict.user_wallet_balance}:</span>{' '}
+                      {formatCurrency(balance, getCurrencyFromLanguage(language))}
                     </div>
                   )}
                 </div>
@@ -126,7 +131,7 @@ export function MobileSidebar({
                 variant='outline'
                 className='w-full justify-center gap-2 rounded-xl border-red-500/20 text-red-500 hover:bg-red-500/10 hover:text-red-400'>
                 <LogOut className='w-4 h-4' />
-                {isPending ? 'Keluar...' : 'Keluar Akun'}
+                {isPending ? dict.user_logout_pending : dict.user_logout}
               </Button>
             </div>
           ) : (
@@ -138,7 +143,7 @@ export function MobileSidebar({
                   <Button
                     variant='outline'
                     className='w-full justify-center rounded-xl font-bold bg-muted/50 border-border/50'>
-                    Masuk
+                    {dict.btn_login}
                   </Button>
                 </Link>
                 {authMode === 'email' && (
@@ -146,7 +151,7 @@ export function MobileSidebar({
                     href='/register'
                     className='flex-1'>
                     <Button className='w-full justify-center rounded-xl font-bold text-black bg-white hover:bg-gray-200 shadow-[0_0_15px_rgba(255,255,255,0.3)]'>
-                      Daftar
+                      {dict.btn_register}
                     </Button>
                   </Link>
                 )}
@@ -170,10 +175,10 @@ export function MobileSidebar({
                 </div>
                 <div>
                   <p className='text-sm font-bold text-foreground'>
-                    Join Saluran WA
+                    {dict.mobile_join_wa}
                   </p>
                   <p className='text-xs text-muted-foreground'>
-                    Info & Promo Spesial
+                    {dict.mobile_join_wa_desc}
                   </p>
                 </div>
               </div>
@@ -186,19 +191,19 @@ export function MobileSidebar({
               href='/'
               className='flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-xl hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors'>
               <Home className='w-5 h-5' />
-              Beranda
+              {dict.nav_home}
             </Link>
             <Link
               href='/track'
               className='flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-xl hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors'>
               <Search className='w-5 h-5' />
-              Cek Transaksi
+              {dict.nav_check_invoice}
             </Link>
             <Link
               href='/prices'
               className='flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-xl hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors'>
               <List className='w-5 h-5' />
-              Daftar Harga
+              {dict.nav_price_list}
             </Link>
           </nav>
         </div>

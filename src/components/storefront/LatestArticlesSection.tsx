@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { getDictionary, Language } from "@/lib/dictionary";
 
 const fixUrl = (url: string | null) => {
   if (!url) return '';
@@ -9,15 +10,16 @@ const fixUrl = (url: string | null) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function LatestArticlesSection({ articles }: { articles: any[] }) {
+export function LatestArticlesSection({ articles, language = 'id' }: { articles: any[], language?: Language }) {
+  const dict = getDictionary(language);
   if (!articles || articles.length === 0) return null;
 
   return (
     <div className="w-full">
       <div className="mb-8 max-w-3xl">
-        <h2 className="text-2xl md:text-3xl font-black tracking-widest text-foreground uppercase mb-3">ARTIKEL TERBARU</h2>
+        <h2 className="text-2xl md:text-3xl font-black tracking-widest text-foreground uppercase mb-3">{dict.home_articles_title}</h2>
         <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-          Dapatkan informasi terbaru seputar dunia game! Temukan panduan lengkap untuk meningkatkan pengalaman bermain, serta berita terkini mengenai promo, update top-up, dan komunitas gamer.
+          {dict.home_articles_desc}
         </p>
       </div>
 
@@ -36,7 +38,7 @@ export function LatestArticlesSection({ articles }: { articles: any[] }) {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-slate-900 text-muted-foreground">
-                  No Image
+                  {dict.home_articles_no_image}
                 </div>
               )}
               
@@ -47,7 +49,7 @@ export function LatestArticlesSection({ articles }: { articles: any[] }) {
               <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-6 md:p-8 pointer-events-none">
                 <div className="space-y-3">
                   <span className="text-xs md:text-sm font-semibold text-yellow-400 uppercase tracking-wider">
-                    {article.author || "Admin"}
+                    {article.author || dict.home_articles_admin}
                   </span>
                   
                   <h3 className="font-bold text-foreground text-lg md:text-xl leading-snug line-clamp-3 group-hover:text-primary transition-colors">
@@ -68,7 +70,7 @@ export function LatestArticlesSection({ articles }: { articles: any[] }) {
       <div className="mt-10">
         <Link href="/blog">
           <button className="px-6 py-3 rounded-xl font-bold text-primary-foreground bg-primary hover:opacity-90 transition-opacity shadow-lg shadow-primary/20">
-            Lihat Semua Artikel
+            {dict.home_articles_see_all}
           </button>
         </Link>
       </div>
