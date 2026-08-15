@@ -61,7 +61,7 @@ export function Header({
         <div className="flex-1" />
 
         <div className="hidden md:block relative max-w-sm w-full">
-           <GlobalSearch />
+           <GlobalSearch domain={domain} />
         </div>
 
         <div className="hidden md:flex items-center justify-end space-x-1 md:space-x-3 shrink-0">
@@ -83,7 +83,7 @@ export function Header({
 
         <div className="flex md:hidden items-center gap-2">
           <div className="block md:hidden">
-             <GlobalSearch />
+             <GlobalSearch domain={domain} />
           </div>
           {isLoggedIn && (
             <UserDropdown user={user} memberSession={memberSession} authMode={authMode} language={language} />

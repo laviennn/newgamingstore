@@ -6,8 +6,9 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { searchGames } from "@/app/actions/search";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { normalizeAssetUrl } from "@/lib/storageUtils";
 
-export function GlobalSearch() {
+export function GlobalSearch({ domain }: { domain?: string }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -36,17 +37,17 @@ export function GlobalSearch() {
 
     setLoading(true);
     const delayDebounceFn = setTimeout(async () => {
-      const res = await searchGames(query);
+      const res = await searchGames(query, domain);
       if (res.success) {
         setResults(res.games);
       } else {
         setResults([]);
       }
       setLoading(false);
-    }, 400);
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [query]);
+  }, [query, domain]);
 
   // Reset when dialog closes
   useEffect(() => {
@@ -115,7 +116,7 @@ export function GlobalSearch() {
                     <div className="w-12 h-12 bg-gray-800 rounded-lg overflow-hidden shrink-0 relative">
                       {game.image_url ? (
                         <img 
-                          src={game.image_url.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com')} 
+                          src={normalizeAssetUrl(game.image_url, domain)} 
                           alt={game.name} 
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
                         />
