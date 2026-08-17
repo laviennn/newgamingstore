@@ -325,6 +325,7 @@ export default async function StorefrontLayout({
         <PurchaseNotification
           tenantName={currentTenantName}
           notifications={purchaseNotifications}
+          language={config.language || 'id'}
         />
       </div>
 

@@ -4,7 +4,8 @@ import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, Loader2, AlertCircle, UploadCloud } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Save, Loader2, AlertCircle, UploadCloud, MessageSquareText } from "lucide-react";
 import { useNotification } from "@/components/ui/notification";
 import { createClient } from "@/utils/supabase/client";
 import { uploadFile } from "@/app/actions/upload";
@@ -52,6 +53,10 @@ export default function ContactsClient() {
   const [waChannelActive, setWaChannelActive] = React.useState(false);
   const [waChannelUrl, setWaChannelUrl] = React.useState("");
 
+  // WhatsApp Payment Confirmation Templates (Separate from Floating CS default message)
+  const [waOrderConfirmTemplate, setWaOrderConfirmTemplate] = React.useState("");
+  const [waDepositConfirmTemplate, setWaDepositConfirmTemplate] = React.useState("");
+
   React.useEffect(() => {
     async function loadTenant() {
       try {
@@ -85,6 +90,8 @@ export default function ContactsClient() {
              setWaDefaultMessage(config.waDefaultMessage || "Halo Admin, saya ingin bertanya seputar layanan top-up.");
              setWaChannelActive(config.waChannelActive ?? false);
              setWaChannelUrl(config.waChannelUrl || "");
+             setWaOrderConfirmTemplate(config.waOrderConfirmTemplate || "");
+             setWaDepositConfirmTemplate(config.waDepositConfirmTemplate || "");
            }, 0);
         } else {
            setErrorMsg(`No tenants found in database.`);
@@ -179,6 +186,8 @@ export default function ContactsClient() {
          waFloatingAvatarUrl,
          waFloatingText,
          waDefaultMessage,
+         waOrderConfirmTemplate,
+         waDepositConfirmTemplate,
          waChannelActive,
          waChannelUrl
       };
@@ -195,6 +204,8 @@ export default function ContactsClient() {
         waFloatingAvatarUrl,
         waFloatingText,
         waDefaultMessage,
+        waOrderConfirmTemplate,
+        waDepositConfirmTemplate,
         waChannelActive,
         waChannelUrl,
       });
@@ -204,7 +215,7 @@ export default function ContactsClient() {
       }
       
       setThemeConfig(updatedConfig);
-      showNotification("success", "Tersimpan", "Informasi kontak, footer, dan WhatsApp berhasil diperbarui.");
+      showNotification("success", "Tersimpan", "Informasi kontak, footer, dan template WhatsApp berhasil diperbarui.");
     } catch (err) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const error = err as any;
@@ -248,14 +259,95 @@ export default function ContactsClient() {
                <Input placeholder="cs@domain.com" value={email} onChange={(e) => setEmail(e.target.value)} />
              </div>
              <div className="space-y-2 md:col-span-2">
-               <label className="text-sm font-medium">Pesan Otomatis WhatsApp (Default Message)</label>
+               <label className="text-sm font-medium">Pesan Otomatis WhatsApp CS (Floating Widget & Footer)</label>
                <Input placeholder="Halo Admin, saya ingin bertanya seputar layanan top-up..." value={waDefaultMessage} onChange={(e) => setWaDefaultMessage(e.target.value)} />
-               <p className="text-xs text-muted-foreground">Pesan yang otomatis terisi saat visitor mengklik tombol WhatsApp (di Footer maupun Floating Widget).</p>
+               <p className="text-xs text-muted-foreground">Pesan pertanyaan umum yang otomatis terisi saat visitor mengklik tombol WhatsApp bantuan/CS di Footer maupun Floating Widget.</p>
              </div>
              <div className="space-y-2 md:col-span-2">
                <label className="text-sm font-medium">Jam Operasional</label>
                <Input placeholder="08:00 - 23:00 WIB" value={operationalHours} onChange={(e) => setOperationalHours(e.target.value)} />
              </div>
+          </CardContent>
+        </Card>
+
+        {/* WhatsApp Confirmation Templates (Payment & Deposit) */}
+        <Card className="shadow-sm md:col-span-2 border-emerald-500/30">
+          <CardHeader className="bg-emerald-500/5 border-b border-border/50">
+            <CardTitle className="flex items-center gap-2 text-emerald-500">
+              <MessageSquareText className="w-5 h-5" />
+              Template Pesan Konfirmasi WhatsApp (Checkout & Deposit)
+            </CardTitle>
+            <CardDescription>
+              Atur format pesan WhatsApp saat pelanggan menekan tombol <strong>"Konfirmasi via WhatsApp"</strong> setelah mengunggah bukti transfer. Kosongkan jika ingin menggunakan template bawaan sistem berdasarkan bahasa tenant.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+            {/* Variables Guide */}
+            <div className="p-3.5 bg-muted/40 rounded-xl border space-y-2">
+              <span className="text-xs font-semibold text-foreground uppercase tracking-wider block">Tag Variabel yang Tersedia:</span>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <code className="px-2 py-1 bg-background border rounded-md font-mono text-emerald-500 font-semibold">{'{invoice_id}'}</code>
+                <span className="text-muted-foreground self-center">No. Invoice</span>
+                <code className="px-2 py-1 bg-background border rounded-md font-mono text-emerald-500 font-semibold">{'{product_name}'}</code>
+                <span className="text-muted-foreground self-center">Nama Pesanan / Paket</span>
+                <code className="px-2 py-1 bg-background border rounded-md font-mono text-emerald-500 font-semibold">{'{total}'}</code>
+                <span className="text-muted-foreground self-center">Total Nominal</span>
+                <code className="px-2 py-1 bg-background border rounded-md font-mono text-emerald-500 font-semibold">{'{payment_proof}'}</code>
+                <span className="text-muted-foreground self-center">Link Bukti Transfer</span>
+                <code className="px-2 py-1 bg-background border rounded-md font-mono text-emerald-500 font-semibold">{'{store_name}'}</code>
+                <span className="text-muted-foreground self-center">Nama Toko</span>
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Game Order Confirmation Template */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Template Konfirmasi Pesanan Game (Order Checkout)</label>
+                  {waOrderConfirmTemplate && (
+                    <button
+                      type="button"
+                      onClick={() => setWaOrderConfirmTemplate("")}
+                      className="text-xs text-muted-foreground hover:text-destructive underline"
+                    >
+                      Reset ke Default
+                    </button>
+                  )}
+                </div>
+                <Textarea
+                  rows={7}
+                  placeholder={`Halo Admin, saya ingin konfirmasi pembayaran:\n- No. Invoice: *{invoice_id}*\n- Pesanan: *{product_name}*\n- Total: *{total}*\n- Bukti Transfer: {payment_proof}\n\nMohon segera diproses ya, terima kasih!`}
+                  value={waOrderConfirmTemplate}
+                  onChange={(e) => setWaOrderConfirmTemplate(e.target.value)}
+                  className="font-mono text-xs leading-relaxed"
+                />
+                <p className="text-xs text-muted-foreground">Digunakan di halaman checkout pesanan game setelah upload bukti transfer.</p>
+              </div>
+
+              {/* Deposit & Upgrade Confirmation Template */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Template Konfirmasi Deposit & Upgrade (Deposit Checkout)</label>
+                  {waDepositConfirmTemplate && (
+                    <button
+                      type="button"
+                      onClick={() => setWaDepositConfirmTemplate("")}
+                      className="text-xs text-muted-foreground hover:text-destructive underline"
+                    >
+                      Reset ke Default
+                    </button>
+                  )}
+                </div>
+                <Textarea
+                  rows={7}
+                  placeholder={`Halo Admin, saya ingin konfirmasi deposit saldo:\n- No. Invoice: *{invoice_id}*\n- Nominal Deposit: *{total}*\n- Bukti Transfer: {payment_proof}\n\nMohon segera diproses ya, terima kasih!`}
+                  value={waDepositConfirmTemplate}
+                  onChange={(e) => setWaDepositConfirmTemplate(e.target.value)}
+                  className="font-mono text-xs leading-relaxed"
+                />
+                <p className="text-xs text-muted-foreground">Digunakan di halaman konfirmasi deposit saldo dan permohonan upgrade membership.</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

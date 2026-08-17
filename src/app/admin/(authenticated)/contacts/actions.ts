@@ -17,6 +17,8 @@ export interface ContactSettingsPayload {
   waFloatingAvatarUrl?: string;
   waFloatingText?: string;
   waDefaultMessage?: string;
+  waOrderConfirmTemplate?: string;
+  waDepositConfirmTemplate?: string;
   waChannelActive?: boolean;
   waChannelUrl?: string;
 }
@@ -63,6 +65,8 @@ export async function saveContactSettings(settings: ContactSettingsPayload) {
       "waFloatingAvatarUrl",
       "waFloatingText",
       "waDefaultMessage",
+      "waOrderConfirmTemplate",
+      "waDepositConfirmTemplate",
       "waChannelActive",
       "waChannelUrl",
     ];

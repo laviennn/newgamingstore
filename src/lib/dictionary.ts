@@ -355,6 +355,13 @@ export const dictionaries = {
     member_filter_date_to: "SAMPAI TANGGAL",
     member_btn_filter: "Filter Data",
     member_btn_reset: "Reset",
+
+    // Purchase Notification
+    notification_bought: "Telah Membeli",
+    notification_verified: "Diverifikasi oleh",
+    notification_just_now: "Baru saja",
+    notification_secs_ago: "detik lalu",
+    notification_mins_ago: "menit lalu",
   },
   ms: {
     // Header & Navigation
@@ -710,6 +717,13 @@ export const dictionaries = {
     member_filter_date_to: "SEHINGGA TARIKH",
     member_btn_filter: "Tapis Data",
     member_btn_reset: "Set Semula",
+
+    // Purchase Notification
+    notification_bought: "Telah Membeli",
+    notification_verified: "Disahkan oleh",
+    notification_just_now: "Sebentar tadi",
+    notification_secs_ago: "saat lalu",
+    notification_mins_ago: "minit lalu",
   },
 };
 

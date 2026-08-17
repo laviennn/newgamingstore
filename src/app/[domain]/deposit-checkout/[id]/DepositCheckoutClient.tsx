@@ -20,6 +20,7 @@ import { updateDepositProof } from "@/components/storefront/depositActions";
 import { useNotification } from "@/components/ui/notification";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currencyUtils";
+import { buildDepositWAMessage } from "@/lib/whatsappUtils";
 
 export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any, tenantConfig: any }) {
   const currency = tenantConfig?.currency || (tenantConfig?.language === 'ms' ? 'MYR' : 'IDR');
@@ -175,20 +176,19 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
      }
 
      const waNumber = tenantConfig?.whatsapp?.replace(/[^0-9]/g, "") || "6281234567890"; // fallback
+     const lang = tenantConfig?.language || "id";
      
-     const message = isUpgrade 
-       ? `Halo Admin, saya ingin konfirmasi upgrade membership (${packageName}):
-- No. Invoice: *${deposit.invoice_id}*
-- Total Biaya: *${formatCurrency(deposit.amount, currency)}*
-- Bukti Transfer: ${fixUrl(paymentProofUrl)}
-
-Mohon segera diproses ya, terima kasih!`
-       : `Halo Admin, saya ingin konfirmasi deposit saldo:
-- No. Invoice: *${deposit.invoice_id}*
-- Nominal Deposit: *${formatCurrency(deposit.amount, currency)}*
-- Bukti Transfer: ${fixUrl(paymentProofUrl)}
-
-Mohon segera diproses ya, terima kasih!`;
+     const message = buildDepositWAMessage({
+        template: tenantConfig?.waDepositConfirmTemplate,
+        language: lang,
+        isUpgrade: isUpgrade,
+        packageName: packageName,
+        invoiceId: deposit.invoice_id,
+        amountFormatted: formatCurrency(deposit.amount, currency),
+        paymentProofUrl: fixUrl(paymentProofUrl),
+        storeName: tenantConfig?.siteName || "Store",
+        paymentMethodName: deposit.payment_channels?.name || "",
+     });
 
      const encoded = encodeURIComponent(message);
      window.open(`https://wa.me/${waNumber}?text=${encoded}`, '_blank');

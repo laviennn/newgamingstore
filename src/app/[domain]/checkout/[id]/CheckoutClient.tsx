@@ -22,6 +22,7 @@ import { updatePaymentProof } from "@/components/storefront/checkoutActions";
 import { useNotification } from "@/components/ui/notification";
 import { getDictionary } from "@/lib/dictionary";
 import { formatCurrency } from "@/lib/currencyUtils";
+import { buildOrderWAMessage } from "@/lib/whatsappUtils";
 
 import Link from "next/link";
 import { normalizeAssetUrl } from "@/lib/storageUtils";
@@ -173,14 +174,18 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
     }
 
     const waNumber = tenantConfig?.whatsapp?.replace(/[^0-9]/g, "") || "6281234567890"; // fallback
+    const lang = tenantConfig?.language || "id";
 
-    const message = `Halo Admin, saya ingin konfirmasi pembayaran:
-- No. Invoice: *${order.invoice_id}*
-- Pesanan: *${order.products?.name}*
-- Total: *${formatCurrency(order.total_price, currency)}*
-- Bukti Transfer: ${fixUrl(paymentProofUrl)}
-
-Mohon segera diproses ya, terima kasih!`;
+    const message = buildOrderWAMessage({
+      template: tenantConfig?.waOrderConfirmTemplate,
+      language: lang,
+      invoiceId: order.invoice_id,
+      productName: order.products?.name || "Game Item",
+      totalPriceFormatted: formatCurrency(order.total_price, currency),
+      paymentProofUrl: fixUrl(paymentProofUrl),
+      storeName: tenantConfig?.siteName || "Store",
+      paymentMethodName: order.payment_channels?.name || "",
+    });
 
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${waNumber}?text=${encoded}`, '_blank');
