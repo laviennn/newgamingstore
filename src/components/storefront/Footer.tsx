@@ -133,8 +133,8 @@ export function Footer({ domain, themeConfig, paymentChannels }: { domain: strin
             </div>
           </div>
 
-          {/* Column 3: Navigation Menu */}
-          <div className="md:col-span-2 space-y-6">
+          {/* Column 3: Navigation Menu (Hidden on mobile to keep footer compact and clean) */}
+          <div className="hidden md:block md:col-span-2 space-y-6">
             <h3 className="text-sm font-semibold text-foreground">Menu</h3>
             <ul className="space-y-3 text-sm text-slate-400">
               <li><Link href="/track" className="hover:text-primary transition-colors">{dict.nav_check_invoice}</Link></li>
@@ -192,8 +192,8 @@ export function Footer({ domain, themeConfig, paymentChannels }: { domain: strin
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-border bg-background">
+      {/* Bottom Bar (Added pb-20 on mobile so text is never obscured by fixed MobileBottomBar) */}
+      <div className="border-t border-border bg-background pb-20 md:pb-0">
         <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <p className="text-xs text-slate-500">
             Copyright © {new Date().getFullYear()} <span className="font-bold text-muted-foreground">{displayTitle}</span>. {dict.footer_copyright}

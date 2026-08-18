@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Wallet, Megaphone, ReceiptText, Tag } from "lucide-react";
+import { Home, Wallet, Megaphone, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileBottomBarProps {
   waChannelActive?: boolean;
   waChannelUrl?: string;
+  isLoggedIn?: boolean;
 }
 
-export function MobileBottomBar({ waChannelActive, waChannelUrl }: MobileBottomBarProps) {
+export function MobileBottomBar({ waChannelActive, waChannelUrl, isLoggedIn = false }: MobileBottomBarProps) {
   const pathname = usePathname();
+
+  const topUpHref = isLoggedIn ? "/member/deposit" : "/login";
 
   const navItems = [
     {
@@ -22,7 +25,7 @@ export function MobileBottomBar({ waChannelActive, waChannelUrl }: MobileBottomB
     {
       label: "TOP UP",
       icon: Wallet,
-      href: "/prices",
+      href: topUpHref,
     }
   ];
 
@@ -44,7 +47,7 @@ export function MobileBottomBar({ waChannelActive, waChannelUrl }: MobileBottomB
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t border-border/40 pb-safe">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href === "/member/deposit" && pathname?.startsWith("/member"));
           return (
             <Link
               key={item.label}
@@ -63,3 +66,4 @@ export function MobileBottomBar({ waChannelActive, waChannelUrl }: MobileBottomB
     </div>
   );
 }
+

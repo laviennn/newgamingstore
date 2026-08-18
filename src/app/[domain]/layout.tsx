@@ -320,6 +320,7 @@ export default async function StorefrontLayout({
         <MobileBottomBar
           waChannelActive={config.waChannelActive ?? false}
           waChannelUrl={config.waChannelUrl || '#'}
+          isLoggedIn={!!user || !!memberSession}
         />
 
         <PurchaseNotification
