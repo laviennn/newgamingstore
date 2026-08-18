@@ -10,7 +10,24 @@ import { useNotification } from "@/components/ui/notification";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { createOperator, deleteOperator } from "./actions";
 
-export function OperatorsClient({ initialOperators, roles, tenants }: { initialOperators: any[], roles: any[], tenants: any[] }) {
+interface OperatorsClientProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  initialOperators: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  roles: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tenants: any[];
+  currentTenantId?: string | null;
+  isSuperAdmin?: boolean;
+}
+
+export function OperatorsClient({
+  initialOperators,
+  roles,
+  tenants,
+  currentTenantId,
+  isSuperAdmin = false,
+}: OperatorsClientProps) {
   const [operators, setOperators] = useState(initialOperators);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "", roleId: "", tenantId: "" });
@@ -23,8 +40,16 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
   });
   const { showNotification, NotificationComponent } = useNotification();
 
+  const activeTenantObj = tenants.find((t) => t.id === currentTenantId) || tenants[0];
+
   const handleOpenDialog = () => {
-    setFormData({ email: "", password: "", roleId: roles[0]?.id || "", tenantId: tenants[0]?.id || "" });
+    const defaultTenantId = currentTenantId || tenants[0]?.id || "";
+    setFormData({
+      email: "",
+      password: "",
+      roleId: roles[0]?.id || "",
+      tenantId: defaultTenantId,
+    });
     setIsDialogOpen(true);
   };
 
@@ -33,7 +58,8 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
     setLoading(true);
 
     try {
-      const res = await createOperator(formData.email, formData.password, formData.roleId, formData.tenantId);
+      const targetTenantId = isSuperAdmin ? formData.tenantId : (currentTenantId || formData.tenantId);
+      const res = await createOperator(formData.email, formData.password, formData.roleId, targetTenantId);
 
       if (res.success) {
         showNotification("success", "Sukses", "Operator berhasil dibuat");
@@ -42,6 +68,7 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
       } else {
         showNotification("error", "Gagal", res.message || "Gagal membuat operator");
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       showNotification("error", "Kesalahan Sistem", err.message);
     } finally {
@@ -54,15 +81,15 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
   };
 
   const confirmDelete = async () => {
-    setDeleteState(prev => ({ ...prev, loading: true }));
+    setDeleteState((prev) => ({ ...prev, loading: true }));
     const res = await deleteOperator(deleteState.id);
     if (res.success) {
-      setOperators(operators.filter(o => o.id !== deleteState.id));
+      setOperators(operators.filter((o) => o.id !== deleteState.id));
       showNotification("success", "Terhapus", `Akses operator "${deleteState.email}" berhasil dicabut`);
       setDeleteState({ isOpen: false, id: "", email: "", loading: false });
     } else {
       showNotification("error", "Gagal", res.message || "Gagal menghapus operator");
-      setDeleteState(prev => ({ ...prev, loading: false }));
+      setDeleteState((prev) => ({ ...prev, loading: false }));
     }
   };
 
@@ -70,7 +97,14 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
     <div className="space-y-4">
       {NotificationComponent}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">Manajemen Operator</h2>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Manajemen Operator</h2>
+          {activeTenantObj && (
+            <p className="text-sm text-muted-foreground">
+              Tenant Aktif: <span className="font-semibold text-foreground">{activeTenantObj.name}</span>
+            </p>
+          )}
+        </div>
         <Button onClick={handleOpenDialog} className="gap-2">
           <Plus className="h-4 w-4" /> Tambah Operator
         </Button>
@@ -111,7 +145,7 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
             {operators.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">
-                  Belum ada operator.
+                  Belum ada operator untuk tenant ini.
                 </td>
               </tr>
             )}
@@ -129,6 +163,7 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
               <Label>Email</Label>
               <Input
                 type="email"
+                placeholder="operator@domain.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
@@ -137,7 +172,8 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
             <div className="space-y-2">
               <Label>Password</Label>
               <Input
-                type="text" // Plain text so SuperAdmin can see what they set
+                type="text" // Plain text so Admin can see what they set
+                placeholder="Minimal 6 karakter"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
@@ -152,23 +188,32 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
                 onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
                 required
               >
-                {roles.map(r => (
+                {roles.map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
               <Label>Assign ke Tenant</Label>
-              <select
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                value={formData.tenantId}
-                onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
-                required
-              >
-                {tenants.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
+              {isSuperAdmin && tenants.length > 1 ? (
+                <select
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  value={formData.tenantId}
+                  onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
+                  required
+                >
+                  {tenants.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  type="text"
+                  value={activeTenantObj?.name || "Tenant Aktif"}
+                  disabled
+                  className="bg-muted text-muted-foreground cursor-not-allowed font-medium"
+                />
+              )}
             </div>
             <div className="flex justify-end gap-2 pt-4 border-t mt-6">
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
@@ -182,7 +227,7 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
 
       <ConfirmDeleteDialog
         isOpen={deleteState.isOpen}
-        onClose={() => setDeleteState(prev => ({ ...prev, isOpen: false }))}
+        onClose={() => setDeleteState((prev) => ({ ...prev, isOpen: false }))}
         onConfirm={confirmDelete}
         title="Cabut Akses Operator"
         description="Apakah Anda yakin ingin mencabut akses BO operator ini? Operator tersebut tidak akan dapat login lagi ke Dashboard Admin."
@@ -192,3 +237,4 @@ export function OperatorsClient({ initialOperators, roles, tenants }: { initialO
     </div>
   );
 }
+

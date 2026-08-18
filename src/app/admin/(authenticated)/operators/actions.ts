@@ -1,12 +1,26 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { checkPermission } from '@/app/admin/actions';
+import { checkPermission, getActiveAdminTenantId, getAdminSession } from '@/app/admin/actions';
 import { revalidatePath } from 'next/cache';
 
 export async function createOperator(email: string, password: string, roleId: string, tenantId: string) {
-  if (!(await checkPermission('manage_operators'))) { // Superadmin only usually, but let's say 'manage_operators' or just checking superadmin
+  if (!(await checkPermission('manage_operators'))) {
     return { success: false, message: 'Akses ditolak.' };
+  }
+
+  const adminSession = await getAdminSession();
+  const currentTenantId = await getActiveAdminTenantId();
+
+  // If non-superadmin, force tenant_id to be their active tenant
+  let finalTenantId = tenantId;
+  if (!adminSession?.is_superadmin) {
+    if (!currentTenantId) {
+      return { success: false, message: 'Tenant aktif tidak ditemukan.' };
+    }
+    finalTenantId = currentTenantId;
+  } else if (!finalTenantId && currentTenantId) {
+    finalTenantId = currentTenantId;
   }
 
   const supabase = await createClient();
@@ -16,7 +30,7 @@ export async function createOperator(email: string, password: string, roleId: st
     p_email: email,
     p_password: password,
     p_role_id: roleId || null,
-    p_tenant_id: tenantId || null
+    p_tenant_id: finalTenantId || null
   });
 
   if (error) {
@@ -32,11 +46,23 @@ export async function deleteOperator(id: string) {
     return { success: false, message: 'Akses ditolak.' };
   }
 
+  const adminSession = await getAdminSession();
+  const currentTenantId = await getActiveAdminTenantId();
   const supabase = await createClient();
-  
-  // Admin_users table has ON DELETE CASCADE from auth.users? Wait, auth.users is the parent.
-  // Actually, we can't easily delete auth.users without Service Role Key.
-  // Let's just delete from admin_users to revoke BO access.
+
+  // Verify that the operator belongs to current tenant if caller is not superadmin
+  if (!adminSession?.is_superadmin) {
+    const { data: targetOp } = await supabase
+      .from('admin_users')
+      .select('tenant_id, is_superadmin')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (!targetOp || targetOp.is_superadmin || targetOp.tenant_id !== currentTenantId) {
+      return { success: false, message: 'Akses ditolak untuk menghapus operator ini.' };
+    }
+  }
+
   const { error } = await supabase.from('admin_users').delete().eq('id', id);
 
   if (error) {
@@ -46,3 +72,4 @@ export async function deleteOperator(id: string) {
   revalidatePath('/admin/operators');
   return { success: true };
 }
+
