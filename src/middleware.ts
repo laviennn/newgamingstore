@@ -20,11 +20,15 @@ export default async function middleware(req: NextRequest) {
 
   // Explicit fast-path bypass for Next.js internals, static chunks, and API routes
   if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/_static') ||
-    pathname.startsWith('/_vercel') ||
-    pathname.includes('.')
+    pathname.startsWith('/_next/') ||
+    pathname === '/_next' ||
+    pathname.startsWith('/api/') ||
+    pathname === '/api' ||
+    pathname.startsWith('/_static/') ||
+    pathname === '/_static' ||
+    pathname.startsWith('/_vercel/') ||
+    pathname === '/_vercel' ||
+    /\.(png|jpg|jpeg|gif|webp|svg|ico|css|js|woff|woff2|ttf|eot|mp4|webm|pdf|json|txt|map)$/i.test(pathname)
   ) {
     return NextResponse.next();
   }
