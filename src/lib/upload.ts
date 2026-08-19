@@ -1,5 +1,23 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import sharp from "sharp";
+
+// Lazy / resilient sharp loader
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let sharpModuleCache: any = null;
+let sharpLoadAttempted = false;
+
+async function getSharp() {
+  if (sharpLoadAttempted) return sharpModuleCache;
+  sharpLoadAttempted = true;
+  try {
+    const sharpModule = await import("sharp");
+    sharpModuleCache = sharpModule.default || sharpModule;
+    return sharpModuleCache;
+  } catch (err) {
+    console.warn("[SHARP_LOAD_NOTICE] Sharp native module unavailable on this environment. Direct fallback will be used:", err);
+    sharpModuleCache = null;
+    return null;
+  }
+}
 
 const endpoint =
   process.env.R2_ENDPOINT ||
@@ -84,6 +102,16 @@ export async function optimizeImageServer(
   quality: number = 82
 ): Promise<{ buffer: Buffer; mime: string; ext: string }> {
   try {
+    const sharp = await getSharp();
+    if (!sharp) {
+      const magic = validateImageMagicBytes(buffer);
+      return {
+        buffer,
+        mime: magic.mime || "application/octet-stream",
+        ext: magic.ext || "bin",
+      };
+    }
+
     const image = sharp(buffer);
     const metadata = await image.metadata();
 
