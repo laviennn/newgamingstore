@@ -16,7 +16,7 @@ export function FaqSection({ faqs, language = 'id' }: { faqs: any[], language?: 
   };
 
   return (
-    <div className="w-full py-8 md:py-12">
+    <div className="w-full">
       <div className="text-center mb-12 max-w-2xl mx-auto space-y-4">
         <h2 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">
           {dict.home_faq_title_1} <span className="bg-gradient-to-r from-rose-500 to-orange-500 bg-clip-text text-transparent">{dict.home_faq_title_2}</span>

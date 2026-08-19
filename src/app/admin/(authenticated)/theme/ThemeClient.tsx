@@ -175,31 +175,44 @@ export default function ThemeClient() {
             <CardDescription>Pilih preset tema bawaan. Anda dapat menyesuaikan warna spesifik di bawahnya.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-             <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Default Preset Option */}
                 <div 
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all relative overflow-hidden ${themePreset === 'default' ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'}`}
+                  className={`border-2 rounded-xl p-3 cursor-pointer transition-all relative overflow-hidden ${themePreset === 'default' ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'}`}
                   onClick={() => applyPreset('default')}
                   style={{ backgroundColor: THEME_PRESETS.default.background }}
                 >
-                   {themePreset === 'default' && <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-blue-500" />}
-                   <div className="w-full h-20 rounded-lg mb-3 border border-white/10" style={{ backgroundColor: THEME_PRESETS.default.card }}>
-                     <div className="w-1/2 h-8 m-2 rounded-md" style={{ backgroundColor: THEME_PRESETS.default.primary }}></div>
+                   {themePreset === 'default' && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-blue-500" />}
+                   <div className="w-full h-16 rounded-lg mb-2 border border-white/10" style={{ backgroundColor: THEME_PRESETS.default.card }}>
+                     <div className="w-1/2 h-6 m-1.5 rounded-md" style={{ backgroundColor: THEME_PRESETS.default.primary }}></div>
                    </div>
-                   <p className="font-semibold text-center text-white text-sm">Default (Neon Blue)</p>
+                   <p className="font-semibold text-center text-white text-xs">Default (Neon Blue)</p>
                 </div>
                 
                 {/* Emerald Preset Option */}
                 <div 
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all relative overflow-hidden ${themePreset === 'emerald' ? 'border-[#10b981] ring-2 ring-[#10b981]/20' : 'border-border hover:border-[#10b981]/50'}`}
+                  className={`border-2 rounded-xl p-3 cursor-pointer transition-all relative overflow-hidden ${themePreset === 'emerald' ? 'border-[#10b981] ring-2 ring-[#10b981]/20' : 'border-border hover:border-[#10b981]/50'}`}
                   onClick={() => applyPreset('emerald')}
                   style={{ backgroundColor: THEME_PRESETS.emerald.background }}
                 >
-                   {themePreset === 'emerald' && <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-[#10b981]" />}
-                   <div className="w-full h-20 rounded-lg mb-3 border border-white/10" style={{ backgroundColor: THEME_PRESETS.emerald.card }}>
-                     <div className="w-1/2 h-8 m-2 rounded-md" style={{ backgroundColor: THEME_PRESETS.emerald.primary }}></div>
+                   {themePreset === 'emerald' && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-[#10b981]" />}
+                   <div className="w-full h-16 rounded-lg mb-2 border border-white/10" style={{ backgroundColor: THEME_PRESETS.emerald.card }}>
+                     <div className="w-1/2 h-6 m-1.5 rounded-md" style={{ backgroundColor: THEME_PRESETS.emerald.primary }}></div>
                    </div>
-                   <p className="font-semibold text-center text-white text-sm">Emerald (Cyber Green)</p>
+                   <p className="font-semibold text-center text-white text-xs">Emerald (Cyber Green)</p>
+                </div>
+
+                {/* Neon Gaming Preset Option */}
+                <div 
+                  className={`border-2 rounded-xl p-3 cursor-pointer transition-all relative overflow-hidden ${themePreset === 'neon-gaming' ? 'border-[#14D0C7] ring-2 ring-[#14D0C7]/20' : 'border-border hover:border-[#14D0C7]/50'}`}
+                  onClick={() => applyPreset('neon-gaming')}
+                  style={{ backgroundColor: THEME_PRESETS['neon-gaming'].background }}
+                >
+                   {themePreset === 'neon-gaming' && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-[#14D0C7]" />}
+                   <div className="w-full h-16 rounded-lg mb-2 border border-white/10" style={{ backgroundColor: THEME_PRESETS['neon-gaming'].card }}>
+                     <div className="w-1/2 h-6 m-1.5 rounded-md" style={{ backgroundColor: THEME_PRESETS['neon-gaming'].primary }}></div>
+                   </div>
+                   <p className="font-semibold text-center text-white text-xs">Neon Gaming (Cyber Aqua)</p>
                 </div>
              </div>
           </CardContent>

@@ -194,23 +194,17 @@ export default async function StorefrontPage({
 
 
 
-      {/* Global Background Layer (Full Page) */}
-      <div className="fixed inset-0 w-full h-full -z-20 pointer-events-none bg-background">
-        {heroBackgroundUrl ? (
-          <div
-            className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat opacity-30 blur-xl scale-105"
-            style={{ backgroundImage: `url(${heroBackgroundUrl})` }}
-          />
-        ) : (
+      {/* Global Ambient Glow Layer when no custom hero background is set */}
+      {!heroBackgroundUrl && (
+        <div className="fixed inset-0 w-full h-full -z-20 pointer-events-none">
           <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-primary/10 to-background" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
-      </div>
+        </div>
+      )}
 
       <div className="flex-1">
-        {/* Immersive Hero Section */}
+        {/* Immersive Hero Section (Retains active theme background color) */}
         <section
-          className="relative w-full pt-8 pb-12 overflow-hidden"
+          className="relative w-full pt-8 pb-12 overflow-hidden bg-background border-b border-border/30"
         >
           {/* Content (Slider) */}
           <div className="container relative z-10 mx-auto px-4 group">
@@ -218,27 +212,31 @@ export default async function StorefrontPage({
           </div>
         </section>
 
-        {/* Flash Sale Section */}
+        {/* Flash Sale Section (Retains active theme background color) */}
         {flashSaleProducts.length > 0 && (
-          <section className="container mx-auto px-4 -mt-4 relative z-20">
-            <FlashSaleSection products={flashSaleProducts} language={language} />
+          <section className="w-full bg-background relative z-20 pb-8 pt-2 border-b border-border/30">
+            <div className="container mx-auto px-4">
+              <FlashSaleSection products={flashSaleProducts} language={language} />
+            </div>
           </section>
         )}
 
-        {/* Promo Section */}
+        {/* Promo Section (Retains active theme background color) */}
         {(promoHeadline || promoCode) && (
-          <section className="container mx-auto px-4 py-2">
-            <div className="rounded-2xl bg-gradient-to-r from-primary/20 via-primary/10 to-background px-6 py-6 border border-primary/20 shadow-[0_0_30px_rgba(var(--primary),0.1)] flex flex-col md:flex-row items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">{promoHeadline}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{dict.home_promo_desc}</p>
-              </div>
-              {promoCode && (
-                <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/10">
-                  <span className="text-sm text-muted-foreground">{dict.home_promo_code_label}</span>
-                  <span className="font-bold text-primary tracking-wider text-lg">{promoCode}</span>
+          <section className="w-full bg-background relative z-20 py-4 border-b border-border/30">
+            <div className="container mx-auto px-4">
+              <div className="rounded-2xl bg-card px-6 py-6 border border-primary/20 shadow-[0_0_30px_rgba(var(--primary),0.1)] flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">{promoHeadline}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{dict.home_promo_desc}</p>
                 </div>
-              )}
+                {promoCode && (
+                  <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/10">
+                    <span className="text-sm text-muted-foreground">{dict.home_promo_code_label}</span>
+                    <span className="font-bold text-primary tracking-wider text-lg">{promoCode}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         )}
@@ -334,10 +332,12 @@ export default async function StorefrontPage({
           </section>
         )}
 
-        {/* FAQ Section */}
+        {/* FAQ Section (Retains active theme background color) */}
         {faqs.length > 0 && (
-          <section className="container mx-auto px-4 pb-12 md:pb-20 relative z-20">
-            <FaqSection faqs={faqs} language={language} />
+          <section className="w-full bg-background relative z-20 border-t border-border/40 py-12 md:py-16">
+            <div className="container mx-auto px-4">
+              <FaqSection faqs={faqs} language={language} />
+            </div>
           </section>
         )}
 

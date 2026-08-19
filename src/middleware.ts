@@ -16,9 +16,22 @@ export const config = {
 
 export default async function middleware(req: NextRequest) {
   const url = req.nextUrl;
+  const pathname = url.pathname.toLowerCase();
+
+  // Explicit fast-path bypass for Next.js internals, static chunks, and API routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_static') ||
+    pathname.startsWith('/_vercel') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next();
+  }
 
   // Get hostname of request (e.g. demo.vercel.pub, demo.localhost:3000)
   let hostname = req.headers.get('host') || 'localhost:3000';
+
 
   // Allow for local development
   hostname = hostname.replace(
@@ -33,8 +46,6 @@ export default async function middleware(req: NextRequest) {
 
   // Extract the tenant domain (removing port if present)
   const currentHost = hostname.split(':')[0];
-
-  const pathname = url.pathname.toLowerCase();
   const isAdminDomain =
     currentHost.startsWith('admin.') ||
     currentHost === process.env.NEXT_PUBLIC_ADMIN_DOMAIN;

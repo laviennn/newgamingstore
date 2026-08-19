@@ -1,4 +1,4 @@
-export type ThemePreset = "default" | "emerald";
+export type ThemePreset = "default" | "emerald" | "neon-gaming";
 
 export interface ThemeColors {
   primary: string;
@@ -14,6 +14,7 @@ export interface ThemeConfig {
   colors?: Partial<ThemeColors>;
   language?: Language;
   currency?: "IDR" | "MYR";
+  heroBackgroundUrl?: string;
 }
 
 export const THEME_PRESETS: Record<ThemePreset, ThemeColors> = {
@@ -29,7 +30,14 @@ export const THEME_PRESETS: Record<ThemePreset, ThemeColors> = {
     card: "#0e221b",
     text: "#ffffff",
   },
+  "neon-gaming": {
+    primary: "#14D0C7",
+    background: "#03151A",
+    card: "#0D262B",
+    text: "#F4F7EF",
+  },
 };
+
 
 // Helper to convert hex to RGB string (e.g., "#2563eb" -> "37 99 235")
 // Useful if we want to use rgba() with CSS variables
@@ -67,6 +75,9 @@ export function getThemeConfigOrDefault(tenantThemeConfig?: ThemeConfig): { pres
 
 export function generateThemeCssVariables(themeConfig?: ThemeConfig): string {
   const { colors } = getThemeConfigOrDefault(themeConfig);
+  const heroBg = themeConfig?.heroBackgroundUrl
+    ? themeConfig.heroBackgroundUrl.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com')
+    : null;
   
   return `
     :root, .dark {
@@ -86,5 +97,32 @@ export function generateThemeCssVariables(themeConfig?: ThemeConfig): string {
       
       --accent-glow: rgba(${hexToRgbString(colors.primary)}, 0.15);
     }
+
+    ${heroBg ? `
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -10;
+        pointer-events: none;
+        background-color: ${colors.background};
+        background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('${heroBg}');
+        background-repeat: repeat;
+        background-size: contain;
+        filter: blur(1.5px);
+        transform: scale(1.02);
+      }
+      body {
+        background-color: ${colors.background};
+        box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.7);
+        position: relative;
+        min-height: 100vh;
+      }
+    ` : `
+      body {
+        background-color: ${colors.background};
+      }
+    `}
   `;
 }
+

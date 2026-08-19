@@ -463,8 +463,8 @@ export default function ContactsClient() {
               <Input placeholder="Atau paste URL gambar..." value={footerBannerUrl} onChange={(e) => setFooterBannerUrl(e.target.value)} className="flex-1" />
             </div>
             {footerBannerUrl && (
-              <div className="mt-4 relative w-full h-[200px] md:h-[300px] rounded-xl overflow-hidden border bg-muted">
-                <Image src={footerBannerUrl.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com')} alt="Footer Banner" fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover" />
+              <div className="mt-4 relative w-full h-[200px] md:h-[300px] min-h-[160px] rounded-xl overflow-hidden border bg-muted">
+                <Image src={footerBannerUrl.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com')} alt="Footer Banner" fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover" unoptimized />
               </div>
             )}
           </CardContent>

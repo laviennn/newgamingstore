@@ -89,7 +89,7 @@ export async function saveContactSettings(settings: ContactSettingsPayload) {
     });
 
     revalidatePath("/admin/contacts");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (err: unknown) {
     const error = err as Error;

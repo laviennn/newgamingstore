@@ -94,7 +94,7 @@ export default async function GameTopUpPage({
   const dict = getDictionary(language);
 
   return (
-    <div className='min-h-screen bg-background pb-20'>
+    <div className='min-h-screen pb-20'>
       {/* Top Banner (Full Width) */}
       {gameDetailBanner && (
         <div className='relative w-full h-[320px] lg:h-[460px]'>

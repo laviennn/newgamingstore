@@ -39,29 +39,28 @@ export function Footer({ domain, themeConfig, paymentChannels }: { domain: strin
     : '#';
 
   return (
-    <footer className={`w-full bg-background border-t border-border relative z-10 ${footerBannerUrl ? 'mt-20 sm:mt-28 md:mt-36' : 'mt-20'}`}>
+    <footer className="w-full bg-background border-t border-border relative z-10 mt-0">
       
-      {/* Banner Area (Positioned above footer) */}
+      {/* Full Width Banner Area (Edge-to-edge) */}
       {footerBannerUrl && (
-        <div className="w-full -mt-16 sm:-mt-24 md:-mt-32 relative z-20">
-          <div className="container mx-auto px-4">
-            <div className="w-full relative aspect-[16/9] rounded-2xl md:rounded-[32px] overflow-hidden border border-border shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-card">
-               <Image 
-                 src={fixUrl(footerBannerUrl)} 
-                 alt="Promo Banner" 
-                 fill 
-                 sizes="(max-width: 1200px) 100vw, 1200px"
-                 className="object-cover object-center"
-               />
-               {/* Gentle bottom shadow blend */}
-               <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-background/30 to-transparent pointer-events-none" />
-            </div>
-          </div>
+        <div 
+          className="w-full relative h-[160px] sm:h-[220px] md:h-[300px] lg:h-[360px] min-h-[140px] overflow-hidden border-b border-border/40 bg-card"
+        >
+           <Image 
+             src={fixUrl(footerBannerUrl)} 
+             alt="Footer Banner" 
+             fill 
+             sizes="100vw"
+             className="object-cover object-center w-full h-full"
+             priority
+           />
+           {/* Gentle bottom shadow blend */}
+           <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-background/40 to-transparent pointer-events-none" />
         </div>
       )}
 
-      {/* Main Footer Content */}
-      <div className={`container mx-auto px-4 pt-16 md:pt-24 pb-12`}>
+      {/* Main Footer Content with dynamic top padding */}
+      <div className={`container mx-auto px-4 ${footerBannerUrl ? 'pt-10 md:pt-14' : 'pt-16 md:pt-20 lg:pt-24'} pb-14 md:pb-20`}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
           
           {/* Column 1: Brand & Payments */}

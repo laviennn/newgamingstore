@@ -275,7 +275,7 @@ export default async function StorefrontLayout({
 
   return (
     <>
-      <div className='flex min-h-screen flex-col bg-background text-foreground font-sans'>
+      <div className={`flex min-h-screen flex-col ${config?.heroBackgroundUrl ? 'bg-transparent' : 'bg-background'} text-foreground font-sans`}>
         <style dangerouslySetInnerHTML={{ __html: customStyle }} />
         <SnowfallEffect />
 
