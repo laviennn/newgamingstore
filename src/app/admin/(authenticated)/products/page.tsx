@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { checkPermission, getActiveAdminTenantId, getAdminSession } from "@/app/admin/actions";
 import { UnauthorizedAccess } from "@/components/admin/UnauthorizedAccess";
 import { createClient } from "@/utils/supabase/server";
@@ -57,7 +58,9 @@ export default async function ProductsPage() {
 
   return (
     <div className="space-y-6">
-       <ProductsClient initialProducts={products} games={games} currency={currency} />
+       <Suspense fallback={<div className="p-8 text-center text-muted-foreground text-sm">Memuat katalog produk...</div>}>
+         <ProductsClient initialProducts={products} games={games} currency={currency} />
+       </Suspense>
     </div>
   );
 }
