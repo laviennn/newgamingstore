@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { revalidateStorefront } from "@/lib/revalidate";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
 
 export async function saveArticle(formData: FormData, id?: string) {
@@ -39,6 +40,7 @@ export async function saveArticle(formData: FormData, id?: string) {
     revalidatePath("/admin/articles");
     revalidatePath("/");
     revalidatePath("/blog");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Gagal menyimpan artikel." };
@@ -61,6 +63,7 @@ export async function toggleArticleStatus(id: string, currentStatus: boolean) {
     revalidatePath("/admin/articles");
     revalidatePath("/");
     revalidatePath("/blog");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Gagal mengubah status artikel." };
@@ -79,6 +82,7 @@ export async function deleteArticle(id: string) {
     revalidatePath("/admin/articles");
     revalidatePath("/");
     revalidatePath("/blog");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Gagal menghapus artikel." };

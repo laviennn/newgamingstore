@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { revalidateStorefront } from "@/lib/revalidate";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
 import { logActivity, calculateDiffs } from "@/lib/activity-logger";
 
@@ -131,6 +132,7 @@ export async function saveGame(formData: FormData, id?: string) {
     revalidatePath("/");
     revalidatePath("/admin/games");
     revalidatePath("/admin/products");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Failed to save game." };
@@ -172,6 +174,7 @@ export async function toggleGamePopular(id: string, is_popular: boolean) {
 
     revalidatePath("/admin/games");
     revalidatePath("/");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Failed to toggle popular status." };
@@ -207,6 +210,7 @@ export async function deleteGame(id: string) {
 
     revalidatePath("/admin/games");
     revalidatePath("/admin/products");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Failed to delete game." };
@@ -244,6 +248,7 @@ export async function updateGamesOrder(orderedIds: string[]) {
 
     revalidatePath("/");
     revalidatePath("/admin/games");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Failed to update games order." };

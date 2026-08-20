@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, Calendar, User } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // 1-hour ISR cache on Edge CDN
 
 const fixUrl = (url: string | null) => {
   if (!url) return '';

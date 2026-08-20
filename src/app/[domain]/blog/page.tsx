@@ -3,7 +3,7 @@ import { LatestArticlesSection } from "@/components/storefront/LatestArticlesSec
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // 1-hour ISR cache on Edge CDN
 
 export default async function BlogPage({ params }: { params: Promise<{ domain: string }> }) {
   const { domain } = await params;

@@ -3,7 +3,7 @@ import { PricesClient } from "./PricesClient";
 import { getTenantAuthConfig } from "@/lib/tenantAuth";
 import { Currency } from "@/lib/currencyUtils";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // 1-hour ISR cache on Edge CDN
 
 export default async function PriceListPage({
   params,

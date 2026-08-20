@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { revalidateStorefront } from "@/lib/revalidate";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
 
 export async function saveFaq(formData: FormData, id?: string) {
@@ -36,6 +37,7 @@ export async function saveFaq(formData: FormData, id?: string) {
 
     revalidatePath("/admin/faqs");
     revalidatePath("/");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Gagal menyimpan FAQ." };
@@ -57,6 +59,7 @@ export async function toggleFaqStatus(id: string, currentStatus: boolean) {
 
     revalidatePath("/admin/faqs");
     revalidatePath("/");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Gagal mengubah status FAQ." };
@@ -74,6 +77,7 @@ export async function deleteFaq(id: string) {
 
     revalidatePath("/admin/faqs");
     revalidatePath("/");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Gagal menghapus FAQ." };

@@ -2,8 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 3600; // 1-hour ISR cache on Edge CDN
 import Link from 'next/link';
 import { DynamicFieldBuilder } from '@/components/storefront/DynamicFieldBuilder';
 import { GameDescriptionAccordion } from '@/components/storefront/GameDescriptionAccordion';

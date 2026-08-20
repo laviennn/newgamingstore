@@ -13,7 +13,7 @@ import { LatestArticlesSection } from "@/components/storefront/LatestArticlesSec
 import { FaqSection } from "@/components/storefront/FaqSection";
 import { getDictionary } from "@/lib/dictionary";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 1800; // 30-minute ISR cache on Edge CDN
 
 export default async function StorefrontPage({
   params,

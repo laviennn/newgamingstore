@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { revalidateStorefront } from "@/lib/revalidate";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
 import { createSafeAction } from "@/lib/safe-action";
 import { UpdateProductSchema } from "@/schemas/transaction.schema";
@@ -90,6 +91,7 @@ export const saveProductAction = createSafeAction(
     }
 
     revalidatePath("/admin/products");
+    revalidateStorefront();
     return { success: true };
   },
   { requireAuth: true, requiredPermission: "manage_products" }
@@ -154,6 +156,7 @@ export async function deleteProduct(id: string) {
     });
 
     revalidatePath("/admin/products");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Failed to delete product." };
@@ -205,6 +208,7 @@ export async function duplicateProduct(id: string) {
     });
 
     revalidatePath("/admin/products");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Failed to duplicate product." };
@@ -245,6 +249,7 @@ export async function toggleProductStatus(id: string, active: boolean) {
     });
 
     revalidatePath("/admin/products");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Failed to update product status." };

@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400; // 24-hour ISR cache on Edge CDN
 
 export default async function PrivacyPage({
   params,

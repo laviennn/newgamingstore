@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { revalidateStorefront } from "@/lib/revalidate";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
 import { logActivity, calculateDiffs } from "@/lib/activity-logger";
 
@@ -80,6 +81,7 @@ export async function saveCategory(formData: FormData, id?: string) {
     revalidatePath("/admin/categories");
     revalidatePath("/admin/games");
     revalidatePath("/");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Gagal menyimpan kategori." };
@@ -123,6 +125,7 @@ export async function toggleCategoryStatus(id: string, currentStatus: boolean) {
     revalidatePath("/admin/categories");
     revalidatePath("/admin/games");
     revalidatePath("/");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Gagal mengubah status kategori." };
@@ -159,6 +162,7 @@ export async function deleteCategory(id: string) {
     revalidatePath("/admin/categories");
     revalidatePath("/admin/games");
     revalidatePath("/");
+    revalidateStorefront();
     return { success: true };
   } catch (err: unknown) {
     return { error: (err as Error).message || "Gagal menghapus kategori." };
