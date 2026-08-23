@@ -11,7 +11,7 @@ import { createOrder } from "@/components/storefront/checkoutActions";
 import { checkUsername } from "@/app/actions/usernameValidator";
 import { useNotification } from "@/components/ui/notification";
 import { getDictionary } from "@/lib/dictionary";
-import { formatCurrency } from "@/lib/currencyUtils";
+import { formatCurrency, getProductPrice, getProductName, type Currency } from "@/lib/currencyUtils";
 
 // Helper for angled number badge
 const NumberBadge = ({ num }: { num: number }) => (
@@ -24,15 +24,17 @@ export function StorefrontGameForm({
   game,
   products,
   paymentChannels,
-  themeConfig
+  themeConfig,
+  currency: propCurrency,
 }: {
   game: any,
   products: any[],
   paymentChannels: any[],
-  themeConfig: any
+  themeConfig: any,
+  currency?: Currency,
 }) {
   const dict = getDictionary(themeConfig?.language || 'id');
-  const currency = themeConfig?.currency || (themeConfig?.language === 'ms' ? 'MYR' : 'IDR');
+  const currency: Currency = propCurrency || themeConfig?.currency || (themeConfig?.language === 'ms' ? 'MYR' : 'IDR');
   const { showNotification, NotificationComponent } = useNotification();
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
@@ -102,7 +104,7 @@ export function StorefrontGameForm({
     setAvailablePromos(promos);
   };
 
-  let totalPrice = selectedProduct ? selectedProduct.price : 0;
+  let totalPrice = selectedProduct ? getProductPrice(selectedProduct, currency) : 0;
   if (appliedPromo && selectedProduct) {
     if (appliedPromo.discount_type === 'percentage') {
       totalPrice = totalPrice - (totalPrice * (appliedPromo.discount_value / 100));
@@ -207,7 +209,8 @@ export function StorefrontGameForm({
       tenantName: themeConfig?.siteName || "NewGamingStore",
       gameId: game.id,
       productId: selectedProduct.id,
-      productPrice: selectedProduct.price,
+      productPrice: getProductPrice(selectedProduct, currency),
+      currency: currency,
       paymentMethodId: selectedPayment.id,
       tenantId: game.tenant_id,
       accountData: (() => {
@@ -321,7 +324,7 @@ export function StorefrontGameForm({
                     >
                       {/* Top Grey Area */}
                       <div className={`p-4 flex flex-col items-center justify-center flex-1 transition-colors ${isSelected ? 'bg-transparent' : 'bg-[#313338]/50 group-hover:bg-transparent'}`}>
-                        <p className="font-bold text-sm text-center line-clamp-2 text-white/90 mb-3 leading-snug">{p.name}</p>
+                        <p className="font-bold text-sm text-center line-clamp-2 text-white/90 mb-3 leading-snug">{getProductName(p, currency)}</p>
 
                         {/* 3D Product Image */}
                         {p.image_url ? (
@@ -329,7 +332,7 @@ export function StorefrontGameForm({
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={p.image_url}
-                              alt={p.name}
+                              alt={getProductName(p, currency)}
                               className="w-full h-full object-contain filter drop-shadow-xl"
                               style={{ transform: 'rotateY(20deg) rotateX(-4deg)', transformOrigin: 'left center' }}
                             />
@@ -345,7 +348,7 @@ export function StorefrontGameForm({
                       <div className={`p-3 text-center border-t border-border/20 ${isSelected ? 'bg-theme-primary' : 'bg-[#151618] group-hover:bg-[#1a1b1e]'}`}>
                         <p className="text-xs text-white/50 mb-0.5">{dict.game_price_label}</p>
                         <p className={`font-extrabold text-sm md:text-base ${isSelected ? 'text-white' : 'text-white'}`}>
-                          {formatCurrency(p.price, currency)}
+                          {formatCurrency(getProductPrice(p, currency), currency)}
                         </p>
                       </div>
                     </div>
@@ -614,11 +617,11 @@ export function StorefrontGameForm({
           <div className="flex-1 min-w-0">
             {selectedProduct ? (
               <>
-                <p className="text-[11px] font-medium text-white/90 truncate mb-0.5">{selectedProduct.name}</p>
+                <p className="text-[11px] font-medium text-white/90 truncate mb-0.5">{getProductName(selectedProduct, currency)}</p>
                 <div className="flex items-baseline gap-2">
                   {appliedPromo && (
                     <p className="text-[10px] font-bold text-muted-foreground line-through decoration-red-500">
-                      {formatCurrency(selectedProduct.price, currency)}
+                      {formatCurrency(getProductPrice(selectedProduct, currency), currency)}
                     </p>
                   )}
                   <p className="text-sm font-black text-theme-primary opacity-90">{formatCurrency(totalPrice, currency)}</p>
@@ -656,7 +659,7 @@ export function StorefrontGameForm({
                 <p className="font-bold text-white text-base mb-1">{game.name}</p>
                 <div className="flex items-center text-sm font-semibold mb-1">
                   {appliedPromo && (
-                    <span className="text-muted-foreground line-through decoration-red-500 mr-2 text-xs">{formatCurrency(selectedProduct.price, currency)}</span>
+                    <span className="text-muted-foreground line-through decoration-red-500 mr-2 text-xs">{formatCurrency(getProductPrice(selectedProduct, currency), currency)}</span>
                   )}
                   <span className="text-[#facc15]">{formatCurrency(totalPrice, currency)}</span>
                   <span className="text-white mx-2">-</span>
@@ -770,7 +773,7 @@ export function StorefrontGameForm({
                 <div className="space-y-2">
                   <div className="flex items-start justify-between text-sm">
                     <span className="text-white/70">Item</span>
-                    <span className="font-bold text-white text-right max-w-[60%]">{selectedProduct?.name}</span>
+                    <span className="font-bold text-white text-right max-w-[60%]">{getProductName(selectedProduct, currency)}</span>
                   </div>
                   <div className="flex items-start justify-between text-sm">
                     <span className="text-white/70">Product</span>

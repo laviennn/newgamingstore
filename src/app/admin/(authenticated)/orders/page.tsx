@@ -28,7 +28,7 @@ export default async function AdminOrdersPage() {
       if (currentTenantId) {
         const { data, error } = await supabase
           .from('orders')
-          .select('*, games(name), products(name), payment_channels(name, category, account_number, account_name, logo_url, qr_image_url)')
+          .select('*, games(name), products(name, names), payment_channels(name, category, account_number, account_name, logo_url, qr_image_url)')
           .eq('tenant_id', currentTenantId)
           .order('created_at', { ascending: false });
         

@@ -20,6 +20,8 @@ export default async function ProductsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let games: any[] = [];
   let currency: Currency = 'IDR';
+  let supportedCurrencies: Currency[] = ['IDR'];
+  let multiCurrencyEnabled = false;
   
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -48,7 +50,11 @@ export default async function ProductsPage() {
         const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', currentTenantId).single();
         if (tenantData?.theme_config) {
            const tLang = tenantData.theme_config.language || 'id';
-           currency = (tenantData.theme_config.currency || (tLang === 'ms' ? 'MYR' : 'IDR')) as Currency;
+           currency = (tenantData.theme_config.default_currency || tenantData.theme_config.currency || (tLang === 'ms' ? 'MYR' : 'IDR')) as Currency;
+           multiCurrencyEnabled = !!tenantData.theme_config.multi_currency_enabled;
+           supportedCurrencies = Array.isArray(tenantData.theme_config.supported_currencies) && tenantData.theme_config.supported_currencies.length > 0
+             ? tenantData.theme_config.supported_currencies
+             : [currency];
         }
       }
     }
@@ -59,7 +65,13 @@ export default async function ProductsPage() {
   return (
     <div className="space-y-6">
        <Suspense fallback={<div className="p-8 text-center text-muted-foreground text-sm">Memuat katalog produk...</div>}>
-         <ProductsClient initialProducts={products} games={games} currency={currency} />
+         <ProductsClient 
+           initialProducts={products} 
+           games={games} 
+           currency={currency} 
+           supportedCurrencies={supportedCurrencies}
+           multiCurrencyEnabled={multiCurrencyEnabled}
+         />
        </Suspense>
     </div>
   );

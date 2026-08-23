@@ -15,11 +15,14 @@ export const saveProductAction = createSafeAction(
       id,
       game_id,
       name,
+      names,
       price,
+      prices,
       active,
       image_url,
       is_flash_sale,
       original_price,
+      original_prices,
       flash_sale_stock,
       variant_type,
     } = data;
@@ -27,11 +30,14 @@ export const saveProductAction = createSafeAction(
     const productPayload = {
       game_id,
       name,
+      names: names || {},
       price,
+      prices: prices || {},
       active,
       image_url: image_url || "",
       is_flash_sale,
       original_price: is_flash_sale ? original_price : null,
+      original_prices: is_flash_sale ? (original_prices || {}) : {},
       flash_sale_stock: is_flash_sale ? flash_sale_stock : 0,
       variant_type: variant_type || null,
     };
@@ -108,15 +114,48 @@ export async function saveProduct(formData: FormData, id?: string) {
   const flash_sale_stock_raw = formData.get("flash_sale_stock") as string;
   const variant_type_raw = formData.get("variant_type") as string;
 
+  const names_raw = formData.get("names") as string;
+  let names = {};
+  if (names_raw) {
+    try {
+      names = JSON.parse(names_raw);
+    } catch {
+      names = {};
+    }
+  }
+
+  const prices_raw = formData.get("prices") as string;
+  let prices = {};
+  if (prices_raw) {
+    try {
+      prices = JSON.parse(prices_raw);
+    } catch {
+      prices = {};
+    }
+  }
+
+  const original_prices_raw = formData.get("original_prices") as string;
+  let original_prices = {};
+  if (original_prices_raw) {
+    try {
+      original_prices = JSON.parse(original_prices_raw);
+    } catch {
+      original_prices = {};
+    }
+  }
+
   const payload = {
     id,
     game_id,
     name,
+    names,
     price: priceRaw ? parseFloat(priceRaw) : 0,
+    prices,
     active,
     image_url,
     is_flash_sale,
     original_price: original_price_raw ? parseFloat(original_price_raw) : null,
+    original_prices,
     flash_sale_stock: flash_sale_stock_raw ? parseInt(flash_sale_stock_raw, 10) : 0,
     variant_type: variant_type_raw || null,
   };

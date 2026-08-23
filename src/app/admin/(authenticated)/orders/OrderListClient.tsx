@@ -8,7 +8,7 @@ import { Loader2, Eye, ExternalLink, Trash2, CreditCard, Wallet } from "lucide-r
 import { useNotification } from "@/components/ui/notification";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import Image from "next/image";
-import { Currency, formatCurrency } from "@/lib/currencyUtils";
+import { Currency, formatCurrency, getProductName } from "@/lib/currencyUtils";
 
 export function OrderListClient({ initialOrders, currency = 'IDR' }: { initialOrders: any[], currency?: Currency }) {
   const { showNotification, NotificationComponent } = useNotification();
@@ -106,11 +106,11 @@ export function OrderListClient({ initialOrders, currency = 'IDR' }: { initialOr
                   </td>
                   <td className="p-4">
                      <div className="font-semibold">{o.games?.name}</div>
-                     <div className="text-muted-foreground text-xs">{o.products?.name}</div>
+                     <div className="text-muted-foreground text-xs">{getProductName(o.products, orderCurr) || o.products?.name}</div>
                   </td>
                   <td className="p-4 font-medium">
                     <div className="flex items-center gap-1.5 font-bold">
-                      <span className="text-xs">{orderCurr === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+                      <span className="text-xs">{orderCurr === 'MYR' ? '🇲🇾' : orderCurr === 'SGD' ? '🇸🇬' : '🇮🇩'}</span>
                       <span>{formatCurrency(Number(o.total_price), orderCurr)}</span>
                     </div>
                   </td>
@@ -284,9 +284,9 @@ export function OrderListClient({ initialOrders, currency = 'IDR' }: { initialOr
                       <span className="text-muted-foreground">Game</span>
                       <span className="font-bold">{selectedOrder.games?.name}</span>
                     </div>
-                    <div className="flex justify-between border-b py-2">
-                      <span className="text-muted-foreground">Layanan</span>
-                      <span className="font-bold text-right">{selectedOrder.products?.name}</span>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Product:</span>
+                      <span className="font-bold text-right">{getProductName(selectedOrder.products, selectedOrder.currency || currency) || selectedOrder.products?.name}</span>
                     </div>
                     {selectedOrder.account_data && Object.entries(selectedOrder.account_data).map(([k, v]) => (
                       <div key={k} className="flex justify-between border-b py-2">
@@ -297,7 +297,9 @@ export function OrderListClient({ initialOrders, currency = 'IDR' }: { initialOr
                     <div className="flex justify-between items-center pt-2">
                       <span className="text-muted-foreground">Total Harga</span>
                       <div className="flex items-center gap-1.5 font-bold text-lg text-primary">
-                        <span className="text-sm">{(selectedOrder.currency || currency) === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+                        <span className="text-sm">
+                          {(selectedOrder.currency || currency) === 'MYR' ? '🇲🇾' : (selectedOrder.currency || currency) === 'SGD' ? '🇸🇬' : '🇮🇩'}
+                        </span>
                         <span>{formatCurrency(Number(selectedOrder.total_price), selectedOrder.currency || currency)}</span>
                       </div>
                     </div>

@@ -4,13 +4,15 @@ import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, Loader2, AlertCircle, Palette, CheckCircle2 } from "lucide-react";
+import { Save, Loader2, AlertCircle, Palette, CheckCircle2, Globe2 } from "lucide-react";
 import { useNotification } from "@/components/ui/notification";
 import { createClient } from "@/utils/supabase/client";
 import { THEME_PRESETS, ThemePreset, ThemeConfig, getThemeConfigOrDefault } from "@/lib/themeUtils";
 import { Language } from "@/lib/dictionary";
+import { Currency } from "@/lib/currencyUtils";
 import { CurrencyChangeWarningModal } from "@/components/admin/CurrencyChangeWarningModal";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
+import { SkeuoToggle } from "@/components/ui/skeuo-switch";
 
 export default function ThemeClient() {
   const { showNotification, NotificationComponent } = useNotification();
@@ -26,10 +28,15 @@ export default function ThemeClient() {
   const [themeConfig, setThemeConfig] = React.useState<any>({});
   const [themePreset, setThemePreset] = React.useState<ThemePreset>("default");
   const [language, setLanguage] = React.useState<Language>("id");
-  const [currency, setCurrency] = React.useState<"IDR" | "MYR">("IDR");
-  const [initialCurrency, setInitialCurrency] = React.useState<"IDR" | "MYR">("IDR");
+  const [currency, setCurrency] = React.useState<Currency>("IDR");
+  const [initialCurrency, setInitialCurrency] = React.useState<Currency>("IDR");
   const [isWarningModalOpen, setIsWarningModalOpen] = React.useState(false);
   
+  // Multi-Currency State
+  const [multiCurrencyEnabled, setMultiCurrencyEnabled] = React.useState(false);
+  const [supportedCurrencies, setSupportedCurrencies] = React.useState<Currency[]>(["IDR"]);
+  const [defaultCurrency, setDefaultCurrency] = React.useState<Currency>("IDR");
+
   // Custom Colors State
   const [primaryColor, setPrimaryColor] = React.useState("#3b82f6");
   const [backgroundColor, setBackgroundColor] = React.useState("#0f172a");
@@ -73,9 +80,17 @@ export default function ThemeClient() {
           setCardColor(config.colors.card);
           setTextColor(config.colors.text);
           setLanguage(config.language || "id");
-          const curr = (config.currency || (config.language === 'ms' ? 'MYR' : 'IDR')) as "IDR" | "MYR";
+          const curr = (config.currency || (config.language === 'ms' ? 'MYR' : 'IDR')) as Currency;
           setCurrency(curr);
           setInitialCurrency(curr);
+
+          setMultiCurrencyEnabled(!!tenant.theme_config.multi_currency_enabled);
+          setSupportedCurrencies(
+            Array.isArray(tenant.theme_config.supported_currencies) && tenant.theme_config.supported_currencies.length > 0
+              ? tenant.theme_config.supported_currencies
+              : [curr]
+          );
+          setDefaultCurrency(tenant.theme_config.default_currency || curr);
         }
       } catch (err) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,6 +113,21 @@ export default function ThemeClient() {
     setTextColor(colors.text);
   };
 
+  const handleToggleSupportedCurrency = (code: Currency, checked: boolean) => {
+    let next = checked
+      ? [...supportedCurrencies, code]
+      : supportedCurrencies.filter((c) => c !== code);
+    
+    if (next.length === 0) {
+      next = [code]; // Must keep at least 1
+    }
+    setSupportedCurrencies(next);
+
+    if (!next.includes(defaultCurrency)) {
+      setDefaultCurrency(next[0]);
+    }
+  };
+
   const executeSave = async () => {
     if (!tenantId) return;
     setSaving(true);
@@ -106,7 +136,10 @@ export default function ThemeClient() {
          ...themeConfig,
          themePreset,
          language,
-         currency,
+         currency: defaultCurrency || currency,
+         multi_currency_enabled: multiCurrencyEnabled,
+         supported_currencies: supportedCurrencies,
+         default_currency: defaultCurrency,
          colors: {
            primary: primaryColor,
            background: backgroundColor,
@@ -119,9 +152,9 @@ export default function ThemeClient() {
       if (error) throw error;
       
       setThemeConfig(updatedConfig);
-      setInitialCurrency(currency);
+      setInitialCurrency(defaultCurrency || currency);
       setIsWarningModalOpen(false);
-      showNotification("success", "Tersimpan", "Pengaturan tema & mata uang berhasil diperbarui.");
+      showNotification("success", "Tersimpan", "Pengaturan tema & multi-currency berhasil diperbarui.");
     } catch (err) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const error = err as any;
@@ -262,30 +295,92 @@ export default function ThemeClient() {
 
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Bahasa & Mata Uang Storefront</CardTitle>
-            <CardDescription>Pilih bahasa utama dan mata uang operasional untuk etalase toko Anda.</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe2 className="h-5 w-5 text-primary" /> Multi-Currency & Multi-Region
+                </CardTitle>
+                <CardDescription>
+                  Aktifkan kemampuan toko untuk melayani pelanggan dari Indonesia (IDR), Malaysia (MYR), dan Singapura (SGD).
+                </CardDescription>
+              </div>
+              <SkeuoToggle
+                checked={multiCurrencyEnabled}
+                onChange={(val) => setMultiCurrencyEnabled(val)}
+                activeText="Aktif"
+                inactiveText="Nonaktif"
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {multiCurrencyEnabled && (
+              <div className="space-y-4 p-4 bg-muted/30 rounded-xl border animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Wilayah / Mata Uang yang Didukung:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                    {(['IDR', 'MYR', 'SGD'] as Currency[]).map((cur) => (
+                      <label key={cur} className="flex items-center gap-2 p-2 rounded-lg border bg-background hover:bg-muted/50 cursor-pointer transition-colors text-xs font-semibold">
+                        <input
+                          type="checkbox"
+                          checked={supportedCurrencies.includes(cur)}
+                          onChange={(e) => handleToggleSupportedCurrency(cur, e.target.checked)}
+                          className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+                        />
+                        <span>{cur === 'IDR' ? '🇮🇩 IDR (Rp)' : cur === 'MYR' ? '🇲🇾 MYR (RM)' : '🇸🇬 SGD (S$)'}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-border/50">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Mata Uang Bawaan (Default):
+                  </label>
+                  <select
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={defaultCurrency}
+                    onChange={(e) => setDefaultCurrency(e.target.value as Currency)}
+                  >
+                    {supportedCurrencies.map((cur) => (
+                      <option key={cur} value={cur}>
+                        {cur === 'IDR' ? '🇮🇩 Indonesia - Rupiah (IDR)' : cur === 'MYR' ? '🇲🇾 Malaysia - Ringgit (MYR)' : '🇸🇬 Singapore - Dolar (SGD)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Bahasa Utama Storefront</CardTitle>
+            <CardDescription>Pilih bahasa default untuk etalase toko Anda.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
             <div 
               className={`border-2 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all relative ${language === 'id' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-primary/50'}`}
-              onClick={() => { setLanguage('id'); setCurrency('IDR'); }}
+              onClick={() => { setLanguage('id'); }}
             >
               {language === 'id' && <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-primary" />}
               <div className="text-4xl mb-2">🇮🇩</div>
               <p className="font-semibold text-center text-sm">Indonesia (ID)</p>
               <span className="text-[11px] text-muted-foreground mt-1 bg-white/5 px-2 py-0.5 rounded-full">
-                Mata Uang: <strong>Rupiah (Rp / IDR)</strong>
+                Bahasa Indonesia
               </span>
             </div>
             <div 
               className={`border-2 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all relative ${language === 'ms' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-primary/50'}`}
-              onClick={() => { setLanguage('ms'); setCurrency('MYR'); }}
+              onClick={() => { setLanguage('ms'); }}
             >
               {language === 'ms' && <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-primary" />}
               <div className="text-4xl mb-2">🇲🇾</div>
               <p className="font-semibold text-center text-sm">Malaysia (MS)</p>
               <span className="text-[11px] text-muted-foreground mt-1 bg-white/5 px-2 py-0.5 rounded-full">
-                Mata Uang: <strong>Ringgit (RM / MYR)</strong>
+                Bahasa Melayu
               </span>
             </div>
           </CardContent>

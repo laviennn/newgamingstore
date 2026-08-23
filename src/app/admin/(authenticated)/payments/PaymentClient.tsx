@@ -108,7 +108,18 @@ export function PaymentClient({ initialPayments }: { initialPayments: any[] }) {
                   </div>
                 </td>
                 <td className="p-4">
-                  <div className="font-bold">{p.name}</div>
+                  <div className="font-bold flex items-center gap-2">
+                    <span>{p.name}</span>
+                    {Array.isArray(p.supported_currencies) && p.supported_currencies.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        {p.supported_currencies.map((cur: string) => (
+                          <span key={cur} className="text-[10px] px-1.5 py-0.5 rounded bg-muted font-bold border">
+                            {cur === 'IDR' ? '🇮🇩 IDR' : cur === 'MYR' ? '🇲🇾 MYR' : cur === 'SGD' ? '🇸🇬 SGD' : cur}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   {(p.account_number || p.account_name) && (
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {p.account_number} {p.account_name ? `a/n ${p.account_name}` : ''}

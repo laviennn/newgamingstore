@@ -6,6 +6,7 @@ import { generateInvoiceId } from "@/lib/invoiceUtils";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { DepositSchema } from "@/schemas/transaction.schema";
 import { getMemberSession } from "@/utils/memberSession";
+import { Currency, getMinDepositAmount, formatCurrency } from "@/lib/currencyUtils";
 
 export async function createDepositOrder(depositData: any) {
   try {
@@ -66,14 +67,37 @@ export async function createDepositOrder(depositData: any) {
     const invoiceId = generateInvoiceId("DEP", "DEP");
 
     const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', validData.tenantId).single();
-    const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
+    const defaultCurrency = (tenantData?.theme_config?.default_currency || tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR')) as Currency;
+    const requestedCurrency: Currency = ((validData as any).currency as Currency) || defaultCurrency;
 
-    const minDeposit = currency === 'MYR' ? 5 : 10000;
+    // Validate minimum deposit
+    const minDeposit = getMinDepositAmount(requestedCurrency);
     if (validData.amount < minDeposit) {
       return {
         success: false,
-        message: `Minimal deposit adalah ${currency === 'MYR' ? 'RM 5' : 'Rp 10.000'}`,
+        message: `Minimal deposit adalah ${formatCurrency(minDeposit, requestedCurrency)}`,
       };
+    }
+
+    // Validate payment channel currency
+    const { data: channel, error: channelError } = await supabase
+      .from('payment_channels')
+      .select('id, name, supported_currencies, is_active')
+      .eq('id', validData.paymentMethodId)
+      .eq('tenant_id', validData.tenantId)
+      .maybeSingle();
+
+    if (channelError || !channel || !channel.is_active) {
+      return { success: false, message: "Metode pembayaran tidak valid atau sedang dinonaktifkan." };
+    }
+
+    if (Array.isArray(channel.supported_currencies) && channel.supported_currencies.length > 0) {
+      if (!channel.supported_currencies.includes(requestedCurrency)) {
+        return {
+          success: false,
+          message: `Metode pembayaran ${channel.name} tidak berlaku untuk transaksi deposit ${requestedCurrency}.`,
+        };
+      }
     }
 
     const payload = {
@@ -84,7 +108,7 @@ export async function createDepositOrder(depositData: any) {
        status: 'Pending',
        customer_email: loggedInEmail || validData.customerEmail || validData.waNumber || 'no-email@test.com',
        tenant_id: validData.tenantId,
-       currency: currency
+       currency: requestedCurrency
     };
 
     const { data, error } = await supabase

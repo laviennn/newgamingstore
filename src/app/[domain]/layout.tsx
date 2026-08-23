@@ -23,6 +23,8 @@ import {
 } from '@/lib/tenantAuth';
 import type { MemberPayload } from '@/utils/memberSession';
 import { generateThemeCssVariables } from '@/lib/themeUtils';
+import { getLanguageFromCurrency, type Currency } from '@/lib/currencyUtils';
+import type { Language } from '@/lib/dictionary';
 
 export async function generateMetadata({
   params,
@@ -223,7 +225,7 @@ export default async function StorefrontLayout({
           .eq('is_active', true),
         supabase
           .from('products')
-          .select('name, games(name, image_url)')
+          .select('name, names, games(name, image_url)')
           .eq('tenant_id', tenantData.id)
           .eq('active', true),
       ]);
@@ -235,7 +237,11 @@ export default async function StorefrontLayout({
         // Group products by game name
         const gameMap = new Map<
           string,
-          { gameName: string; gameImage: string; products: string[] }
+          {
+            gameName: string;
+            gameImage: string;
+            products: Array<{ itemName: string; names?: Record<string, string> | null }>;
+          }
         >();
 
         for (const product of productsData) {
@@ -253,17 +259,21 @@ export default async function StorefrontLayout({
               products: [],
             });
           }
-          gameMap.get(key)!.products.push(product.name);
+          gameMap.get(key)!.products.push({
+            itemName: product.name,
+            names: (product as any).names || null,
+          });
         }
 
         // For each game, shuffle and take max 4 products
         for (const entry of gameMap.values()) {
           const selected = getShuffledProducts(entry.products).slice(0, 4);
-          for (const itemName of selected) {
+          for (const item of selected) {
             purchaseNotifications.push({
               gameName: entry.gameName,
               gameImage: entry.gameImage,
-              itemName,
+              itemName: item.itemName,
+              names: item.names,
             });
           }
         }
@@ -272,6 +282,30 @@ export default async function StorefrontLayout({
   }
 
   const customStyle = generateThemeCssVariables(config);
+
+  // Multi-Currency and Multi-Region Resolution
+  const userCurrencyCookie = cookieStore.get('storefront_currency')?.value as Currency | undefined;
+  const isMultiCurrency = !!config.multi_currency_enabled;
+  const supportedCurrencies: Currency[] = Array.isArray(config.supported_currencies) && config.supported_currencies.length > 0
+    ? config.supported_currencies
+    : (config.currency ? [config.currency as Currency] : [config.language === 'ms' ? 'MYR' : 'IDR']);
+  const defaultCurrency: Currency = (config.default_currency as Currency) || supportedCurrencies[0] || 'IDR';
+
+  let activeCurrency: Currency = defaultCurrency;
+  if (userCurrencyCookie && supportedCurrencies.includes(userCurrencyCookie)) {
+    activeCurrency = userCurrencyCookie;
+  }
+
+  // Dynamic Language resolution synced with active currency or tenant configuration
+  const activeLanguage: Language = isMultiCurrency || userCurrencyCookie
+    ? getLanguageFromCurrency(activeCurrency)
+    : (config.language || getLanguageFromCurrency(activeCurrency) || 'id');
+
+  // Dynamic WhatsApp CS routing per region
+  const activeWhatsappNumber =
+    (config.whatsapp_contacts && config.whatsapp_contacts[activeCurrency]) ||
+    config.whatsapp ||
+    '';
 
   return (
     <>
@@ -299,7 +333,9 @@ export default async function StorefrontLayout({
           user={user}
           memberSession={memberSession}
           authMode={authMode}
-          language={config.language || 'id'}
+          language={activeLanguage}
+          currency={activeCurrency}
+          supportedCurrencies={supportedCurrencies}
         />
 
         <main className='flex-1'>{children}</main>
@@ -308,10 +344,11 @@ export default async function StorefrontLayout({
           domain={domain}
           themeConfig={config}
           paymentChannels={paymentChannels}
+          language={activeLanguage}
         />
 
         <FloatingWhatsapp
-          whatsapp={config.whatsapp}
+          whatsapp={activeWhatsappNumber}
           active={config.waFloatingActive ?? true}
           avatarUrl={config.waFloatingAvatarUrl}
           text={config.waFloatingText}
@@ -326,7 +363,8 @@ export default async function StorefrontLayout({
         <PurchaseNotification
           tenantName={currentTenantName}
           notifications={purchaseNotifications}
-          language={config.language || 'id'}
+          language={activeLanguage}
+          supportedCurrencies={supportedCurrencies}
         />
       </div>
 
@@ -336,6 +374,6 @@ export default async function StorefrontLayout({
   );
 }
 
-function getShuffledProducts(products: string[]): string[] {
-  return [...products].sort(() => Math.random() - 0.5);
+function getShuffledProducts<T>(products: T[]): T[] {
+  return [...products].sort();
 }

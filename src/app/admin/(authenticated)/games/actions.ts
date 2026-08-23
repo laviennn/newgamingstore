@@ -27,6 +27,19 @@ export async function saveGame(formData: FormData, id?: string) {
   const sort_order_raw = formData.get("sort_order") as string;
   const sort_order = sort_order_raw !== null && sort_order_raw !== "" ? parseInt(sort_order_raw, 10) : 0;
 
+  const supported_currencies_raw = formData.get("supported_currencies") as string;
+  let supported_currencies = ["IDR", "MYR", "SGD"];
+  if (supported_currencies_raw) {
+    try {
+      const parsed = JSON.parse(supported_currencies_raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        supported_currencies = parsed;
+      }
+    } catch {
+      supported_currencies = ["IDR", "MYR", "SGD"];
+    }
+  }
+
   if (!name || !slug) {
     return { error: "Name and Slug are required." };
   }
@@ -74,6 +87,7 @@ export async function saveGame(formData: FormData, id?: string) {
     validator_provider,
     validator_game_code,
     sort_order,
+    supported_currencies,
   };
 
   try {

@@ -2,8 +2,8 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { generateInvoiceId } from "@/lib/invoiceUtils";
-
 import { getMemberSession } from "@/utils/memberSession";
+import { Currency, getProductPrice, getProductOriginalPrice } from "@/lib/currencyUtils";
 
 export async function createOrder(orderData: any) {
   try {
@@ -18,11 +18,29 @@ export async function createOrder(orderData: any) {
     const tenantIdentifier = tenantData?.theme_config?.siteName || tenantData?.name || tenantData?.domain || orderData.tenantName || "NewGamingStore";
     const invoiceId = generateInvoiceId(tenantIdentifier);
 
-    const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
+    // 1. Resolve requested currency safely
+    const defaultCurrency = (tenantData?.theme_config?.default_currency || tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR')) as Currency;
+    const requestedCurrency: Currency = (orderData.currency as Currency) || defaultCurrency;
 
-    // Calculate total price with promo
-    let originalPrice = orderData.productPrice;
-    let totalPrice = originalPrice;
+    // 2. Fetch authoritative Product from database (Anti-Fraud verification)
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .select('id, name, names, price, prices, active, is_flash_sale, original_price, original_prices')
+      .eq('id', orderData.productId)
+      .eq('tenant_id', orderData.tenantId)
+      .single();
+
+    if (productError || !product || !product.active) {
+      return { success: false, message: "Produk tidak ditemukan atau sedang tidak aktif." };
+    }
+
+    // 3. Authoritative price calculation based on requested currency
+    const serverProductPrice = getProductPrice(product, requestedCurrency);
+    const serverOriginalPrice = getProductOriginalPrice(product, requestedCurrency) || serverProductPrice;
+
+    // 4. Calculate total price with promo
+    let originalPrice = serverProductPrice;
+    let totalPrice = serverProductPrice;
     let discountAmount = 0;
     
     if (orderData.promo) {
@@ -35,9 +53,33 @@ export async function createOrder(orderData: any) {
        if (totalPrice < 0) totalPrice = 0;
     }
 
-    // Biaya dihapus sesuai request
     const fee = 0;
     totalPrice += fee;
+
+    // 5. Payment Channel Currency Validation
+    const isWalletPayment = orderData.paymentMethodId === '11111111-1111-1111-1111-111111111111';
+
+    if (!isWalletPayment) {
+      const { data: channel, error: channelError } = await supabase
+        .from('payment_channels')
+        .select('id, name, supported_currencies, is_active')
+        .eq('id', orderData.paymentMethodId)
+        .eq('tenant_id', orderData.tenantId)
+        .maybeSingle();
+
+      if (channelError || !channel || !channel.is_active) {
+        return { success: false, message: "Metode pembayaran tidak valid atau sedang dinonaktifkan." };
+      }
+
+      if (Array.isArray(channel.supported_currencies) && channel.supported_currencies.length > 0) {
+        if (!channel.supported_currencies.includes(requestedCurrency)) {
+          return {
+            success: false,
+            message: `Metode pembayaran ${channel.name} tidak berlaku untuk transaksi dengan mata uang ${requestedCurrency}.`,
+          };
+        }
+      }
+    }
 
     // Check if user is logged in (supports both Username mode and Supabase Email mode)
     let loggedInEmail: string | null = null;
@@ -66,8 +108,6 @@ export async function createOrder(orderData: any) {
       }
     }
 
-    const isWalletPayment = orderData.paymentMethodId === '11111111-1111-1111-1111-111111111111';
-
     // If Payment Method is Wallet, deduct balance first
     if (isWalletPayment) {
       if (!loggedInEmail) {
@@ -91,7 +131,7 @@ export async function createOrder(orderData: any) {
        game_id: orderData.gameId,
        product_id: orderData.productId,
        payment_channel_id: orderData.paymentMethodId,
-       tenant_id: orderData.tenantId, // Can be null if not multi-tenant strictly
+       tenant_id: orderData.tenantId,
        account_data: orderData.accountData,
        promo_code_id: orderData.promo?.id || null,
        wa_number: orderData.waNumber || loggedInPhone || null,
@@ -101,9 +141,9 @@ export async function createOrder(orderData: any) {
        total_price: totalPrice,
        status: isWalletPayment ? 'Processed' : 'Pending',
        payment_status: isWalletPayment ? 'PAID' : 'UNPAID',
-       customer_email: loggedInEmail || orderData.customerEmail || orderData.waNumber || 'no-email@test.com', // accurately use member email
-       form_data: orderData.accountData, // fallback for original schema
-       currency: currency
+       customer_email: loggedInEmail || orderData.customerEmail || orderData.waNumber || 'no-email@test.com',
+       form_data: orderData.accountData,
+       currency: requestedCurrency
     };
 
     const { data, error } = await supabase
@@ -161,7 +201,7 @@ export async function checkOrderStatus(invoiceId: string) {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('orders')
-      .select('*, games(name), products(name)')
+      .select('*, games(name), products(name, names)')
       .eq('invoice_id', invoiceId)
       .single();
 

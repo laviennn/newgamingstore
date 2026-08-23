@@ -31,8 +31,19 @@ import { ProductFormModal } from "@/components/admin/ProductFormModal";
 import Image from "next/image";
 import { Currency, formatCurrency } from "@/lib/currencyUtils";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function ProductsClient({ initialProducts, games, currency = 'IDR' }: { initialProducts: any[], games: any[], currency?: Currency }) {
+export function ProductsClient({ 
+  initialProducts, 
+  games, 
+  currency = 'IDR',
+  supportedCurrencies = ['IDR'],
+  multiCurrencyEnabled = false,
+}: { 
+  initialProducts: any[], 
+  games: any[], 
+  currency?: Currency,
+  supportedCurrencies?: Currency[],
+  multiCurrencyEnabled?: boolean,
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -642,6 +653,18 @@ export function ProductsClient({ initialProducts, games, currency = 'IDR' }: { i
                       </span>
                     )}
                   </div>
+                  {p.names && typeof p.names === "object" && Object.keys(p.names).length > 1 && (
+                    <div className="flex items-center flex-wrap gap-1 mt-1">
+                      {Object.entries(p.names).map(([c, n]) => {
+                        const flag = c === "MYR" ? "🇲🇾" : c === "SGD" ? "🇸🇬" : "🇮🇩";
+                        return (
+                          <span key={c} className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-muted/60 text-muted-foreground border border-border/50">
+                            {flag} {String(n)}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                   {p.games?.name && (
                     <span className="text-xs text-muted-foreground block mt-0.5 font-normal">{p.games.name}</span>
                   )}
@@ -800,6 +823,8 @@ export function ProductsClient({ initialProducts, games, currency = 'IDR' }: { i
         product={selectedProduct}
         games={games}
         currency={currency}
+        supportedCurrencies={supportedCurrencies}
+        multiCurrencyEnabled={multiCurrencyEnabled}
       />
 
       {/* Delete Dialog */}

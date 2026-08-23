@@ -1,14 +1,15 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { DepositForm } from '@/components/storefront/DepositForm';
 import { getUnifiedSession } from '@/lib/tenantAuth';
 import { getDictionary } from '@/lib/dictionary';
 import { Currency, formatCurrency } from '@/lib/currencyUtils';
+import Link from 'next/link';
+import { ArrowLeft, Wallet } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-import Link from 'next/link';
-import { ArrowLeft, Wallet } from 'lucide-react';
 
 export default async function MemberDepositPage({
   params,
@@ -52,17 +53,29 @@ export default async function MemberDepositPage({
     tenant = res.data;
   }
   
+  const cookieStore = await cookies();
   const language = tenant?.theme_config?.language || 'id';
-  const currency: Currency = (tenant?.theme_config?.currency || (language === 'ms' ? 'MYR' : 'IDR')) as Currency;
+  const themeConfig = tenant?.theme_config || {};
+  const userCurrencyCookie = cookieStore.get('storefront_currency')?.value as Currency | undefined;
+  const supportedCurrencies: Currency[] = Array.isArray(themeConfig?.supported_currencies) && themeConfig.supported_currencies.length > 0
+    ? themeConfig.supported_currencies
+    : (themeConfig?.currency ? [themeConfig.currency as Currency] : [language === 'ms' ? 'MYR' : 'IDR']);
+  const defaultCurrency: Currency = (themeConfig?.default_currency as Currency) || supportedCurrencies[0] || 'IDR';
+  const currency: Currency = (userCurrencyCookie && supportedCurrencies.includes(userCurrencyCookie)) ? userCurrencyCookie : defaultCurrency;
   const dict = getDictionary(language);
 
-  // Fetch active payment channels
-  const { data: paymentChannels } = await supabase
+  // Fetch active payment channels & filter by active currency
+  const { data: channels } = await supabase
     .from('payment_channels')
     .select('*')
     .eq('tenant_id', tenant?.id)
     .eq('is_active', true)
     .order('created_at', { ascending: false });
+
+  const paymentChannels = (channels || []).filter((pc: any) => {
+    if (!pc.supported_currencies || !Array.isArray(pc.supported_currencies) || pc.supported_currencies.length === 0) return true;
+    return pc.supported_currencies.includes(currency);
+  });
 
   // Fetch Wallet Balance
   const userEmail = (user.email || '').toLowerCase();

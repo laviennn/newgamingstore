@@ -183,7 +183,7 @@ export function RiwayatDepositClient({ initialDeposits, language = "id", currenc
                         </Link>
                       </td>
                       <td className="py-5 px-6 font-bold text-white text-sm">
-                        {formatCurrency(dep.amount, currency)}
+                        {formatCurrency(dep.amount, (dep.currency as Currency) || currency)}
                       </td>
                       <td className="py-5 px-6 text-gray-400 text-xs font-medium">
                         {formattedDate}

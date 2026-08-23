@@ -99,16 +99,20 @@ export function FlashSaleSection({ products, language = 'id', currency = 'IDR' }
 
   const carouselPlugins = React.useMemo(() => [plugin.current], []);
 
-  if (!products || products.length === 0) return null;
-
-  // Ensure enough items so the carousel can actually scroll and loop!
-  // On desktop (basis-1/4 or basis-1/5), Embla needs at least 8-10 items to loop flawlessly.
-  let displayProducts = [...products];
-  if (displayProducts.length > 0 && displayProducts.length < 12) {
-    while (displayProducts.length < 12) {
-      displayProducts = [...displayProducts, ...products.map(p => ({ ...p, id: p.id + Math.random().toString() }))];
+  // Ensure enough items so the carousel can actually scroll and loop flawlessly!
+  // Use deterministic keys so SSR and client hydration match 100% without triggering reload loops.
+  const displayProducts = React.useMemo(() => {
+    if (!products || products.length === 0) return [];
+    let items = [...products];
+    let multiplier = 0;
+    while (items.length < 12) {
+      multiplier++;
+      items = [...items, ...products.map((p, idx) => ({ ...p, id: `${p.id}_clone_${multiplier}_${idx}` }))];
     }
-  }
+    return items;
+  }, [products]);
+
+  if (!products || products.length === 0) return null;
 
   return (
     <div className="w-full bg-background rounded-2xl border border-border p-4 md:p-6 shadow-2xl overflow-hidden">

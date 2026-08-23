@@ -1,7 +1,8 @@
+import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { PricesClient } from "./PricesClient";
 import { getTenantAuthConfig } from "@/lib/tenantAuth";
-import { Currency } from "@/lib/currencyUtils";
+import { type Currency } from "@/lib/currencyUtils";
 
 export const revalidate = 3600; // 1-hour ISR cache on Edge CDN
 
@@ -11,12 +12,13 @@ export default async function PriceListPage({
   params: Promise<{ domain: string }>;
 }) {
   const { domain } = await params;
+  const cookieStore = await cookies();
   const tenantConfig = await getTenantAuthConfig(domain);
   const language = tenantConfig?.language || 'id';
-  const currency: Currency = (tenantConfig?.currency as Currency) || (language === 'ms' ? 'MYR' : 'IDR');
 
   let products: any[] = [];
   let games: any[] = [];
+  let activeCurrency: Currency = "IDR";
 
   try {
     const supabase = await createClient();
@@ -48,27 +50,44 @@ export default async function PriceListPage({
       tenantData = res.data;
     }
 
+    // Resolve Active Currency
+    const themeConfig = tenantData?.theme_config || {};
+    const userCurrencyCookie = cookieStore.get('storefront_currency')?.value as Currency | undefined;
+    const supportedCurrencies: Currency[] = Array.isArray(themeConfig?.supported_currencies) && themeConfig.supported_currencies.length > 0
+      ? themeConfig.supported_currencies
+      : (themeConfig?.currency ? [themeConfig.currency as Currency] : [language === 'ms' ? 'MYR' : 'IDR']);
+    const defaultCurrency: Currency = (themeConfig?.default_currency as Currency) || supportedCurrencies[0] || 'IDR';
+    activeCurrency = (userCurrencyCookie && supportedCurrencies.includes(userCurrencyCookie)) ? userCurrencyCookie : defaultCurrency;
+
     const tenantId = tenantData?.id;
 
     if (tenantId) {
       // 2. Fetch all active games strictly for this tenant
       const { data: gamesData } = await supabase
         .from('games')
-        .select('id, name, slug, image_url')
+        .select('id, name, slug, image_url, supported_currencies')
         .eq('tenant_id', tenantId)
         .order('name', { ascending: true });
       
-      if (gamesData) games = gamesData;
+      if (gamesData) {
+        games = gamesData.filter(g => !g.supported_currencies || !Array.isArray(g.supported_currencies) || g.supported_currencies.length === 0 || g.supported_currencies.includes(activeCurrency));
+      }
 
       // 3. Fetch all active products strictly for this tenant
       const { data: productsData } = await supabase
         .from('products')
-        .select('*, games!inner(id, name, tenant_id)')
+        .select('*, games!inner(id, name, tenant_id, supported_currencies)')
         .eq('tenant_id', tenantId)
         .eq('active', true)
         .order('price', { ascending: true });
 
-      if (productsData) products = productsData;
+      if (productsData) {
+        products = productsData.filter(p => {
+          const gameSupported = p.games?.supported_currencies;
+          if (!gameSupported || !Array.isArray(gameSupported) || gameSupported.length === 0) return true;
+          return gameSupported.includes(activeCurrency);
+        });
+      }
     }
   } catch (error) {
     console.error("Failed to fetch price list data:", error);
@@ -76,7 +95,7 @@ export default async function PriceListPage({
 
   return (
     <div className="min-h-screen bg-theme-background text-white">
-      <PricesClient initialGames={games} initialProducts={products} language={language} currency={currency} />
+      <PricesClient initialGames={games} initialProducts={products} language={language} currency={activeCurrency} />
     </div>
   );
 }

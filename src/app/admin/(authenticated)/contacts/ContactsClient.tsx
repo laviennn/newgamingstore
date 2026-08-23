@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, Loader2, AlertCircle, UploadCloud, MessageSquareText } from "lucide-react";
+import { Save, Loader2, AlertCircle, UploadCloud, MessageSquareText, Globe2, Phone, MessageSquare } from "lucide-react";
 import { useNotification } from "@/components/ui/notification";
 import { createClient } from "@/utils/supabase/client";
 import { uploadFile } from "@/app/actions/upload";
@@ -37,6 +37,16 @@ export default function ContactsClient() {
   const [youtube, setYoutube] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [operationalHours, setOperationalHours] = React.useState("");
+
+  // Multi-Currency & Multi-Region Contact State
+  const [multiCurrencyEnabled, setMultiCurrencyEnabled] = React.useState(false);
+  const [supportedCurrencies, setSupportedCurrencies] = React.useState<string[]>(["IDR"]);
+  const [defaultCurrency, setDefaultCurrency] = React.useState<string>("IDR");
+  const [whatsappContacts, setWhatsappContacts] = React.useState<Record<string, string>>({
+    IDR: "",
+    MYR: "",
+    SGD: "",
+  });
 
   // Footer Banner State
   const [footerBannerUrl, setFooterBannerUrl] = React.useState("");
@@ -76,8 +86,25 @@ export default function ContactsClient() {
           const config = data.theme_config || {};
           setThemeConfig(config);
 
+          const isMulti = !!config.multi_currency_enabled;
+          const supported = Array.isArray(config.supported_currencies) && config.supported_currencies.length > 0
+            ? config.supported_currencies
+            : [(config.currency || (config.language === 'ms' ? 'MYR' : 'IDR'))];
+          const defaultCurr = config.default_currency || supported[0] || 'IDR';
+
+          setMultiCurrencyEnabled(isMulti);
+          setSupportedCurrencies(supported);
+          setDefaultCurrency(defaultCurr);
+
           setTimeout(() => {
-            setWhatsapp(config.whatsapp || "");
+            const initialWhatsapp = config.whatsapp || "";
+            setWhatsapp(initialWhatsapp);
+            setWhatsappContacts({
+              IDR: config.whatsapp_contacts?.IDR || initialWhatsapp || "",
+              MYR: config.whatsapp_contacts?.MYR || "",
+              SGD: config.whatsapp_contacts?.SGD || "",
+              ...(config.whatsapp_contacts || {}),
+            });
             setInstagram(config.instagram || "");
             setTiktok(config.tiktok || "");
             setYoutube(config.youtube || "");
@@ -169,13 +196,30 @@ export default function ContactsClient() {
     }
   };
 
+  const handleWAChange = (code: string, value: string) => {
+    setWhatsappContacts((prev) => ({
+      ...prev,
+      [code]: value,
+    }));
+    if (code === defaultCurrency) {
+      setWhatsapp(value);
+    }
+  };
+
   const handleSave = async () => {
     if (!tenantId) return;
     setSaving(true);
     try {
+      const resolvedPrimaryWhatsapp = 
+        whatsappContacts[defaultCurrency] ||
+        whatsappContacts.IDR ||
+        whatsapp ||
+        "";
+
       const updatedConfig = {
         ...themeConfig,
-        whatsapp,
+        whatsapp: resolvedPrimaryWhatsapp,
+        whatsapp_contacts: whatsappContacts,
         instagram,
         tiktok,
         youtube,
@@ -193,7 +237,8 @@ export default function ContactsClient() {
       };
 
       const res = await saveContactSettings({
-        whatsapp,
+        whatsapp: resolvedPrimaryWhatsapp,
+        whatsapp_contacts: whatsappContacts,
         instagram,
         tiktok,
         youtube,
@@ -215,6 +260,7 @@ export default function ContactsClient() {
       }
 
       setThemeConfig(updatedConfig);
+      setWhatsapp(resolvedPrimaryWhatsapp);
       showNotification("success", "Tersimpan", "Informasi kontak, footer, dan template WhatsApp berhasil diperbarui.");
     } catch (err) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -243,29 +289,109 @@ export default function ContactsClient() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-sm md:col-span-2">
-          <CardHeader>
-            <CardTitle>Informasi Kontak & WhatsApp</CardTitle>
-            <CardDescription>Nomor WhatsApp dan Pesan Otomatis (Default Message) ini digunakan bersama di Footer & Floating Widget.</CardDescription>
+        <Card className={`shadow-sm md:col-span-2 ${multiCurrencyEnabled ? 'border-primary/30' : ''}`}>
+          <CardHeader className={multiCurrencyEnabled ? 'bg-primary/5 border-b border-border/50' : ''}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-emerald-500" />
+                  Informasi Kontak & WhatsApp CS
+                </CardTitle>
+                <CardDescription>
+                  {multiCurrencyEnabled 
+                    ? "Kelola nomor WhatsApp CS untuk masing-masing wilayah, email, dan jam operasional toko Anda."
+                    : "Nomor WhatsApp dan Pesan Otomatis (Default Message) ini digunakan bersama di Footer & Floating Widget."}
+                </CardDescription>
+              </div>
+              {multiCurrencyEnabled && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 w-fit">
+                  <Globe2 className="w-3.5 h-3.5" /> Multi-Region Active ({supportedCurrencies.join(', ')})
+                </span>
+              )}
+            </div>
           </CardHeader>
-          <CardContent className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Nomor WhatsApp</label>
-              <Input placeholder="628123456789" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
-              <p className="text-xs text-muted-foreground">Format nomor tanpa + (contoh: 628...)</p>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input placeholder="cs@domain.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium">Pesan Otomatis WhatsApp CS (Floating Widget & Footer)</label>
-              <Input placeholder="Halo Admin, saya ingin bertanya seputar layanan top-up..." value={waDefaultMessage} onChange={(e) => setWaDefaultMessage(e.target.value)} />
-              <p className="text-xs text-muted-foreground">Pesan pertanyaan umum yang otomatis terisi saat visitor mengklik tombol WhatsApp bantuan/CS di Footer maupun Floating Widget.</p>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium">Jam Operasional</label>
-              <Input placeholder="08:00 - 23:00 WIB" value={operationalHours} onChange={(e) => setOperationalHours(e.target.value)} />
+
+          <CardContent className="pt-6 space-y-6">
+            {/* Dynamic Multi-Region WhatsApp CS Section when Multi Currency is enabled */}
+            {multiCurrencyEnabled ? (
+              <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-emerald-500" />
+                    Nomor WhatsApp CS per Wilayah / Mata Uang
+                  </label>
+                  <span className="text-[11px] text-muted-foreground">
+                    Default Storefront: <strong>{defaultCurrency}</strong>
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Pengunjung dari wilayah/mata uang yang dipilih akan secara otomatis diarahkan ke nomor WhatsApp CS bersangkutan saat mengklik widget WhatsApp, tombol bantuan di footer, maupun konfirmasi pesanan.
+                </p>
+
+                <div className="grid gap-3 pt-2">
+                  {supportedCurrencies.map((cur) => {
+                    const flag = cur === 'IDR' ? '🇮🇩' : cur === 'MYR' ? '🇲🇾' : cur === 'SGD' ? '🇸🇬' : '🌐';
+                    const countryName = cur === 'IDR' ? 'Indonesia (+62)' : cur === 'MYR' ? 'Malaysia (+60)' : cur === 'SGD' ? 'Singapura (+65)' : cur;
+                    const placeholder = cur === 'IDR' ? 'Contoh: 628123456789' : cur === 'MYR' ? 'Contoh: 601234567890' : cur === 'SGD' ? 'Contoh: 6591234567' : 'Nomor WhatsApp';
+                    const isDefault = cur === defaultCurrency;
+
+                    return (
+                      <div key={cur} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center p-3 rounded-lg border bg-background/60">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{flag}</span>
+                          <div>
+                            <label className="text-xs font-bold text-foreground block">{countryName}</label>
+                            <span className="text-[10px] text-muted-foreground font-mono">Currency: {cur} {isDefault && '• (Default)'}</span>
+                          </div>
+                        </div>
+                        <Input
+                          placeholder={placeholder}
+                          value={whatsappContacts[cur] || ''}
+                          onChange={(e) => handleWAChange(cur, e.target.value)}
+                          className="md:col-span-2 text-xs"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Nomor WhatsApp CS</label>
+                  <Input 
+                    placeholder="628123456789" 
+                    value={whatsapp} 
+                    onChange={(e) => { 
+                      setWhatsapp(e.target.value); 
+                      setWhatsappContacts(prev => ({ ...prev, [defaultCurrency || 'IDR']: e.target.value })); 
+                    }} 
+                  />
+                  <p className="text-xs text-muted-foreground">Format nomor tanpa + (contoh: 628...)</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Email Dukungan Pelanggan</label>
+                  <Input placeholder="cs@domain.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+              </div>
+            )}
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {multiCurrencyEnabled && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Email Dukungan Pelanggan</label>
+                  <Input placeholder="cs@domain.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+              )}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Jam Operasional</label>
+                <Input placeholder="08:00 - 23:00 WIB" value={operationalHours} onChange={(e) => setOperationalHours(e.target.value)} />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium">Pesan Otomatis WhatsApp CS (Floating Widget & Footer)</label>
+                <Input placeholder="Halo Admin, saya ingin bertanya seputar layanan top-up..." value={waDefaultMessage} onChange={(e) => setWaDefaultMessage(e.target.value)} />
+                <p className="text-xs text-muted-foreground">Pesan pertanyaan umum yang otomatis terisi saat visitor mengklik tombol WhatsApp bantuan/CS di Footer maupun Floating Widget.</p>
+              </div>
             </div>
           </CardContent>
         </Card>

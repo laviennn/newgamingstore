@@ -116,7 +116,7 @@ export function AdminDepositsClient({ initialDeposits, currency = 'IDR' }: { ini
                   </td>
                   <td className="px-4 py-4 border-b border-muted/20">
                     <div className="font-bold text-green-500 flex items-center gap-1.5">
-                      <span className="text-xs">{(dep.currency || currency) === 'MYR' ? '🇲🇾' : '🇮🇩'}</span>
+                      <span className="text-xs">{(dep.currency || currency) === 'MYR' ? '🇲🇾' : (dep.currency || currency) === 'SGD' ? '🇸🇬' : '🇮🇩'}</span>
                       <span>{formatCurrency(Number(dep.amount), dep.currency || currency)}</span>
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">

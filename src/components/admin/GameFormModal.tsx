@@ -80,6 +80,11 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
   );
   const [isPopular, setIsPopular] = React.useState<boolean>(game?.is_popular || false);
   const [sortOrder, setSortOrder] = React.useState<number>(game?.sort_order ?? 0);
+  const [supportedCurrencies, setSupportedCurrencies] = React.useState<string[]>(
+    game?.supported_currencies && Array.isArray(game.supported_currencies) && game.supported_currencies.length > 0
+      ? game.supported_currencies
+      : ["IDR", "MYR", "SGD"]
+  );
   const [hasUsernameValidator, setHasUsernameValidator] = React.useState<boolean>(game?.has_username_validator || false);
   const [validatorProvider, setValidatorProvider] = React.useState<string>(game?.validator_provider || "auto");
   const [validatorGameCode, setValidatorGameCode] = React.useState<string>(game?.validator_game_code || "");
@@ -94,6 +99,11 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
       setCategoryId(game?.category_id || "");
       setIsPopular(game?.is_popular || false);
       setSortOrder(game?.sort_order ?? 0);
+      setSupportedCurrencies(
+        game?.supported_currencies && Array.isArray(game.supported_currencies) && game.supported_currencies.length > 0
+          ? game.supported_currencies
+          : ["IDR", "MYR", "SGD"]
+      );
       setHasUsernameValidator(game?.has_username_validator || false);
       setValidatorProvider(game?.validator_provider || "auto");
       setValidatorGameCode(game?.validator_game_code || "");
@@ -104,6 +114,14 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
       }
     }, 0);
   }, [game]);
+
+  const handleToggleGameCurrency = (cur: string, checked: boolean) => {
+    let next = checked
+      ? [...supportedCurrencies, cur]
+      : supportedCurrencies.filter((c) => c !== cur);
+    if (next.length === 0) next = [cur]; // keep at least one
+    setSupportedCurrencies(next);
+  };
 
   const handleToggleValidator = (checked: boolean) => {
     setHasUsernameValidator(checked);
@@ -194,6 +212,7 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
     payload.append("form_fields", formFieldsJson);
     payload.append("is_popular", isPopular ? "true" : "false");
     payload.append("sort_order", sortOrder.toString());
+    payload.append("supported_currencies", JSON.stringify(supportedCurrencies));
     
     payload.append("has_username_validator", hasUsernameValidator ? "true" : "false");
     if (validatorProvider) payload.append("validator_provider", validatorProvider);
@@ -332,6 +351,27 @@ export function GameFormModal({ isOpen, onClose, game, categories = [] }: { isOp
                  <Image src={bgPreview} alt="BG Preview" fill sizes="400px" className="object-cover" />
                </div>
             )}
+          </div>
+
+          {/* Ketersediaan Wilayah Game (Multi-Currency/Multi-Region) */}
+          <div className="space-y-2 border-t pt-4">
+            <label className="text-sm font-bold block">Ketersediaan Wilayah Game</label>
+            <p className="text-xs text-muted-foreground">
+              Pilih negara/mata uang tempat game ini dapat dilihat dan dibeli oleh pengunjung:
+            </p>
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              {['IDR', 'MYR', 'SGD'].map((cur) => (
+                <label key={cur} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30 hover:bg-muted/60 text-xs font-semibold cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={supportedCurrencies.includes(cur)}
+                    onChange={(e) => handleToggleGameCurrency(cur, e.target.checked)}
+                    className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+                  />
+                  <span>{cur === 'IDR' ? '🇮🇩 Indonesia (IDR)' : cur === 'MYR' ? '🇲🇾 Malaysia (MYR)' : '🇸🇬 Singapore (SGD)'}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center justify-between border-t pt-4">

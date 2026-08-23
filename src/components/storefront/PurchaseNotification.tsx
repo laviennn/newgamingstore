@@ -5,32 +5,56 @@ import Image from "next/image";
 import { BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, Language } from "@/lib/dictionary";
+import { Currency, getLanguageFromCurrency, getProductName } from "@/lib/currencyUtils";
 
 export type NotificationItem = {
   gameName: string;
   gameImage: string;
   itemName: string;
+  names?: Record<string, string> | null;
 };
 
 interface PurchaseNotificationProps {
   tenantName: string;
   notifications: NotificationItem[];
   language?: Language;
+  supportedCurrencies?: Currency[];
 }
 
-// Helper to generate realistic masked phone numbers based on language/country
-function generateRandomPhoneNumber(language: Language = "id"): string {
-  if (language === "ms") {
+// Helper to generate realistic masked phone numbers based on country/currency
+function generateRandomPhoneNumber(currency: Currency = "IDR"): string {
+  if (currency === "MYR") {
     // Malaysian mobile prefixes: 6011, 6012, 6013, 6014, 6016, 6017, 6018, 6019
     const myPrefixes = ["6011", "6012", "6013", "6014", "6016", "6017", "6018", "6019"];
     const prefix = myPrefixes[Math.floor(Math.random() * myPrefixes.length)];
     const suffix = Math.floor(100 + Math.random() * 900).toString(); // 3 random digits
     return `${prefix}****${suffix}`;
+  } else if (currency === "SGD") {
+    // Singapore mobile prefixes: 6581, 6582, 6583, 6584, 6585, 6591, 6592, 6593, 6594
+    const sgPrefixes = ["6581", "6582", "6583", "6584", "6585", "6591", "6592", "6593", "6594"];
+    const prefix = sgPrefixes[Math.floor(Math.random() * sgPrefixes.length)];
+    const suffix = Math.floor(100 + Math.random() * 900).toString();
+    return `${prefix}****${suffix}`;
+  } else if (currency === "PHP") {
+    const phPrefixes = ["6391", "6392", "6393", "6394", "6397", "6398", "6399"];
+    const prefix = phPrefixes[Math.floor(Math.random() * phPrefixes.length)];
+    const suffix = Math.floor(100 + Math.random() * 900).toString();
+    return `${prefix}****${suffix}`;
+  } else if (currency === "INR") {
+    const inPrefixes = ["9198", "9197", "9196", "9191", "9188", "9170"];
+    const prefix = inPrefixes[Math.floor(Math.random() * inPrefixes.length)];
+    const suffix = Math.floor(100 + Math.random() * 900).toString();
+    return `${prefix}****${suffix}`;
+  } else if (currency === "USD") {
+    const usPrefixes = ["1202", "1312", "1415", "1646", "1718", "1917"];
+    const prefix = usPrefixes[Math.floor(Math.random() * usPrefixes.length)];
+    const suffix = Math.floor(100 + Math.random() * 900).toString();
+    return `${prefix}****${suffix}`;
   } else {
     // Indonesian mobile prefixes: 62812, 62813, 62821, 62852, 62857, 62877, 62878, 62896
     const idPrefixes = ["62812", "62813", "62821", "62852", "62857", "62877", "62878", "62896"];
     const prefix = idPrefixes[Math.floor(Math.random() * idPrefixes.length)];
-    const suffix = Math.floor(100 + Math.random() * 900).toString(); // 3 random digits
+    const suffix = Math.floor(100 + Math.random() * 900).toString();
     return `${prefix}****${suffix}`;
   }
 }
@@ -47,11 +71,22 @@ function generateRelativeTime(dict: ReturnType<typeof getDictionary>): string {
   }
 }
 
-export function PurchaseNotification({ tenantName, notifications, language = "id" }: PurchaseNotificationProps) {
-  const dict = getDictionary(language);
-  const [activeItem, setActiveItem] = useState<NotificationItem | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState<string>("");
-  const [timeAgo, setTimeAgo] = useState<string>("");
+export function PurchaseNotification({ 
+  tenantName, 
+  notifications, 
+  language = "id",
+  supportedCurrencies = ["IDR"],
+}: PurchaseNotificationProps) {
+  const [activeItem, setActiveItem] = useState<{
+    gameName: string;
+    gameImage: string;
+    displayItemName: string;
+    phoneNumber: string;
+    actionText: string;
+    verifiedText: string;
+    timeAgo: string;
+  } | null>(null);
+  
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -63,22 +98,47 @@ export function PurchaseNotification({ tenantName, notifications, language = "id
     }, 3000);
 
     return () => clearTimeout(initialTimeout);
-  }, [notifications, language]);
+  }, [notifications, language, supportedCurrencies]);
 
   const showNextNotification = () => {
     if (!notifications || notifications.length === 0) return;
 
+    // 1. Pick random product
     const randomItem = notifications[Math.floor(Math.random() * notifications.length)];
-    setActiveItem(randomItem);
-    setPhoneNumber(generateRandomPhoneNumber(language));
-    setTimeAgo(generateRelativeTime(dict));
+
+    // 2. Multi-Currency Mix: Pick random currency from supportedCurrencies
+    const activeCurrencies = supportedCurrencies && supportedCurrencies.length > 0
+      ? supportedCurrencies
+      : ["IDR" as Currency];
+    const pickedCurrency = activeCurrencies[Math.floor(Math.random() * activeCurrencies.length)];
+
+    // 3. Derive country-specific dictionary, phone number & denomination
+    const pickedLang = getLanguageFromCurrency(pickedCurrency);
+    const dict = getDictionary(pickedLang);
+    const phoneNumber = generateRandomPhoneNumber(pickedCurrency);
+    const displayItemName = getProductName(
+      { name: randomItem.itemName, names: randomItem.names },
+      pickedCurrency
+    );
+    const timeAgo = generateRelativeTime(dict);
+
+    setActiveItem({
+      gameName: randomItem.gameName,
+      gameImage: randomItem.gameImage,
+      displayItemName,
+      phoneNumber,
+      actionText: dict.notification_bought,
+      verifiedText: `${dict.notification_verified} ${tenantName || "Store"}`,
+      timeAgo,
+    });
+
     setIsVisible(true);
 
     // Hide after 4.5 seconds
     setTimeout(() => {
       setIsVisible(false);
 
-      // Wait for a random time between 5s to 12s before showing the next one
+      // Wait for a random delay between 5s to 12s before showing the next one
       const nextDelay = Math.floor(Math.random() * (12000 - 5000 + 1) + 5000);
       setTimeout(() => {
         showNextNotification();
@@ -94,10 +154,10 @@ export function PurchaseNotification({ tenantName, notifications, language = "id
       className={cn(
         "fixed z-40 transition-all duration-500 ease-in-out",
         "top-20 left-4 right-4 max-w-[360px] mx-auto",
-        "md:top-24 md:left-6 md:right-auto md:w-auto md:mx-0",
+        "md:top-auto md:bottom-6 md:left-6 md:right-auto md:w-auto md:mx-0",
         isVisible
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 -translate-y-6 md:-translate-y-10 pointer-events-none"
+          ? "opacity-100 translate-y-0 scale-100"
+          : "opacity-0 -translate-y-4 md:translate-y-6 scale-95 pointer-events-none"
       )}
     >
       <div className="bg-[#111]/95 backdrop-blur-md border border-white/10 rounded-2xl p-3 shadow-2xl flex items-center gap-3.5">
@@ -115,21 +175,21 @@ export function PurchaseNotification({ tenantName, notifications, language = "id
         {/* Content */}
         <div className="flex flex-col gap-0.5 overflow-hidden flex-1 min-w-0">
           <p className="text-xs md:text-sm font-medium text-gray-300 truncate">
-            <span className="font-semibold text-white">{phoneNumber}</span> {dict.notification_bought}
+            <span className="font-semibold text-white">{activeItem.phoneNumber}</span> {activeItem.actionText}
           </p>
           <p className="text-xs md:text-sm font-bold text-white truncate">
-            {activeItem.itemName}
+            {activeItem.displayItemName}
           </p>
           <div className="flex items-center justify-between gap-2 mt-0.5">
             <div className="flex items-center gap-1.5 min-w-0">
               <BadgeCheck className="w-3.5 h-3.5 text-theme-primary fill-blue-500/20 shrink-0" />
               <p className="text-[11px] md:text-xs text-gray-400 truncate">
-                {dict.notification_verified} {tenantName || "Store"}
+                {activeItem.verifiedText}
               </p>
             </div>
-            {timeAgo && (
+            {activeItem.timeAgo && (
               <span className="text-[10px] text-gray-500 shrink-0">
-                • {timeAgo}
+                • {activeItem.timeAgo}
               </span>
             )}
           </div>
@@ -138,4 +198,3 @@ export function PurchaseNotification({ tenantName, notifications, language = "id
     </div>
   );
 }
-

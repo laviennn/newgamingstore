@@ -25,7 +25,8 @@ import type { User } from '@supabase/supabase-js';
 import type { AuthMode } from '@/lib/tenantAuth';
 import type { MemberPayload } from '@/utils/memberSession';
 import { getDictionary, Language } from '@/lib/dictionary';
-import { formatCurrency, getCurrencyFromLanguage } from '@/lib/currencyUtils';
+import { formatCurrency, getCurrencyFromLanguage, type Currency } from '@/lib/currencyUtils';
+import { CurrencySelector } from '@/components/storefront/CurrencySelector';
 
 interface MobileSidebarProps {
   user?: User | null;
@@ -34,6 +35,8 @@ interface MobileSidebarProps {
   waChannelActive?: boolean;
   waChannelUrl?: string;
   language?: Language;
+  currency?: Currency;
+  supportedCurrencies?: Currency[];
 }
 
 export function MobileSidebar({
@@ -43,6 +46,8 @@ export function MobileSidebar({
   waChannelActive,
   waChannelUrl,
   language = 'id',
+  currency = 'IDR',
+  supportedCurrencies = ['IDR'],
 }: MobileSidebarProps) {
   const dict = getDictionary(language);
   const [isPending, startTransition] = useTransition();
@@ -100,8 +105,11 @@ export function MobileSidebar({
       <SheetContent
         side='right'
         className='w-[300px] sm:w-[350px] bg-background border-border p-0 flex flex-col h-full'>
-        <SheetHeader className='p-4 border-b border-border/50 text-left'>
+        <SheetHeader className='p-4 border-b border-border/50 flex flex-row items-center justify-between text-left'>
           <SheetTitle className='text-lg font-bold'>{dict.mobile_menu_title}</SheetTitle>
+          <div className="mr-6">
+            <CurrencySelector currentCurrency={currency} supportedCurrencies={supportedCurrencies} />
+          </div>
         </SheetHeader>
 
         <div className='flex-1 overflow-y-auto p-4 space-y-6'>

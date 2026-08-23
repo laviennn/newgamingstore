@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { HeroSlider } from "@/components/storefront/HeroSlider";
 import { FlashSaleSection } from "@/components/storefront/FlashSaleSection";
@@ -12,8 +13,10 @@ import { SnowfallEffect } from "@/components/storefront/SnowfallEffect";
 import { LatestArticlesSection } from "@/components/storefront/LatestArticlesSection";
 import { FaqSection } from "@/components/storefront/FaqSection";
 import { getDictionary } from "@/lib/dictionary";
+import { getProductPrice, getProductOriginalPrice, getProductName, type Currency } from "@/lib/currencyUtils";
 
-export const revalidate = 1800; // 30-minute ISR cache on Edge CDN
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function StorefrontPage({
   params,
@@ -21,6 +24,7 @@ export default async function StorefrontPage({
   params: Promise<{ domain: string }>;
 }) {
   const { domain } = await params;
+  const cookieStore = await cookies();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let popularGames: any[] = [];
@@ -44,6 +48,8 @@ export default async function StorefrontPage({
     return url.replace('pub-3646a3a5b32742faa2d3d52cb23ae4ff.r2.dev', 'assets.newgamingstore.com');
   };
 
+  let activeCurrency: Currency = "IDR";
+
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       const supabase = await createClient();
@@ -60,6 +66,14 @@ export default async function StorefrontPage({
       if (tenantData && tenantData.theme_config) {
         tenantConfig = tenantData.theme_config;
       }
+
+      // Resolve Active Currency based on Visitor Cookie & Tenant Configuration
+      const userCurrencyCookie = cookieStore.get('storefront_currency')?.value as Currency | undefined;
+      const supportedCurrencies: Currency[] = Array.isArray(tenantConfig?.supported_currencies) && tenantConfig.supported_currencies.length > 0
+        ? tenantConfig.supported_currencies
+        : (tenantConfig?.currency ? [tenantConfig.currency as Currency] : [tenantConfig?.language === 'ms' ? 'MYR' : 'IDR']);
+      const defaultCurrency: Currency = (tenantConfig?.default_currency as Currency) || supportedCurrencies[0] || 'IDR';
+      activeCurrency = (userCurrencyCookie && supportedCurrencies.includes(userCurrencyCookie)) ? userCurrencyCookie : defaultCurrency;
       
       const tenantId = tenantData?.id;
 
@@ -85,32 +99,40 @@ export default async function StorefrontPage({
         }
 
         if (gamesData) {
-          popularGames = gamesData.map(g => ({
-            ...g,
-            image_url: fixUrl(g.image_url)
-          }));
+          popularGames = gamesData
+            .filter(g => !g.supported_currencies || !Array.isArray(g.supported_currencies) || g.supported_currencies.length === 0 || g.supported_currencies.includes(activeCurrency))
+            .map(g => ({
+              ...g,
+              image_url: fixUrl(g.image_url)
+            }));
         }
 
         // Fetch Flash Sale Products
         const { data: flashSaleData } = await supabase
           .from('products')
-          .select('*, games(name, slug, image_url)')
+          .select('*, games(name, slug, image_url, supported_currencies)')
           .eq('tenant_id', tenantId)
           .eq('is_flash_sale', true)
           .eq('active', true)
           .limit(10);
 
         if (flashSaleData) {
-          flashSaleProducts = flashSaleData.map(p => ({
-            id: p.id,
-            gameSlug: p.games?.slug || '',
-            gameName: p.games?.name || 'GAME',
-            productName: p.name,
-            image: fixUrl(p.games?.image_url) || '/placeholder.webp',
-            originalPrice: p.original_price || p.price,
-            discountPrice: p.price,
-            stockRemaining: p.flash_sale_stock || 0,
-          }));
+          flashSaleProducts = flashSaleData
+            .filter(p => {
+              const gameSupported = p.games?.supported_currencies;
+              if (!gameSupported || !Array.isArray(gameSupported) || gameSupported.length === 0) return true;
+              return gameSupported.includes(activeCurrency);
+            })
+            .map(p => ({
+              id: p.id,
+              gameSlug: p.games?.slug || '',
+              gameName: p.games?.name || 'GAME',
+              productName: getProductName(p, activeCurrency),
+              image: fixUrl(p.games?.image_url) || '/placeholder.webp',
+              originalPrice: getProductOriginalPrice(p, activeCurrency) || getProductPrice(p, activeCurrency),
+              discountPrice: getProductPrice(p, activeCurrency),
+              stockRemaining: p.flash_sale_stock || 0,
+            }));
         }
 
         // Fetch Categories
@@ -129,7 +151,9 @@ export default async function StorefrontPage({
           .eq('tenant_id', tenantId)
           .order('sort_order', { ascending: true })
           .order('created_at', { ascending: false });
-        if (allGamesData) allGames = allGamesData;
+        if (allGamesData) {
+          allGames = allGamesData.filter(g => !g.supported_currencies || !Array.isArray(g.supported_currencies) || g.supported_currencies.length === 0 || g.supported_currencies.includes(activeCurrency));
+        }
 
         // Fetch Latest Articles
         const { data: articlesData } = await supabase
@@ -216,7 +240,7 @@ export default async function StorefrontPage({
         {flashSaleProducts.length > 0 && (
           <section className="w-full bg-background relative z-20 pb-8 pt-2 border-b border-border/30">
             <div className="container mx-auto px-4">
-              <FlashSaleSection products={flashSaleProducts} language={language} />
+              <FlashSaleSection products={flashSaleProducts} language={language} currency={activeCurrency} />
             </div>
           </section>
         )}

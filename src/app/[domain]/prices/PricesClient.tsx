@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Search, ChevronDown, Download, RefreshCcw, LayoutGrid, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import { getDictionary, Language } from "@/lib/dictionary";
-import { Currency, formatCurrency } from "@/lib/currencyUtils";
+import { Currency, formatCurrency, getProductPrice, getProductName } from "@/lib/currencyUtils";
 import { normalizeAssetUrl } from "@/lib/storageUtils";
 
 export function PricesClient({ initialGames, initialProducts, language = 'id', currency = 'IDR' }: { initialGames: any[], initialProducts: any[], language?: Language, currency?: Currency }) {
@@ -41,7 +41,9 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
       const query = searchQuery.toLowerCase();
       result = result.filter(p => {
         const sku = getSKU(p.games?.name || "UNK", p.id).toLowerCase();
-        return p.name.toLowerCase().includes(query) || sku.includes(query);
+        const localizedName = getProductName(p, currency).toLowerCase();
+        const fallbackName = (p.name || "").toLowerCase();
+        return localizedName.includes(query) || fallbackName.includes(query) || sku.includes(query);
       });
     }
 
@@ -210,12 +212,12 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
               <tbody className="divide-y divide-gray-800/50">
                 {filteredProducts.slice(0, rowsPerPage).map((product) => {
                   const sku = getSKU(product.games?.name || "UNK", product.id);
-                  const price = product.price;
+                  const price = getProductPrice(product, currency);
                   
                   // Calculate mock tier prices
-                  const memberPrice = Math.floor(price * 0.98); // -2%
-                  const platinumPrice = Math.floor(price * 0.96); // -4%
-                  const goldPrice = Math.floor(price * 0.94); // -6%
+                  const memberPrice = currency === 'IDR' ? Math.floor(price * 0.98) : Number((price * 0.98).toFixed(2));
+                  const platinumPrice = currency === 'IDR' ? Math.floor(price * 0.96) : Number((price * 0.96).toFixed(2));
+                  const goldPrice = currency === 'IDR' ? Math.floor(price * 0.94) : Number((price * 0.94).toFixed(2));
 
                   return (
                     <tr key={product.id} className="hover:bg-white/5 transition-colors group text-sm">
@@ -224,7 +226,7 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
                           {sku}
                         </span>
                       </td>
-                      <td className="py-3 px-6 text-gray-300 font-medium">{product.name}</td>
+                      <td className="py-3 px-6 text-gray-300 font-medium">{getProductName(product, currency)}</td>
                       <td className="py-3 px-6 text-gray-500 font-mono">{formatCurrency(price, currency)}</td>
                       <td className="py-3 px-6 text-white font-bold font-mono">{formatCurrency(memberPrice, currency)}</td>
                       <td className="py-3 px-6 text-[#38bdf8] font-bold font-mono">{formatCurrency(platinumPrice, currency)}</td>

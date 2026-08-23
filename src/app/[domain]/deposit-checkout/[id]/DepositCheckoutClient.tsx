@@ -19,11 +19,11 @@ import { uploadFile, logUploadError } from "@/app/actions/upload";
 import { updateDepositProof } from "@/components/storefront/depositActions";
 import { useNotification } from "@/components/ui/notification";
 import Link from "next/link";
-import { formatCurrency } from "@/lib/currencyUtils";
+import { Currency, formatCurrency } from "@/lib/currencyUtils";
 import { buildDepositWAMessage } from "@/lib/whatsappUtils";
 
 export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any, tenantConfig: any }) {
-  const currency = tenantConfig?.currency || (tenantConfig?.language === 'ms' ? 'MYR' : 'IDR');
+  const currency: Currency = (deposit.currency as Currency) || tenantConfig?.currency || (tenantConfig?.language === 'ms' ? 'MYR' : 'IDR');
   const { showNotification, NotificationComponent } = useNotification();
   const [timeLeft, setTimeLeft] = useState<{h: number, m: number, s: number} | null>(null);
   const [copied, setCopied] = useState(false);
@@ -175,7 +175,8 @@ export function DepositCheckoutClient({ deposit, tenantConfig }: { deposit: any,
         return;
      }
 
-     const waNumber = tenantConfig?.whatsapp?.replace(/[^0-9]/g, "") || "6281234567890"; // fallback
+     const rawWaNumber = tenantConfig?.whatsapp_contacts?.[currency] || tenantConfig?.whatsapp || "6281234567890";
+     const waNumber = rawWaNumber.replace(/[^0-9]/g, "");
      const lang = tenantConfig?.language || "id";
      
      const message = buildDepositWAMessage({

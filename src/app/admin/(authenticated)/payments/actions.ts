@@ -15,6 +15,19 @@ export async function savePayment(formData: FormData, id?: string) {
   const is_active_raw = formData.get("is_active") as string;
   const is_active = is_active_raw === "true";
 
+  const supported_currencies_raw = formData.get("supported_currencies") as string;
+  let supported_currencies = ["IDR"];
+  if (supported_currencies_raw) {
+    try {
+      const parsed = JSON.parse(supported_currencies_raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        supported_currencies = parsed;
+      }
+    } catch {
+      supported_currencies = ["IDR"];
+    }
+  }
+
   if (!category || !name) {
     return { error: "Kategori dan Nama Pembayaran wajib diisi." };
   }
@@ -31,6 +44,7 @@ export async function savePayment(formData: FormData, id?: string) {
     logo_url,
     qr_image_url,
     is_active,
+    supported_currencies,
   };
 
   try {

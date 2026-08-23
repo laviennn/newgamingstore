@@ -195,7 +195,7 @@ export function RiwayatTransaksiClient({ initialOrders, language = "id", currenc
                         {targetFormatted}
                       </td>
                       <td className="py-5 px-6 font-bold text-white text-sm">
-                        {formatCurrency(order.total_price, currency)}
+                        {formatCurrency(order.total_price, (order.currency as Currency) || currency)}
                       </td>
                       <td className="py-5 px-6 text-gray-400 text-xs font-medium">
                         {formattedDate}

@@ -26,6 +26,11 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
   const [logoPreview, setLogoPreview] = React.useState<string | null>(payment?.logo_url || null);
   const [qrPreview, setQrPreview] = React.useState<string | null>(payment?.qr_image_url || null);
   const [isActive, setIsActive] = React.useState(payment?.is_active ?? true);
+  const [supportedCurrencies, setSupportedCurrencies] = React.useState<string[]>(
+    payment?.supported_currencies && Array.isArray(payment.supported_currencies) && payment.supported_currencies.length > 0
+      ? payment.supported_currencies
+      : ["IDR"]
+  );
 
   React.useEffect(() => {
     setCategory(payment?.category || "Bank Transfer");
@@ -35,7 +40,24 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
     setLogoPreview(payment?.logo_url || null);
     setQrPreview(payment?.qr_image_url || null);
     setIsActive(payment?.is_active ?? true);
+    setSupportedCurrencies(
+      payment?.supported_currencies && Array.isArray(payment.supported_currencies) && payment.supported_currencies.length > 0
+        ? payment.supported_currencies
+        : ["IDR"]
+    );
   }, [payment, isOpen]);
+
+  const handleToggleCurrency = (cur: string, checked: boolean) => {
+    let next = checked
+      ? [...supportedCurrencies, cur]
+      : supportedCurrencies.filter((c) => c !== cur);
+    if (next.length === 0) next = [cur]; // Keep at least one
+    setSupportedCurrencies(next);
+  };
+
+  const handleSelectAllCurrencies = () => {
+    setSupportedCurrencies(["IDR", "MYR", "SGD"]);
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isQr: boolean = false) => {
     const file = e.target.files?.[0];
@@ -85,6 +107,7 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
     formData.set("logo_url", logoPreview || "");
     formData.set("qr_image_url", qrPreview || "");
     formData.set("is_active", isActive.toString());
+    formData.set("supported_currencies", JSON.stringify(supportedCurrencies));
 
     const result = await savePayment(formData, payment?.id);
     
@@ -197,7 +220,37 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
               </div>
             </div>
 
-            <div className="space-y-2 pt-2">
+            {/* Target Mata Uang / Wilayah */}
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold block">Target Wilayah / Mata Uang</label>
+                <button
+                  type="button"
+                  onClick={handleSelectAllCurrencies}
+                  className="text-xs text-primary hover:underline font-semibold"
+                >
+                  Pilih Semua Mata Uang
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Channel ini hanya akan muncul saat visitor memilih mata uang yang dicentang:
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                {['IDR', 'MYR', 'SGD'].map((cur) => (
+                  <label key={cur} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30 hover:bg-muted/60 text-xs font-semibold cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={supportedCurrencies.includes(cur)}
+                      onChange={(e) => handleToggleCurrency(cur, e.target.checked)}
+                      className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+                    />
+                    <span>{cur === 'IDR' ? '🇮🇩 IDR (Rp)' : cur === 'MYR' ? '🇲🇾 MYR (RM)' : '🇸🇬 SGD (S$)'}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t">
               <label className="text-sm font-medium block">Status Tampil di Footer</label>
               <div>
                 <SkeuoToggle

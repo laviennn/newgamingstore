@@ -14,7 +14,7 @@ import {
 import { createClient } from "@/utils/supabase/server";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
 import Link from "next/link";
-import { formatCurrency } from "@/lib/currencyUtils";
+import { formatCurrency, Currency, getProductName } from "@/lib/currencyUtils";
 
 export default async function AdminDashboardPage() {
   let stats = {
@@ -59,7 +59,7 @@ export default async function AdminDashboardPage() {
           supabase.from('orders').select('*', { count: 'exact', head: true }).eq('tenant_id', currentTenantId).in('payment_status', ['PENDING', 'UNPAID']),
           supabase.from('orders').select('total_price, currency').eq('tenant_id', currentTenantId).eq('payment_status', 'PAID'),
           supabase.from('orders').select('total_price, currency').eq('tenant_id', currentTenantId).in('payment_status', ['PENDING', 'UNPAID']),
-          supabase.from('orders').select('*, games(name), products(name), payment_channels(name, category)').eq('tenant_id', currentTenantId).order('created_at', { ascending: false }).limit(6),
+          supabase.from('orders').select('*, games(name), products(name, names), payment_channels(name, category)').eq('tenant_id', currentTenantId).order('created_at', { ascending: false }).limit(6),
           supabase.from('tenants').select('theme_config').eq('id', currentTenantId).single(),
         ]);
 
@@ -426,7 +426,7 @@ export default async function AdminDashboardPage() {
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {o.games?.name || 'Game'} • {o.products?.name || 'Product'} {o.payment_channel_id === '11111111-1111-1111-1111-111111111111' ? '• Saldo Akun' : (o.payment_channels?.name ? `• ${o.payment_channels.name}` : '')}
+                        {o.games?.name || 'Game'} • {getProductName(o.products, o.currency || currency) || o.products?.name || 'Product'} {o.payment_channel_id === '11111111-1111-1111-1111-111111111111' ? '• Saldo Akun' : (o.payment_channels?.name ? `• ${o.payment_channels.name}` : '')}
                       </p>
                     </div>
 

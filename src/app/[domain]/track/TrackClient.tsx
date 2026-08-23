@@ -178,7 +178,7 @@ export function TrackClient({ language = 'id', currency = 'IDR' }: { language?: 
                  <div className="col-span-2 pt-4 border-t border-gray-800/50 flex justify-between items-end">
                     <div>
                       <p className="text-xs text-gray-500 uppercase font-semibold tracking-wider mb-1">{dict.track_total_price}</p>
-                      <p className="text-2xl font-black text-white">{formatCurrency(order.total_price, currency)}</p>
+                      <p className="text-2xl font-black text-white">{formatCurrency(order.total_price, (order.currency as Currency) || currency)}</p>
                     </div>
                  </div>
               </div>

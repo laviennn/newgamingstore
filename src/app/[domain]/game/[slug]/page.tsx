@@ -23,12 +23,16 @@ import {
 import { StorefrontGameForm } from '@/components/storefront/StorefrontGameForm';
 import { getDictionary } from '@/lib/dictionary';
 
+import { cookies } from 'next/headers';
+import { type Currency } from '@/lib/currencyUtils';
+
 export default async function GameTopUpPage({
   params,
 }: {
   params: Promise<{ slug: string; domain: string }>;
 }) {
   const { slug, domain } = await params;
+  const cookieStore = await cookies();
   const supabase = await createClient();
 
   // 1. Fetch Global Banner from Tenant First
@@ -59,6 +63,15 @@ export default async function GameTopUpPage({
     gameDetailBanner = tenant.theme_config.gameDetailBanner;
   }
 
+  // Resolve Active Currency
+  const themeConfig = tenant?.theme_config || {};
+  const userCurrencyCookie = cookieStore.get('storefront_currency')?.value as Currency | undefined;
+  const supportedCurrencies: Currency[] = Array.isArray(themeConfig?.supported_currencies) && themeConfig.supported_currencies.length > 0
+    ? themeConfig.supported_currencies
+    : (themeConfig?.currency ? [themeConfig.currency as Currency] : [themeConfig?.language === 'ms' ? 'MYR' : 'IDR']);
+  const defaultCurrency: Currency = (themeConfig?.default_currency as Currency) || supportedCurrencies[0] || 'IDR';
+  const activeCurrency: Currency = (userCurrencyCookie && supportedCurrencies.includes(userCurrencyCookie)) ? userCurrencyCookie : defaultCurrency;
+
   // 2. Fetch Game
   const { data: game, error: gameError } = await supabase
     .from('games')
@@ -77,17 +90,22 @@ export default async function GameTopUpPage({
     .select('*')
     .eq('game_id', game.id)
     .eq('tenant_id', tenant.id)
+    .eq('active', true)
     .order('price', { ascending: true });
 
   const displayProducts = products || [];
 
-  // 4. Fetch Payment Channels
+  // 4. Fetch Payment Channels & Filter by Active Currency
   const { data: channels } = await supabase
     .from('payment_channels')
     .select('*')
     .eq('tenant_id', tenant.id)
     .eq('is_active', true);
-  const paymentChannels = channels || [];
+    
+  const paymentChannels = (channels || []).filter((pc: any) => {
+    if (!pc.supported_currencies || !Array.isArray(pc.supported_currencies) || pc.supported_currencies.length === 0) return true;
+    return pc.supported_currencies.includes(activeCurrency);
+  });
 
   const language = tenant?.theme_config?.language || 'id';
   const dict = getDictionary(language);
@@ -161,6 +179,7 @@ export default async function GameTopUpPage({
             products={displayProducts}
             paymentChannels={paymentChannels}
             themeConfig={tenant?.theme_config || {}}
+            currency={activeCurrency}
           />
         </div>
       </div>

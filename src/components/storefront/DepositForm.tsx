@@ -7,10 +7,7 @@ import { createDepositOrder } from "@/components/storefront/depositActions";
 import { useNotification } from "@/components/ui/notification";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getDictionary, Language } from "@/lib/dictionary";
-import { Currency, formatCurrency } from "@/lib/currencyUtils";
-
-const IDR_NOMINALS = [10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000];
-const MYR_NOMINALS = [5, 10, 20, 50, 100, 200, 500, 1000];
+import { Currency, formatCurrency, getDepositNominalOptions, getMinDepositAmount } from "@/lib/currencyUtils";
 
 export function DepositForm({
   paymentChannels,
@@ -36,9 +33,9 @@ export function DepositForm({
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const nominalOptions = currency === 'MYR' ? MYR_NOMINALS : IDR_NOMINALS;
-  const minDeposit = currency === 'MYR' ? 5 : 10000;
-  const currencyPrefix = currency === 'MYR' ? 'RM' : 'Rp';
+  const nominalOptions = getDepositNominalOptions(currency);
+  const minDeposit = getMinDepositAmount(currency);
+  const currencyPrefix = currency === 'MYR' ? 'RM' : (currency === 'SGD' ? 'S$' : 'Rp');
 
   const amount = selectedNominal || (customNominal ? parseInt(customNominal.replace(/[^0-9]/g, "")) : 0) || 0;
 
@@ -81,6 +78,7 @@ export function DepositForm({
       paymentMethodId: selectedPayment.id,
       waNumber: waNumber,
       amount: amount,
+      currency: currency,
       tenantId: tenantId,
     };
 

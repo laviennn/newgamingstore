@@ -21,7 +21,7 @@ import { uploadFile, logUploadError } from "@/app/actions/upload";
 import { updatePaymentProof } from "@/components/storefront/checkoutActions";
 import { useNotification } from "@/components/ui/notification";
 import { getDictionary } from "@/lib/dictionary";
-import { formatCurrency } from "@/lib/currencyUtils";
+import { formatCurrency, Currency, getProductName } from "@/lib/currencyUtils";
 import { buildOrderWAMessage } from "@/lib/whatsappUtils";
 
 import Link from "next/link";
@@ -29,7 +29,7 @@ import { normalizeAssetUrl } from "@/lib/storageUtils";
 
 export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConfig: any }) {
   const dict = getDictionary(tenantConfig?.language || 'id');
-  const currency = tenantConfig?.currency || (tenantConfig?.language === 'ms' ? 'MYR' : 'IDR');
+  const currency: Currency = (order.currency as Currency) || tenantConfig?.currency || (tenantConfig?.language === 'ms' ? 'MYR' : 'IDR');
   const { showNotification, NotificationComponent } = useNotification();
   const [timeLeft, setTimeLeft] = useState<{ h: number, m: number, s: number } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -173,14 +173,15 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
       return;
     }
 
-    const waNumber = tenantConfig?.whatsapp?.replace(/[^0-9]/g, "") || "6281234567890"; // fallback
+    const rawWaNumber = tenantConfig?.whatsapp_contacts?.[currency] || tenantConfig?.whatsapp || "6281234567890";
+    const waNumber = rawWaNumber.replace(/[^0-9]/g, "");
     const lang = tenantConfig?.language || "id";
 
     const message = buildOrderWAMessage({
       template: tenantConfig?.waOrderConfirmTemplate,
       language: lang,
       invoiceId: order.invoice_id,
-      productName: order.products?.name || "Game Item",
+      productName: getProductName(order.products, currency) || order.products?.name || "Game Item",
       totalPriceFormatted: formatCurrency(order.total_price, currency),
       paymentProofUrl: fixUrl(paymentProofUrl),
       storeName: tenantConfig?.siteName || "Store",
@@ -331,7 +332,7 @@ export function CheckoutClient({ order, tenantConfig }: { order: any, tenantConf
                 ))}
                 <div className="flex items-start text-xs sm:text-sm gap-2">
                   <span className="text-gray-400 font-medium w-20 sm:w-28 shrink-0">{dict.checkout_service_label}</span>
-                  <span className="text-white font-semibold print:text-black break-words min-w-0 flex-1">{order.products?.name}</span>
+                  <span className="text-white font-semibold print:text-black break-words min-w-0 flex-1">{getProductName(order.products, currency)}</span>
                 </div>
               </div>
             </div>

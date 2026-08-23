@@ -7,6 +7,7 @@ import { logActivity, calculateDiffs } from "@/lib/activity-logger";
 
 export interface ContactSettingsPayload {
   whatsapp?: string;
+  whatsapp_contacts?: Record<string, string>;
   instagram?: string;
   tiktok?: string;
   youtube?: string;
@@ -40,9 +41,20 @@ export async function saveContactSettings(settings: ContactSettingsPayload) {
     }
 
     const previousConfig = tenant.theme_config || {};
+    const defaultCurrency = previousConfig.default_currency || (previousConfig.language === 'ms' ? 'MYR' : 'IDR');
+    
+    // Determine the primary fallback whatsapp number from default region or IDR
+    const resolvedPrimaryWhatsapp = 
+      (settings.whatsapp_contacts && settings.whatsapp_contacts[defaultCurrency]) ||
+      (settings.whatsapp_contacts && settings.whatsapp_contacts.IDR) ||
+      settings.whatsapp ||
+      previousConfig.whatsapp ||
+      "";
+
     const updatedConfig = {
       ...previousConfig,
       ...settings,
+      whatsapp: resolvedPrimaryWhatsapp,
     };
 
     const { error: updateError } = await supabase
@@ -55,6 +67,7 @@ export async function saveContactSettings(settings: ContactSettingsPayload) {
     // Calculate diffs on contact-related micro fields
     const contactKeys = [
       "whatsapp",
+      "whatsapp_contacts",
       "instagram",
       "tiktok",
       "youtube",

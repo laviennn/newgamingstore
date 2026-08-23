@@ -6,24 +6,105 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { saveProduct } from "@/app/admin/(authenticated)/products/actions";
 import { useNotification } from "@/components/ui/notification";
-import { Loader2, UploadCloud } from "lucide-react";
+import { Loader2, UploadCloud, DollarSign, Tag } from "lucide-react";
 import { uploadFile } from "@/app/actions/upload";
 import { compressImageClient } from "@/lib/client-image-compressor";
 import Image from "next/image";
-import { Currency } from "@/lib/currencyUtils";
+import { Currency, CURRENCY_CONFIGS } from "@/lib/currencyUtils";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function ProductFormModal({ isOpen, onClose, product, games, currency = 'IDR' }: { isOpen: boolean; onClose: () => void; product?: any; games: any[], currency?: Currency }) {
+export function ProductFormModal({ 
+  isOpen, 
+  onClose, 
+  product, 
+  games, 
+  currency = 'IDR',
+  supportedCurrencies = ['IDR'],
+  multiCurrencyEnabled = false,
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  product?: any; 
+  games: any[]; 
+  currency?: Currency;
+  supportedCurrencies?: Currency[];
+  multiCurrencyEnabled?: boolean;
+}) {
   const { showNotification, NotificationComponent } = useNotification();
   const [loading, setLoading] = React.useState(false);
   const [isFlashSale, setIsFlashSale] = React.useState(product?.is_flash_sale || false);
   const [imageUrl, setImageUrl] = React.useState(product?.image_url || "");
   const [uploadingImage, setUploadingImage] = React.useState(false);
 
+  // Multi-Currency Names & Prices State
+  const [names, setNames] = React.useState<Record<string, string>>({});
+  const [prices, setPrices] = React.useState<Record<string, number | string>>({});
+  const [originalPrices, setOriginalPrices] = React.useState<Record<string, number | string>>({});
+
+  const activeCurrencies = React.useMemo(() => {
+    if (multiCurrencyEnabled && supportedCurrencies && supportedCurrencies.length > 0) {
+      return supportedCurrencies;
+    }
+    return [currency];
+  }, [multiCurrencyEnabled, supportedCurrencies, currency]);
+
   React.useEffect(() => {
     setIsFlashSale(product?.is_flash_sale || false);
     setImageUrl(product?.image_url || "");
-  }, [product]);
+
+    const initialNames: Record<string, string> = {};
+    const initialPrices: Record<string, number | string> = {};
+    const initialOriginalPrices: Record<string, number | string> = {};
+
+    activeCurrencies.forEach((cur) => {
+      if (product?.names && product.names[cur]) {
+        initialNames[cur] = product.names[cur];
+      } else {
+        initialNames[cur] = product?.name || "";
+      }
+
+      if (product?.prices && product.prices[cur] !== undefined && product.prices[cur] !== null) {
+        initialPrices[cur] = product.prices[cur];
+      } else if (product?.price !== undefined && product?.price !== null) {
+        initialPrices[cur] = product.price;
+      } else {
+        initialPrices[cur] = "";
+      }
+
+      if (product?.original_prices && product.original_prices[cur] !== undefined && product.original_prices[cur] !== null) {
+        initialOriginalPrices[cur] = product.original_prices[cur];
+      } else if (product?.original_price !== undefined && product?.original_price !== null) {
+        initialOriginalPrices[cur] = product.original_price;
+      } else {
+        initialOriginalPrices[cur] = "";
+      }
+    });
+
+    setNames(initialNames);
+    setPrices(initialPrices);
+    setOriginalPrices(initialOriginalPrices);
+  }, [product, activeCurrencies, isOpen]);
+
+  const handleNameChange = (cur: Currency, val: string) => {
+    setNames((prev) => ({
+      ...prev,
+      [cur]: val,
+    }));
+  };
+
+  const handlePriceChange = (cur: Currency, val: string) => {
+    setPrices((prev) => ({
+      ...prev,
+      [cur]: val === "" ? "" : Number(val),
+    }));
+  };
+
+  const handleOriginalPriceChange = (cur: Currency, val: string) => {
+    setOriginalPrices((prev) => ({
+      ...prev,
+      [cur]: val === "" ? "" : Number(val),
+    }));
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -61,7 +142,43 @@ export function ProductFormModal({ isOpen, onClose, product, games, currency = '
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    formData.append("image_url", imageUrl); // Manually append the image URL
+    formData.append("image_url", imageUrl);
+
+    // Build names and numeric prices objects
+    const finalNames: Record<string, string> = {};
+    const finalPrices: Record<string, number> = {};
+    const finalOriginalPrices: Record<string, number> = {};
+
+    activeCurrencies.forEach((cur) => {
+      finalNames[cur] = (names[cur] || "").trim() || (formData.get("name") as string || product?.name || "");
+
+      const val = Number(prices[cur]) || 0;
+      finalPrices[cur] = val;
+
+      if (isFlashSale) {
+        const origVal = Number(originalPrices[cur]) || 0;
+        finalOriginalPrices[cur] = origVal;
+      }
+    });
+
+    const primaryCurrency = currency || activeCurrencies[0] || "IDR";
+    const primaryName = finalNames[primaryCurrency] || finalNames.IDR || finalNames.MYR || finalNames.SGD || (formData.get("name") as string) || "";
+    const primaryPrice = finalPrices[primaryCurrency] || finalPrices.IDR || finalPrices.MYR || finalPrices.SGD || 0;
+    const primaryOriginalPrice = isFlashSale 
+      ? (finalOriginalPrices[primaryCurrency] || finalOriginalPrices.IDR || finalOriginalPrices.MYR || finalOriginalPrices.SGD || null)
+      : null;
+
+    formData.set("name", primaryName);
+    formData.set("names", JSON.stringify(finalNames));
+    formData.set("price", primaryPrice.toString());
+    if (primaryOriginalPrice !== null) {
+      formData.set("original_price", primaryOriginalPrice.toString());
+    } else {
+      formData.delete("original_price");
+    }
+
+    formData.set("prices", JSON.stringify(finalPrices));
+    formData.set("original_prices", JSON.stringify(finalOriginalPrices));
 
     const result = await saveProduct(formData, product?.id);
     
@@ -79,17 +196,20 @@ export function ProductFormModal({ isOpen, onClose, product, games, currency = '
     <>
       {NotificationComponent}
       <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between pr-6">
             <span>{product ? "Edit Product" : "Add New Product"}</span>
-            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border shadow-2xs ${
-              currency === 'MYR' 
-                ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
-                : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-            }`}>
-              {currency === 'MYR' ? '🇲🇾 MYR (RM)' : '🇮🇩 IDR (Rp)'}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {activeCurrencies.map((cur) => {
+                const conf = CURRENCY_CONFIGS[cur] || CURRENCY_CONFIGS.IDR;
+                return (
+                  <span key={cur} className="text-xs font-bold px-2 py-0.5 rounded-full border bg-muted/50 border-border text-foreground shadow-2xs">
+                    {conf.flag} {conf.code}
+                  </span>
+                );
+              })}
+            </div>
           </DialogTitle>
         </DialogHeader>
         
@@ -110,16 +230,52 @@ export function ProductFormModal({ isOpen, onClose, product, games, currency = '
             </select>
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">Product Name (e.g., 86 Diamonds)</label>
-            <Input 
-              id="name" 
-              name="name" 
-              placeholder="e.g., 86 Diamonds" 
-              defaultValue={product?.name || ""}
-              required 
-            />
-          </div>
+          {/* Product Name Inputs (Dynamic Multi-Currency or Single) */}
+          {activeCurrencies.length > 1 ? (
+            <div className="space-y-3 border border-border/60 rounded-xl p-3 bg-muted/20">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold flex items-center gap-1.5">
+                  <Tag className="w-4 h-4 text-primary" /> Nama Item / Denominasi per Wilayah
+                </label>
+                <span className="text-[11px] text-muted-foreground">
+                  Jumlah item dapat berbeda per negara
+                </span>
+              </div>
+
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                {activeCurrencies.map((cur) => {
+                  const conf = CURRENCY_CONFIGS[cur] || CURRENCY_CONFIGS.IDR;
+                  const placeholder = cur === 'IDR' ? 'Contoh: 2.500 Diamonds' : cur === 'MYR' ? 'Contoh: 4650 Diamonds' : 'Contoh: 250 Diamonds';
+                  return (
+                    <div key={cur} className="p-2.5 bg-background rounded-lg border border-border space-y-1.5 shadow-2xs">
+                      <span className="text-xs font-bold flex items-center gap-1 text-foreground">
+                        <span>{conf.flag}</span>
+                        <span>Item {conf.code}</span>
+                      </span>
+                      <Input
+                        placeholder={placeholder}
+                        value={names[cur] !== undefined ? names[cur] : ""}
+                        onChange={(e) => handleNameChange(cur, e.target.value)}
+                        required
+                        className="text-xs font-medium"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium">Product Name (e.g., 86 Diamonds)</label>
+              <Input 
+                id="name" 
+                name="name" 
+                placeholder="e.g., 86 Diamonds" 
+                defaultValue={product?.name || ""}
+                required 
+              />
+            </div>
+          )}
 
           {/* Product Icon / Image Upload */}
           <div className="space-y-2 border border-border/50 rounded-lg p-3 bg-muted/20">
@@ -162,20 +318,41 @@ export function ProductFormModal({ isOpen, onClose, product, games, currency = '
             <p className="text-xs text-muted-foreground">Used for dynamic top up models (e.g. FC Mobile).</p>
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="price" className="text-sm font-medium">
-              Price ({currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'})
-            </label>
-            <Input 
-              id="price" 
-              name="price" 
-              type="number"
-              step="any"
-              min="0"
-              placeholder={currency === "MYR" ? "e.g., 15.50" : "e.g., 24000"} 
-              defaultValue={product?.price || ""}
-              required 
-            />
+          {/* Multi-Currency Price Inputs */}
+          <div className="space-y-3 border-t border-border/40 pt-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-primary" /> Harga Produk per Mata Uang
+              </label>
+              <span className="text-[11px] text-muted-foreground">
+                {activeCurrencies.length > 1 ? "Atur harga khusus tiap region" : "Harga tunggal"}
+              </span>
+            </div>
+
+            <div className={`grid gap-3 ${activeCurrencies.length > 1 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'}`}>
+              {activeCurrencies.map((cur) => {
+                const conf = CURRENCY_CONFIGS[cur] || CURRENCY_CONFIGS.IDR;
+                const isDecimal = conf.decimals > 0;
+                return (
+                  <div key={cur} className="p-3 bg-muted/40 rounded-xl border border-border/60 space-y-1.5">
+                    <span className="text-xs font-bold flex items-center gap-1 text-foreground">
+                      <span>{conf.flag}</span>
+                      <span>Harga {conf.code} ({conf.symbol})</span>
+                    </span>
+                    <Input
+                      type="number"
+                      step={isDecimal ? "0.01" : "1"}
+                      min="0"
+                      placeholder={isDecimal ? `${conf.symbol} 1.50` : `${conf.symbol} 20000`}
+                      value={prices[cur] !== undefined ? prices[cur] : ""}
+                      onChange={(e) => handlePriceChange(cur, e.target.value)}
+                      required
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -211,21 +388,34 @@ export function ProductFormModal({ isOpen, onClose, product, games, currency = '
 
           {isFlashSale && (
             <>
-              <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                <label htmlFor="original_price" className="text-sm font-medium">
-                  Original Price ({currency === 'MYR' ? '🇲🇾 RM' : '🇮🇩 Rp'})
-                </label>
-                <Input 
-                  id="original_price" 
-                  name="original_price" 
-                  type="number"
-                  step="any"
-                  min="0"
-                  placeholder={currency === "MYR" ? "e.g., 25.00" : "e.g., 55000"} 
-                  defaultValue={product?.original_price || ""}
-                  required={isFlashSale}
-                />
-                <p className="text-xs text-muted-foreground">The price before discount (strikethrough).</p>
+              {/* Multi-Currency Original Price Inputs */}
+              <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                <label className="text-sm font-medium">Harga Asli / Coret (Original Price)</label>
+                <div className={`grid gap-3 ${activeCurrencies.length > 1 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'}`}>
+                  {activeCurrencies.map((cur) => {
+                    const conf = CURRENCY_CONFIGS[cur] || CURRENCY_CONFIGS.IDR;
+                    const isDecimal = conf.decimals > 0;
+                    return (
+                      <div key={cur} className="p-3 bg-muted/40 rounded-xl border border-border/60 space-y-1.5">
+                        <span className="text-xs font-bold flex items-center gap-1 text-muted-foreground">
+                          <span>{conf.flag}</span>
+                          <span>Coret {conf.code} ({conf.symbol})</span>
+                        </span>
+                        <Input
+                          type="number"
+                          step={isDecimal ? "0.01" : "1"}
+                          min="0"
+                          placeholder={isDecimal ? `${conf.symbol} 2.00` : `${conf.symbol} 25000`}
+                          value={originalPrices[cur] !== undefined ? originalPrices[cur] : ""}
+                          onChange={(e) => handleOriginalPriceChange(cur, e.target.value)}
+                          required={isFlashSale}
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">Harga sebelum promo (akan dicoret di storefront).</p>
               </div>
 
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
@@ -244,7 +434,7 @@ export function ProductFormModal({ isOpen, onClose, product, games, currency = '
             </>
           )}
 
-          <div className="mt-6 flex justify-end gap-3 pt-4">
+          <div className="mt-6 flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancel
             </Button>
@@ -259,3 +449,4 @@ export function ProductFormModal({ isOpen, onClose, product, games, currency = '
   </>
   );
 }
+

@@ -1,5 +1,28 @@
 import { z } from "zod";
 
+export const CurrencyCodeEnum = z.enum(["IDR", "MYR", "SGD"]);
+export type CurrencyCode = z.infer<typeof CurrencyCodeEnum>;
+
+/**
+ * Zod Schema untuk nama per mata uang / wilayah (Multi-Currency)
+ */
+export const CurrencyNamesSchema = z.record(
+  CurrencyCodeEnum,
+  z.string().min(1, "Nama produk tidak boleh kosong")
+);
+
+export type CurrencyNamesInput = z.infer<typeof CurrencyNamesSchema>;
+
+/**
+ * Zod Schema untuk harga per mata uang (Multi-Currency)
+ */
+export const CurrencyPricesSchema = z.record(
+  CurrencyCodeEnum,
+  z.number().min(0, "Harga tidak boleh negatif")
+);
+
+export type CurrencyPricesInput = z.infer<typeof CurrencyPricesSchema>;
+
 /**
  * Zod Schema untuk transaksi Deposit
  */
@@ -13,6 +36,7 @@ export const DepositSchema = z.object({
   amount: z
     .number({ invalid_type_error: "Nominal harus berupa angka" })
     .positive("Nominal deposit harus bernilai positif"),
+  currency: CurrencyCodeEnum.optional().default("IDR"),
   customerEmail: z
     .string()
     .email("Format email tidak valid")
@@ -33,9 +57,11 @@ export const UpdateProductSchema = z.object({
     .string()
     .min(2, "Nama produk minimal 2 karakter")
     .max(100, "Nama produk maksimal 100 karakter"),
+  names: CurrencyNamesSchema.optional().default({}),
   price: z
     .number({ invalid_type_error: "Harga harus berupa angka" })
     .positive("Harga harus berupa angka positif"),
+  prices: CurrencyPricesSchema.optional().default({}),
   active: z.boolean().default(true),
   image_url: z
     .string()
@@ -48,6 +74,7 @@ export const UpdateProductSchema = z.object({
     .positive("Harga asli harus angka positif")
     .nullable()
     .optional(),
+  original_prices: CurrencyPricesSchema.optional().default({}),
   flash_sale_stock: z
     .number()
     .int()

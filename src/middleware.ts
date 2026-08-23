@@ -81,23 +81,6 @@ export default async function middleware(req: NextRequest) {
       );
     }
   }
-  if (pathname.includes('bypass') || pathname.includes('preview')) {
-    const isDisable =
-      pathname.includes('false') ||
-      pathname.includes('off') ||
-      pathname.includes('disable');
-    const redirectRes = NextResponse.redirect(new URL('/', req.url));
-    if (isDisable) {
-      redirectRes.cookies.delete('bypass_maintenance');
-    } else {
-      redirectRes.cookies.set('bypass_maintenance', 'true', {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        sameSite: 'lax',
-      });
-    }
-    return redirectRes;
-  }
 
   let response: NextResponse;
 

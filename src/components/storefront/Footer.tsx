@@ -3,10 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Mail, Clock, ShieldCheck, ChevronRight } from "lucide-react";
-import { getDictionary } from "@/lib/dictionary";
+import { getDictionary, Language } from "@/lib/dictionary";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function Footer({ domain, themeConfig, paymentChannels }: { domain: string, themeConfig: any, paymentChannels: any[] }) {
+export function Footer({ domain, themeConfig, paymentChannels, language }: { domain: string, themeConfig: any, paymentChannels: any[], language?: Language }) {
   
   const fixUrl = (url: string | null) => {
     if (!url) return '';
@@ -27,8 +27,8 @@ export function Footer({ domain, themeConfig, paymentChannels }: { domain: strin
     logoUrl
   } = themeConfig;
 
-  const language = themeConfig?.language || "id";
-  const dict = getDictionary(language);
+  const activeLanguage = language || themeConfig?.language || "id";
+  const dict = getDictionary(activeLanguage);
 
   const displayTitle = seoTitle || domain;
   const displayDesc = seoDescription || dict.footer_desc;
