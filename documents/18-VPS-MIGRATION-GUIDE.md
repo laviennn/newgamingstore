@@ -185,12 +185,23 @@ Nginx akan menerima trafik dari port 80/443 dan meneruskannya ke Next.js (port 3
 nano /etc/nginx/sites-available/gamingstore
 ```
 
-Isi dengan konfigurasi berikut (Ganti `domainutama.com` dan `*.domainutama.com` sesuai domain Anda):
+Isi dengan konfigurasi berikut (Sudah mencakup domain **Staging** `panel-arvello.space` dan domain **Production**):
 ```nginx
 server {
     listen 80;
     listen [::]:80;
-    server_name domainutama.com *.domainutama.com yowanastore.com *.yowanastore.com topupdisiniyuk.com *.topupdisiniyuk.com localhost 130.94.94.187;
+    
+    # Domain Staging & Production Multi-Tenant
+    server_name 
+        games.panel-arvello.space 
+        admin.panel-arvello.space 
+        *.panel-arvello.space
+        yowanastore.com 
+        *.yowanastore.com 
+        topupdisiniyuk.com 
+        *.topupdisiniyuk.com 
+        localhost 
+        130.94.94.187;
 
     client_max_body_size 20M;
 
@@ -239,7 +250,7 @@ server {
 ln -s /etc/nginx/sites-available/gamingstore /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
-# Uji konfigurasi Nginx
+# Uji konfigurasi Nginx (Pastikan output: syntax is ok & test is successful)
 nginx -t
 
 # Reload Nginx
@@ -248,16 +259,29 @@ systemctl reload nginx
 
 ---
 
-## Langkah 5: Testing & Validasi Sebelum Cutover
+## Langkah 5: Testing Domain Staging Sebelum Migrasi Prod
 
-Sebelum mengarahkan domain utama, pastikan VPS merespons dengan benar:
+Sebelum mengarahkan domain utama production, kita uji coba secara menyeluruh di **Domain Staging**:
 
-1. **Uji dari browser**: Buka `http://130.94.94.187` di browser.
-2. **Uji simulasi domain tenant via cURL dari laptop Anda**:
-   ```bash
-   curl -I -H "Host: yowanastore.com" http://130.94.94.187
-   ```
-   *Jika merespons `HTTP/1.1 200 OK`, artinya multi-tenant routing di VPS sudah 100% siap!*
+### 5.1 Arahkan DNS Staging di Cloudflare
+Buka DNS Cloudflare untuk domain `panel-arvello.space`:
+1. Tambah / Ubah **A Record**:
+   - **Type**: `A`
+   - **Name**: `games`
+   - **IPv4 Address**: `130.94.94.187`
+   - **Proxy Status**: `Proxied (Orange Cloud)`
+2. Tambah / Ubah **A Record**:
+   - **Type**: `A`
+   - **Name**: `admin`
+   - **IPv4 Address**: `130.94.94.187`
+   - **Proxy Status**: `Proxied (Orange Cloud)`
+
+### 5.2 Uji Coba Melalui Browser
+Setelah DNS diarahkan (hanya butuh ~10-30 detik di Cloudflare):
+1. Buka Storefront Staging: **`https://games.panel-arvello.space`**
+   - Pastikan halaman catalog game, flash sale, notifikasi pembelian, dan modal currency berjalan mulus.
+2. Buka Admin Staging: **`https://admin.panel-arvello.space`**
+   - Coba login admin dan kelola produk/transaksi untuk memastikan backend berfungsi sempurna di VPS.
 
 ---
 
