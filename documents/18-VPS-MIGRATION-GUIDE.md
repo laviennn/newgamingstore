@@ -1,232 +1,271 @@
-# 🚀 Panduan Migrasi Production dari Vercel ke VPS Lightnode (Zero-Downtime)
+# 🚀 Panduan Migrasi Production & Setup Dual-Environment (Staging + Prod) di VPS Lightnode
 
-Dokumen ini berisi panduan lengkap langkah demi langkah untuk memindahkan aplikasi **New Gaming Store (Multi-Tenant Multi-Currency)** dari **Vercel** ke **VPS Lightnode (Ubuntu 22.04, 1 vCPU, 2 GB RAM, Jakarta)** dengan jaminan **0 Detik Downtime (Zero-Downtime Migration)**.
+Dokumen ini berisi arsitektur dan panduan lengkap menjalankan **dua environment terisolasi (Staging & Production)** dalam **1 VPS Lightnode (Ubuntu 22.04, 1 vCPU, 2 GB RAM, Jakarta)** secara **sangat hemat RAM**, database terpisah, dan jaminan **Zero-Downtime**.
 
 ---
 
 ## 📑 Daftar Isi
-1. [Strategi Zero-Downtime: Apakah Web Akan Down?](#1-strategi-zero-downtime-apakah-web-akan-down)
-2. [Spesifikasi & Informasi Server](#2-spesifikasi--informasi-server)
-3. [Langkah 1: Persiapan Server VPS Baru](#langkah-1-persiapan-server-vps-baru)
-4. [Langkah 2: Optimasi Next.js Standalone Mode](#langkah-2-optimasi-nextjs-standalone-mode)
-5. [Langkah 3: Deploy Aplikasi ke VPS](#langkah-3-deploy-aplikasi-ke-vps)
-6. [Langkah 4: Konfigurasi Nginx Reverse Proxy](#langkah-4-konfigurasi-nginx-reverse-proxy)
-7. [Langkah 5: Testing & Validasi Sebelum Cutover](#langkah-5-testing--validasi-sebelum-cutover)
-8. [Langkah 6: Pengalihan DNS (Cutover) & SSL](#langkah-6-pengalihan-dns-cutover--ssl)
-9. [Langkah 7: Skrip Update Otomatis (One-Click Deploy)](#langkah-7-skrip-update-otomatis-one-click-deploy)
-10. [Langkah 8: Monitoring & Maintenance](#langkah-8-monitoring--maintenance)
+1. [Arsitektur Dual-Environment di 1 VPS](#1-arsitektur-dual-environment-di-1-vps)
+2. [Analisis Konsumsi RAM (2 GB VPS)](#2-analisis-konsumsi-ram-2-gb-vps)
+3. [Informasi Database & Domain (Staging vs Prod)](#3-informasi-database--domain-staging-vs-prod)
+4. [Langkah 1: Persiapan Server & Swap](#langkah-1-persiapan-server--swap)
+5. [Langkah 2: Setup & Deploy Environment STAGING (Port 3001)](#langkah-2-setup--deploy-environment-staging-port-3001)
+6. [Langkah 3: Setup & Deploy Environment PRODUCTION (Port 3000)](#langkah-3-setup--deploy-environment-production-port-3000)
+7. [Langkah 4: Konfigurasi Nginx Dual-Host (Reverse Proxy)](#langkah-4-konfigurasi-nginx-dual-host-reverse-proxy)
+8. [Langkah 5: Testing Domain Staging (`panel-arvello.space`)](#langkah-5-testing-domain-staging-panel-arvellospace)
+9. [Langkah 6: Cutover Domain Production (Zero-Downtime)](#langkah-6-cutover-domain-production-zero-downtime)
+10. [Langkah 7: Skrip One-Click Deploy Terpisah](#langkah-7-skrip-one-click-deploy-terpisah)
+11. [Langkah 8: Monitoring & Maintenance](#langkah-8-monitoring--maintenance)
 
 ---
 
-## 1. Strategi Zero-Downtime: Apakah Web Akan Down?
+## 1. Arsitektur Dual-Environment di 1 VPS
 
-> **Jawaban: TIDAK AKAN DOWN (100% Tetap Online).**
+```mermaid
+flowchart TD
+    subgraph Pengunjung
+        U1[Browser User: Staging] -->|games.panel-arvello.space| NG[Nginx Reverse Proxy Port 80/443]
+        U2[Browser User: Production] -->|yowanastore.com / topupdisiniyuk.com| NG
+    end
 
-### Mengapa Bisa Tanpa Downtime?
-Kita menggunakan metode **Parallel Staging & DNS Hot-Swap**:
-1. Web di **Vercel tetap dibiarkan menyala normal** dan melayani transaksi pengunjung seperti biasa.
-2. Kita setup VPS Lightnode dari nol, menginstall Node.js, clone project, build, dan menjalankan aplikasi di port `3000` via Nginx.
-3. Kita menguji VPS secara internal terlebih dahulu (menggunakan IP atau hosts mapping) untuk memastikan 100% berjalan sempurna.
-4. Database PostgreSQL berada di **Supabase Cloud** yang terpusat. Baik instance Vercel maupun instance VPS terhubung ke database yang sama persis, sehingga transaksi tidak akan hilang.
-5. Setelah VPS siap, kita cukup mengubah **DNS A Record** di Cloudflare / Domain Registrar ke IP VPS (`130.94.94.187`).
-6. Selama masa propagasi DNS (0 - 60 detik di Cloudflare), user lama tetap dilayani Vercel dan user baru langsung masuk ke VPS.
-7. Setelah trafik 100% berpindah ke VPS, barulah project di Vercel dihapus.
+    subgraph VPS Lightnode Jakarta (2GB RAM)
+        NG -->|Proxy Port 3001| PM_STG[PM2: gamingstore-staging]
+        NG -->|Proxy Port 3000| PM_PRD[PM2: gamingstore-prod]
+        
+        PM_STG --> APP_STG[Next.js Standalone /var/www/gamingstore-staging]
+        PM_PRD --> APP_PRD[Next.js Standalone /var/www/gamingstore-prod]
+    end
 
----
-
-## 2. Spesifikasi & Informasi Server
-
-* **Provider**: Lightnode
-* **Lokasi**: Jakarta, Indonesia 🇮🇩
-* **IP Publik (IPv4)**: `130.94.94.187`
-* **OS**: Ubuntu 22.04 LTS
-* **CPU / RAM**: 1 vCPU (Shared) / 2 GB RAM / 50 GB SSD
-* **User Default**: `root`
-
----
-
-## Langkah 1: Persiapan Server VPS Baru
-
-Akses VPS Anda melalui terminal SSH:
-```bash
-ssh root@130.94.94.187
+    subgraph Supabase Cloud Database
+        APP_STG -->|Koneksi Terisolasi| DB_STG[(Supabase Staging: buqilwpqantgiwedehtj)]
+        APP_PRD -->|Koneksi Terisolasi| DB_PRD[(Supabase Production: gxjcsreigvdnyhusxyyp)]
+    end
 ```
 
-### 1.1 Update Paket Sistem & Install Utilities
+---
+
+## 2. Analisis Konsumsi RAM (2 GB VPS)
+
+Dengan menggunakan mode **Next.js Standalone**, kedua environment dapat berjalan bersamaan dengan sangat efisien:
+
+| Service | Estimasi Penggunaan RAM |
+| :--- | :--- |
+| **Next.js Staging (Port 3001)** | ~180 MB |
+| **Next.js Production (Port 3000)** | ~250 MB |
+| **Nginx Web Server** | ~35 MB |
+| **PM2 Process Manager** | ~35 MB |
+| **OS & Ubuntu Services** | ~250 MB |
+| **TOTAL TERPAKAI** | **~750 MB / 2000 MB (Hanya 37.5%)** |
+| **SISA RAM BEBAS** | **> 1.25 GB RAM BEBAS** + 2–4 GB Swap |
+
+> **Kesimpulan:** VPS 2 GB Anda masih memiliki sisa memori > 1.2 GB yang sangat longgar untuk menangani lonjakan transaksi harian.
+
+---
+
+## 3. Informasi Database & Domain (Staging vs Prod)
+
+### 🧪 Environment STAGING
+* **Domain Storefront**: `games.panel-arvello.space` (dan `*.panel-arvello.space`)
+* **Domain Admin**: `admin.panel-arvello.space`
+* **Port Internal**: `3001`
+* **Folder VPS**: `/var/www/gamingstore-staging`
+* **Database Supabase**: `buqilwpqantgiwedehtj` (dari file `.env.local`)
+
+### 🏆 Environment PRODUCTION
+* **Domain Storefront**: `yowanastore.com`, `*.yowanastore.com`, `topupdisiniyuk.com`, `*.topupdisiniyuk.com`, dll.
+* **Domain Admin**: `admin.newgamingstore.com` (atau subdomain admin prod Anda)
+* **Port Internal**: `3000`
+* **Folder VPS**: `/var/www/gamingstore-prod`
+* **Database Supabase**: `gxjcsreigvdnyhusxyyp` (Production Utama)
+
+---
+
+## Langkah 1: Persiapan Server & Swap
+
+Pastikan paket dasar, Node 20 LTS, PM2, dan Nginx sudah terinstall di VPS:
+
 ```bash
+# Update paket sistem & install tools
 apt update && apt upgrade -y
 apt install -y curl git ufw build-essential htop nginx certbot python3-certbot-nginx
-```
 
-### 1.2 Setup SWAP Memory 4 GB (Sangat Penting untuk 2 GB RAM)
-Swap memory memastikan server tidak akan pernah kehabisan RAM (*Out of Memory / OOM*) saat proses `npm run build` atau saat ada lonjakan trafik.
-```bash
-# Buat file swap 4GB
-fallocate -l 4G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-swapon /swapfile
-
-# Jadikan permanen saat server restart
-echo '/swapfile none swap sw 0 0' >> /etc/fstab
-
-# Optimasi swappiness
-sysctl vm.swappiness=10
-echo 'vm.swappiness=10' >> /etc/sysctl.conf
-```
-
-### 1.3 Install Node.js 20 LTS & PM2
-```bash
-# Install Node.js 20 LTS via NodeSource
+# Install Node.js 20 LTS (bersihkan libnode-dev jika ada konflik)
+apt remove -y libnode-dev libnode72 nodejs npm
+apt autoremove -y
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs
-
-# Verifikasi versi Node & NPM
-node -v   # Output: v20.x.x
-npm -v    # Output: 10.x.x
-
-# Install PM2 (Process Manager) secara global
 npm install -g pm2
-```
 
-### 1.4 Konfigurasi Firewall (UFW)
-```bash
+# Setup UFW Firewall
 ufw allow OpenSSH
 ufw allow 'Nginx Full'
 ufw --force enable
-ufw status
 ```
 
 ---
 
-## Langkah 2: Optimasi Next.js Standalone Mode
+## Langkah 2: Setup & Deploy Environment STAGING (Port 3001)
 
-Pastikan file `next.config.ts` di codebase lokal Anda sudah mengaktifkan `output: 'standalone'`.
-
-Periksa `next.config.ts`:
-```typescript
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  output: 'standalone', // <-- Wajib aktif untuk deploy VPS hemat RAM
-  images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: '**' },
-    ],
-  },
-  // Konfigurasi lainnya...
-};
-
-export default nextConfig;
-```
-
----
-
-## Langkah 3: Deploy Aplikasi ke VPS
-
-### 3.1 Buat Direktori dan Clone Repository
+### 2.1 Clone ke Direktori Staging
 ```bash
 mkdir -p /var/www
 cd /var/www
-
-# Clone repository project Anda
-git clone https://github.com/laviennn/newgamingstore.git gamingstore
-cd /var/www/gamingstore
+git clone -b development https://github.com/laviennn/newgamingstore.git gamingstore-staging
+cd /var/www/gamingstore-staging
 ```
 
-### 3.2 Buat File Environment (`.env.production`)
-Salin semua isi environment variable dari Vercel / `.env.local` lokal Anda ke server:
+### 2.2 Buat File `.env.production` untuk STAGING
 ```bash
-nano .env.production
+nano /var/www/gamingstore-staging/.env.production
 ```
-*Isi dengan environment variable lengkap (Supabase URL, Anon Key, Service Role Key, Cloudflare R2, Midtrans/Tripay, dll.). Simpan dengan `Ctrl + O` -> `Enter` -> `Ctrl + X`.*
 
-### 3.3 Install Dependencies & Build Standalone
+**Tempel konfigurasi STAGING berikut (Database `buqilwpqantgiwedehtj`):**
+```env
+# ==========================================
+# STAGING ENVIRONMENT (buqilwpqantgiwedehtj)
+# ==========================================
+NEXT_PUBLIC_SUPABASE_URL=https://buqilwpqantgiwedehtj.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1cWlsd3BxYW50Z2l3ZWRlaHRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3ODMyNTksImV4cCI6MjEwMjM1OTI1OX0.ccu0NnLVVN2HCGZsePLNdtsayNVlxjaRyEYSFg2gbF0
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1cWlsd3BxYW50Z2l3ZWRlaHRqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Njc4MzI1OSwiZXhwIjoyMTAyMzU5MjU5fQ.sZ8oQnJf9mBbdiWrqI-KIB04PUlu2wrHSS7JzWdMbz4
+DATABASE_URL=postgresql://postgres.buqilwpqantgiwedehtj:jumfes-6tomna-xeZnyx@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres
+
+# Staging Multi-Tenant Domain
+NEXT_PUBLIC_ROOT_DOMAIN=panel-arvello.space
+NEXT_PUBLIC_ADMIN_DOMAIN=admin.panel-arvello.space
+
+# Cloudflare R2 Assets
+R2_ACCOUNT_ID=ca26e72804b3601f7b3f7efe1c0cb385
+R2_ACCESS_KEY_ID=520659218560dd670a217522efc90d86
+R2_SECRET_ACCESS_KEY=d15a15114a5604e96a98825b882f3bc68ba0790ae8c11ee51e2970ea655e289b
+R2_BUCKET_NAME=assetsnewgaming
+R2_PUBLIC_URL=https://assets.newgamingstore.com
+
+# APIs
+VIP_RESELLER_API_ID=0MtaIj83
+VIP_RESELLER_API_KEY=htKQiiiOEGsorYVT6e9BN1pHA4G2rRQaNNGgYNHK5XMBjhzMhPEK6mbVf5dq5FrE
+RAPIDAPI_KEY=6867513528mshc5487aee5d7b88ep10d074jsn72f185ca3c6b
+KOKINPAY_API_KEY=kp5dac3e6eccfcae98edff49aa0a22ce9b641d26a89bd18003
+MEMBER_SESSION_SECRET=Qc8lh7Emx7TtkgtnGjQfezWA58Ws/egpMM8Q+Uz2q9c=
+```
+*(Simpan: `Ctrl + O` $\rightarrow$ `Enter` $\rightarrow$ `Ctrl + X`)*.
+
+### 2.3 Build & Jalankan STAGING di Port 3001
 ```bash
-cd /var/www/gamingstore
-
-# Install package bersih
+cd /var/www/gamingstore-staging
 npm ci
-
-# Build aplikasi
 npm run build
 
-# Salin asset statis ke dalam folder standalone (Wajib untuk Next.js Standalone)
+# Salin asset statis
 cp -r public .next/standalone/
 cp -r .next/static .next/standalone/.next/
+
+# Jalankan via PM2 di Port 3001
+cd /var/www/gamingstore-staging/.next/standalone
+PORT=3001 pm2 start server.js --name "gamingstore-staging" --node-args="--max-old-space-size=768"
+pm2 save
 ```
 
-### 3.4 Jalankan Aplikasi dengan PM2
+---
+
+## Langkah 3: Setup & Deploy Environment PRODUCTION (Port 3000)
+
+### 3.1 Clone ke Direktori Production
 ```bash
-cd /var/www/gamingstore/.next/standalone
+cd /var/www
+git clone -b development https://github.com/laviennn/newgamingstore.git gamingstore-prod
+cd /var/www/gamingstore-prod
+```
 
-# Jalankan server via PM2
-pm2 start server.js --name "gamingstore" --node-args="--max-old-space-size=1536"
+### 3.2 Buat File `.env.production` untuk PRODUCTION
+```bash
+nano /var/www/gamingstore-prod/.env.production
+```
 
-# Buat PM2 otomatis menyala saat server restart
+**Tempel konfigurasi PRODUCTION berikut (Database `gxjcsreigvdnyhusxyyp`):**
+```env
+# ==========================================
+# PRODUCTION ENVIRONMENT (gxjcsreigvdnyhusxyyp)
+# ==========================================
+NEXT_PUBLIC_SUPABASE_URL=https://gxjcsreigvdnyhusxyyp.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4amNzcmVpZ3ZkbnlodXN4eXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0ODYwOTEsImV4cCI6MjEwMTA2MjA5MX0.kzQtGZr9caf4BaRfqx4oTtDhzDapaXx-_PkmhiTaNHk
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4amNzcmVpZ3ZkbnlodXN4eXlwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTQ4NjA5MSwiZXhwIjoyMTAxMDYyMDkxfQ.85sOVwbCAZfjoOxauf-JHPLS2g_EApFZ715ozZJaUGw
+
+# Production Multi-Tenant Domain
+NEXT_PUBLIC_ROOT_DOMAIN=newgamingstore.com
+NEXT_PUBLIC_ADMIN_DOMAIN=admin.newgamingstore.com
+
+# Cloudflare R2 Assets
+R2_ACCOUNT_ID=ca26e72804b3601f7b3f7efe1c0cb385
+R2_ACCESS_KEY_ID=520659218560dd670a217522efc90d86
+R2_SECRET_ACCESS_KEY=d15a15114a5604e96a98825b882f3bc68ba0790ae8c11ee51e2970ea655e289b
+R2_BUCKET_NAME=assetsnewgaming
+R2_PUBLIC_URL=https://assets.newgamingstore.com
+
+# APIs
+VIP_RESELLER_API_ID=0MtaIj83
+VIP_RESELLER_API_KEY=htKQiiiOEGsorYVT6e9BN1pHA4G2rRQaNNGgYNHK5XMBjhzMhPEK6mbVf5dq5FrE
+RAPIDAPI_KEY=6867513528mshc5487aee5d7b88ep10d074jsn72f185ca3c6b
+KOKINPAY_API_KEY=kp5dac3e6eccfcae98edff49aa0a22ce9b641d26a89bd18003
+MEMBER_SESSION_SECRET=Qc8lh7Emx7TtkgtnGjQfezWA58Ws/egpMM8Q+Uz2q9c=
+```
+*(Simpan: `Ctrl + O` $\rightarrow$ `Enter` $\rightarrow$ `Ctrl + X`)*.
+
+### 3.3 Build & Jalankan PRODUCTION di Port 3000
+```bash
+cd /var/www/gamingstore-prod
+npm ci
+npm run build
+
+# Salin asset statis
+cp -r public .next/standalone/
+cp -r .next/static .next/standalone/.next/
+
+# Jalankan via PM2 di Port 3000
+cd /var/www/gamingstore-prod/.next/standalone
+PORT=3000 pm2 start server.js --name "gamingstore-prod" --node-args="--max-old-space-size=1024"
 pm2 save
 pm2 startup
 ```
 
-*Cek status server:*
-```bash
-pm2 status
-curl http://localhost:3000
-```
-
 ---
 
-## Langkah 4: Konfigurasi Nginx Reverse Proxy
+## Langkah 4: Konfigurasi Nginx Dual-Host (Reverse Proxy)
 
-Nginx akan menerima trafik dari port 80/443 dan meneruskannya ke Next.js (port 3000) dengan optimalisasi Gzip dan Multi-Tenant Header.
+Buat satu file konfigurasi Nginx cerdas yang memisahkan lalu lintas Staging (Port 3001) dan Production (Port 3000):
 
-### 4.1 Buat File Konfigurasi Nginx
 ```bash
 nano /etc/nginx/sites-available/gamingstore
 ```
 
-Isi dengan konfigurasi berikut (Sudah mencakup domain **Staging** `panel-arvello.space` dan domain **Production**):
+**Tempel konfigurasi Nginx Dual-Environment berikut:**
 ```nginx
+# =========================================================================
+# 1. BLOCK STAGING (games.panel-arvello.space, admin, dll. -> Port 3001)
+# =========================================================================
 server {
     listen 80;
     listen [::]:80;
-    
-    # Domain Staging & Production Multi-Tenant
-    server_name 
-        games.panel-arvello.space 
-        admin.panel-arvello.space 
-        *.panel-arvello.space
-        yowanastore.com 
-        *.yowanastore.com 
-        topupdisiniyuk.com 
-        *.topupdisiniyuk.com 
-        localhost 
-        130.94.94.187;
+    server_name games.panel-arvello.space admin.panel-arvello.space *.panel-arvello.space;
 
     client_max_body_size 20M;
-
-    # Optimasi Gzip Compression
     gzip on;
     gzip_proxied any;
-    gzip_comp_level 4;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml;
+    gzip_types text/plain text/css application/json application/javascript text/xml image/svg+xml;
 
-    # Cache static assets Next.js
     location /_next/static/ {
-        alias /var/www/gamingstore/.next/standalone/.next/static/;
+        alias /var/www/gamingstore-staging/.next/standalone/.next/static/;
         expires 365d;
         access_log off;
     }
 
     location /public/ {
-        alias /var/www/gamingstore/.next/standalone/public/;
+        alias /var/www/gamingstore-staging/.next/standalone/public/;
         expires 30d;
         access_log off;
     }
 
-    # Proxy ke aplikasi Next.js
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001; # Arahkan ke Port Staging
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -235,22 +274,64 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-        
-        # Timeout handling
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+
+# =========================================================================
+# 2. BLOCK PRODUCTION (yowanastore.com, topupdisiniyuk.com, dll. -> Port 3000)
+# =========================================================================
+server {
+    listen 80;
+    listen [::]:80;
+    server_name 
+        yowanastore.com 
+        *.yowanastore.com 
+        topupdisiniyuk.com 
+        *.topupdisiniyuk.com 
+        newgamingstore.com
+        *.newgamingstore.com
+        localhost 
+        130.94.94.187;
+
+    client_max_body_size 20M;
+    gzip on;
+    gzip_proxied any;
+    gzip_types text/plain text/css application/json application/javascript text/xml image/svg+xml;
+
+    location /_next/static/ {
+        alias /var/www/gamingstore-prod/.next/standalone/.next/static/;
+        expires 365d;
+        access_log off;
+    }
+
+    location /public/ {
+        alias /var/www/gamingstore-prod/.next/standalone/public/;
+        expires 30d;
+        access_log off;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000; # Arahkan ke Port Production
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
         proxy_read_timeout 60s;
     }
 }
 ```
 
-### 4.2 Aktifkan Konfigurasi & Reload Nginx
+### Aktifkan Konfigurasi Nginx:
 ```bash
-# Aktifkan site
 ln -s /etc/nginx/sites-available/gamingstore /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
-# Uji konfigurasi Nginx (Pastikan output: syntax is ok & test is successful)
+# Pastikan test berhasil
 nginx -t
 
 # Reload Nginx
@@ -259,130 +340,87 @@ systemctl reload nginx
 
 ---
 
-## Langkah 5: Testing Domain Staging Sebelum Migrasi Prod
+## Langkah 5: Testing Domain Staging (`panel-arvello.space`)
 
-Sebelum mengarahkan domain utama production, kita uji coba secara menyeluruh di **Domain Staging**:
-
-### 5.1 Arahkan DNS Staging di Cloudflare
-Buka DNS Cloudflare untuk domain `panel-arvello.space`:
-1. Tambah / Ubah **A Record**:
-   - **Type**: `A`
-   - **Name**: `games`
-   - **IPv4 Address**: `130.94.94.187`
-   - **Proxy Status**: `Proxied (Orange Cloud)`
-2. Tambah / Ubah **A Record**:
-   - **Type**: `A`
-   - **Name**: `admin`
-   - **IPv4 Address**: `130.94.94.187`
-   - **Proxy Status**: `Proxied (Orange Cloud)`
-
-### 5.2 Uji Coba Melalui Browser
-Setelah DNS diarahkan (hanya butuh ~10-30 detik di Cloudflare):
-1. Buka Storefront Staging: **`https://games.panel-arvello.space`**
-   - Pastikan halaman catalog game, flash sale, notifikasi pembelian, dan modal currency berjalan mulus.
-2. Buka Admin Staging: **`https://admin.panel-arvello.space`**
-   - Coba login admin dan kelola produk/transaksi untuk memastikan backend berfungsi sempurna di VPS.
+1. **Arahkan DNS di Cloudflare**:
+   - `games.panel-arvello.space` $\rightarrow$ `A Record` ke `130.94.94.187` *(Proxy: ON)*
+   - `admin.panel-arvello.space` $\rightarrow$ `A Record` ke `130.94.94.187` *(Proxy: ON)*
+2. **Uji Coba di Browser**:
+   - Buka `https://games.panel-arvello.space` (Akan membaca data dari DB Staging).
+   - Buka `https://admin.panel-arvello.space` (Login admin staging).
 
 ---
 
-## Langkah 6: Pengalihan DNS (Cutover) & SSL
+## Langkah 6: Cutover Domain Production (Zero-Downtime)
 
-### Opsi A: Jika Domain Menggunakan Cloudflare (Sangat Direkomendasikan ⭐)
-1. Buka Dashboard **Cloudflare** -> Menu **DNS Records**.
-2. Ubah `A Record` untuk `@` dan `*` (atau subdomain tenant):
-   - **Type**: `A`
-   - **Name**: `@` dan `*`
-   - **IPv4 Address**: `130.94.94.187`
-   - **Proxy Status**: `Proxied (Orange Cloud / On)`
-   - **TTL**: `Auto`
-3. Pada menu **SSL/TLS** di Cloudflare:
-   - Pilih mode **Full** atau **Full (Strict)**.
-4. **Selesai!** Dalam 10–30 detik seluruh trafik dunia akan berpindah secara mulus ke VPS Anda tanpa ada gangguan koneksi bagi user yang sedang bertransaksi.
-
-### Opsi B: Jika Menggunakan Certbot SSL Langsung di VPS
-```bash
-certbot --nginx -d domainutama.com -d www.domainutama.com
-```
+Setelah Anda selesai menguji di staging dan merasa 100% puas:
+1. Buka DNS Cloudflare untuk domain Production (`yowanastore.com`, `topupdisiniyuk.com`, dll.).
+2. Ubah `A Record` domain-domain tersebut ke `130.94.94.187` *(Proxy: ON)*.
+3. Trafik pengunjung akan langsung dialihkan ke `gamingstore-prod` di Port `3000` (DB Prod) tanpa ada downtime.
 
 ---
 
-## Langkah 7: Skrip Update Otomatis (One-Click Deploy)
+## Langkah 7: Skrip One-Click Deploy Terpisah
 
-Untuk mempermudah update code di masa depan setiap kali ada fitur baru:
+Agar update code di Staging dan Production tidak saling mengganggu:
 
-### 7.1 Buat Script Deploy di Server
+### 7.1 Skrip Update Staging (`/var/www/deploy-staging.sh`)
 ```bash
-nano /var/www/gamingstore/deploy.sh
+nano /var/www/deploy-staging.sh
 ```
-
-Isi dengan skrip berikut:
+Isi:
 ```bash
 #!/bin/bash
 set -e
-
-echo "🚀 Memulai Deployment Update..."
-cd /var/www/gamingstore
-
-# 1. Ambil code terbaru dari branch development / main
+echo "🚀 Updating Staging (Port 3001)..."
+cd /var/www/gamingstore-staging
 git pull origin development
-
-# 2. Install dependency jika ada package baru
 npm ci
-
-# 3. Build standalone
 npm run build
-
-# 4. Salin static assets
 cp -r public .next/standalone/
 cp -r .next/static .next/standalone/.next/
-
-# 5. Reload PM2 dengan zero-downtime
-pm2 reload gamingstore
-
-echo "✅ Deployment Sukses & Berjalan Normal!"
+pm2 reload gamingstore-staging
+echo "✅ Staging Updated Successfully!"
 ```
 
-### 7.2 Berikan Hak Eksekusi
+### 7.2 Skrip Update Production (`/var/www/deploy-prod.sh`)
 ```bash
-chmod +x /var/www/gamingstore/deploy.sh
+nano /var/www/deploy-prod.sh
+```
+Isi:
+```bash
+#!/bin/bash
+set -e
+echo "🚀 Updating Production (Port 3000)..."
+cd /var/www/gamingstore-prod
+git pull origin development
+npm ci
+npm run build
+cp -r public .next/standalone/
+cp -r .next/static .next/standalone/.next/
+pm2 reload gamingstore-prod
+echo "✅ Production Updated Successfully!"
 ```
 
-*Setiap kali ingin update versi website, cukup jalankan satu perintah:*
+Beri izin eksekusi:
 ```bash
-/var/www/gamingstore/deploy.sh
+chmod +x /var/www/deploy-staging.sh /var/www/deploy-prod.sh
 ```
 
 ---
 
 ## Langkah 8: Monitoring & Maintenance
 
-### Perintah Cepat yang Berguna:
-* **Melihat Penggunaan RAM & CPU Realtime**:
-  ```bash
-  htop
-  ```
-* **Melihat Status & Uptime Aplikasi**:
-  ```bash
-  pm2 status
-  ```
-* **Melihat Log Error / Transaksi Realtime**:
-  ```bash
-  pm2 logs gamingstore
-  ```
-* **Restart Aplikasi**:
-  ```bash
-  pm2 restart gamingstore
-  ```
-* **Melihat Log Nginx**:
-  ```bash
-  tail -f /var/log/nginx/error.log
-  ```
+```bash
+# Lihat status kedua environment
+pm2 status
 
----
+# Lihat realtime CPU/RAM kedua app
+pm2 monit
 
-## 🎯 Kesimpulan
-Dengan mengikuti panduan di atas:
-1. Website Anda **TIDAK AKAN MENGALAMI DOWNTIME** sama sekali.
-2. Bebas dari batasan 4 jam CPU Vercel selamanya.
-3. Loading website menjadi jauh lebih instan bagi pengunjung Indonesia karena server berada di Jakarta.
-4. Mampu menampung 5–20 tenant aktif dengan konsumsi RAM yang sangat efisien (~600 MB / 2000 MB).
+# Lihat logs staging saja
+pm2 logs gamingstore-staging
+
+# Lihat logs prod saja
+pm2 logs gamingstore-prod
+```
