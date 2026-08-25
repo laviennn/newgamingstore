@@ -1,0 +1,78 @@
+name: 🚀 Auto Deploy to VPS (Staging & Production)
+
+on:
+  push:
+    branches:
+      - development
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔍 Determine Environment Target
+        id: target
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "env_name=production" >> $GITHUB_OUTPUT
+            echo "app_dir=/var/www/gamingstore-prod" >> $GITHUB_OUTPUT
+            echo "pm2_name=gamingstore-prod" >> $GITHUB_OUTPUT
+            echo "port=3000" >> $GITHUB_OUTPUT
+            echo "mem_limit=1024" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=staging" >> $GITHUB_OUTPUT
+            echo "app_dir=/var/www/gamingstore-staging" >> $GITHUB_OUTPUT
+            echo "pm2_name=gamingstore-staging" >> $GITHUB_OUTPUT
+            echo "port=3001" >> $GITHUB_OUTPUT
+            echo "mem_limit=768" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🚀 Execute Remote Deployment via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            echo "=========================================="
+            echo "📦 Deploying to: ${{ steps.target.outputs.env_name }}"
+            echo "📁 Target Directory: ${{ steps.target.outputs.app_dir }}"
+            echo "=========================================="
+
+            cd ${{ steps.target.outputs.app_dir }}
+
+            # 1. Tarik perubahan code terbaru
+            echo "🔄 Pulling latest code from branch ${{ github.ref_name }}..."
+            git fetch origin ${{ github.ref_name }}
+            git reset --hard origin/${{ github.ref_name }}
+
+            # 2. Install dependencies yang bersih
+            echo "📥 Installing dependencies..."
+            npm ci
+
+            # 3. Build standalone application
+            echo "🏗️ Building Next.js application..."
+            npm run build
+
+            # 4. Salin asset statis (Wajib untuk Standalone Mode)
+            echo "📂 Copying public and static assets..."
+            cp -r public .next/standalone/
+            cp -r .next/static .next/standalone/.next/
+
+            # 5. Reload atau Start PM2 dengan Zero-Downtime
+            echo "⚡ Reloading PM2 process (${{ steps.target.outputs.pm2_name }})..."
+            if pm2 describe ${{ steps.target.outputs.pm2_name }} > /dev/null 2>&1; then
+              pm2 reload ${{ steps.target.outputs.pm2_name }} --update-env
+            else
+              cd ${{ steps.target.outputs.app_dir }}/.next/standalone
+              PORT=${{ steps.target.outputs.port }} pm2 start server.js --name "${{ steps.target.outputs.pm2_name }}" --node-args="--max-old-space-size=${{ steps.target.outputs.mem_limit }}"
+              pm2 save
+            fi
+
+            echo "=========================================="
+            echo "✅ Deployment ${{ steps.target.outputs.env_name }} Sukses & Aktif!"
+            echo "=========================================="
+            pm2 status
