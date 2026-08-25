@@ -43,16 +43,18 @@ jobs:
         run: |
           mkdir -p ~/.ssh
 
-          # Deteksi apakah secret berupa Base64 atau Raw Text PEM
+          # Decode base64 atau decode raw text
           if echo "$SSH_KEY_SECRET" | grep -q "BEGIN"; then
             printf "%s\n" "$SSH_KEY_SECRET" > ~/.ssh/deploy_key
           else
             echo "$SSH_KEY_SECRET" | base64 -d > ~/.ssh/deploy_key
           fi
 
-          # Pastikan file berakhir dengan newline dan permission ketat
-          sed -i -e '$a\' ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+
+          # Validasi struktur kunci SSH lokal sebelum koneksi
+          echo "🔍 Memverifikasi validitas kunci SSH..."
+          ssh-keygen -l -f ~/.ssh/deploy_key
 
           echo "📡 Menghubungkan ke $SSH_USER@$SSH_HOST:$SSH_PORT..."
 
