@@ -281,6 +281,28 @@ export function getProductOriginalPrice(
 }
 
 /**
+ * Mengurutkan produk berdasarkan harga pada mata uang aktif (IDR, MYR, SGD, dsb.)
+ * Default: 'asc' (Paling Murah / Harga Terendah ke Tertinggi)
+ */
+export function sortProductsByCurrencyPrice<T extends MultiCurrencyProduct>(
+  products: T[],
+  currency: Currency = "IDR",
+  order: "asc" | "desc" = "asc"
+): T[] {
+  if (!products || !Array.isArray(products)) return [];
+  return [...products].sort((a, b) => {
+    const priceA = getProductPrice(a, currency) || 0;
+    const priceB = getProductPrice(b, currency) || 0;
+    if (priceA === priceB) {
+      const nameA = getProductName(a, currency);
+      const nameB = getProductName(b, currency);
+      return nameA.localeCompare(nameB);
+    }
+    return order === "asc" ? priceA - priceB : priceB - priceA;
+  });
+}
+
+/**
  * Pilihan Preset Nominal Deposit yang disesuaikan dengan skala mata uang
  */
 export function getDepositNominalOptions(currency: Currency = "IDR"): number[] {

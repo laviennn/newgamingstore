@@ -653,10 +653,11 @@ export function ProductsClient({
                       </span>
                     )}
                   </div>
-                  {p.names && typeof p.names === "object" && Object.keys(p.names).length > 1 && (
+                  {p.names && typeof p.names === "object" && Object.entries(p.names).filter(([_, n]) => Boolean(n)).length > 1 && (
                     <div className="flex items-center flex-wrap gap-1 mt-1">
-                      {Object.entries(p.names).map(([c, n]) => {
-                        const flag = c === "MYR" ? "🇲🇾" : c === "SGD" ? "🇸🇬" : "🇮🇩";
+                      {Object.entries(p.names).filter(([_, n]) => Boolean(n)).map(([c, n]) => {
+                        const conf = CURRENCY_CONFIGS[c as Currency];
+                        const flag = conf ? conf.flag : (c === "MYR" ? "🇲🇾" : c === "SGD" ? "🇸🇬" : "🇮🇩");
                         return (
                           <span key={c} className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-muted/60 text-muted-foreground border border-border/50">
                             {flag} {String(n)}

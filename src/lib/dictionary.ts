@@ -176,6 +176,13 @@ export const dictionaries = {
     game_confirm_summary: "Ringkasan Pembelian",
     game_confirm_btn: "Pesan Sekarang",
     game_confirm_cancel: "Batal",
+    game_select_nominal: "Pilih Nominal Top Up",
+    game_sort_label: "Urutkan:",
+    game_sort_price_asc: "Termurah",
+    game_sort_price_desc: "Tertinggi",
+    prices_sort_label: "Urutkan Harga",
+    prices_sort_asc: "Harga Termurah",
+    prices_sort_desc: "Harga Tertinggi",
 
     // Checkout Page (/checkout/[id])
     checkout_progress_title: "Progress Transaksi",
@@ -538,6 +545,13 @@ export const dictionaries = {
     game_confirm_summary: "Ringkasan Pembelian",
     game_confirm_btn: "Pesan Sekarang",
     game_confirm_cancel: "Batal",
+    game_select_nominal: "Pilih Nilai Top Up",
+    game_sort_label: "Susun:",
+    game_sort_price_asc: "Paling Murah",
+    game_sort_price_desc: "Paling Tinggi",
+    prices_sort_label: "Susun Harga",
+    prices_sort_asc: "Harga Paling Murah",
+    prices_sort_desc: "Harga Paling Tinggi",
 
     // Checkout Page (/checkout/[id])
     checkout_progress_title: "Kemajuan Transaksi",
@@ -900,6 +914,13 @@ export const dictionaries = {
     game_confirm_summary: "Order Summary",
     game_confirm_btn: "Order Now",
     game_confirm_cancel: "Cancel",
+    game_select_nominal: "Select Top Up Amount",
+    game_sort_label: "Sort:",
+    game_sort_price_asc: "Lowest Price",
+    game_sort_price_desc: "Highest Price",
+    prices_sort_label: "Sort Price",
+    prices_sort_asc: "Lowest Price",
+    prices_sort_desc: "Highest Price",
 
     // Checkout Page (/checkout/[id])
     checkout_progress_title: "Transaction Progress",

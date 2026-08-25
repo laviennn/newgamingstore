@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, ChevronDown, Download, RefreshCcw, LayoutGrid, CheckCircle2 } from "lucide-react";
+import { Search, ChevronDown, Download, RefreshCcw, LayoutGrid, CheckCircle2, ArrowUpDown, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import Image from "next/image";
 import { getDictionary, Language } from "@/lib/dictionary";
-import { Currency, formatCurrency, getProductPrice, getProductName, isProductAvailableInCurrency } from "@/lib/currencyUtils";
+import { Currency, formatCurrency, getProductPrice, getProductName, isProductAvailableInCurrency, sortProductsByCurrencyPrice } from "@/lib/currencyUtils";
 import { normalizeAssetUrl } from "@/lib/storageUtils";
 
 export function PricesClient({ initialGames, initialProducts, language = 'id', currency = 'IDR' }: { initialGames: any[], initialProducts: any[], language?: Language, currency?: Currency }) {
@@ -13,6 +13,7 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
   const [searchQuery, setSearchQuery] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [priceSortOrder, setPriceSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Fix image urls
   const fixUrl = (url: string | null) => {
@@ -29,7 +30,7 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
     return `${initials}-${shortId}`;
   };
 
-  // Filter products by currency availability and search filters
+  // Filter products by currency availability, search filters, and price sorting
   const filteredProducts = useMemo(() => {
     let result = (initialProducts || []).filter((p) => isProductAvailableInCurrency(p, currency));
 
@@ -47,8 +48,8 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
       });
     }
 
-    return result;
-  }, [initialProducts, selectedGameId, searchQuery, currency]);
+    return sortProductsByCurrencyPrice(result, currency, priceSortOrder);
+  }, [initialProducts, selectedGameId, searchQuery, currency, priceSortOrder]);
 
 
 
@@ -162,7 +163,37 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
             </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
+          <div className="flex items-center gap-3 w-full lg:w-auto justify-end flex-wrap">
+            {/* Price Sort Controls */}
+            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10 text-xs">
+              <button
+                type="button"
+                onClick={() => setPriceSortOrder('asc')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold transition-all ${
+                  priceSortOrder === 'asc'
+                    ? 'bg-theme-primary text-white shadow-sm'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+                title={dict.prices_sort_asc || 'Harga Termurah'}
+              >
+                <ArrowDownWideNarrow className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{dict.prices_sort_asc || 'Termurah'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPriceSortOrder('desc')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold transition-all ${
+                  priceSortOrder === 'desc'
+                    ? 'bg-theme-primary text-white shadow-sm'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+                title={dict.prices_sort_desc || 'Harga Tertinggi'}
+              >
+                <ArrowUpWideNarrow className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{dict.prices_sort_desc || 'Tertinggi'}</span>
+              </button>
+            </div>
+
             <div className="relative w-20">
               <select 
                 className="w-full bg-white/5 border border-white/10 rounded-lg pl-3 pr-8 py-2 text-sm text-white appearance-none cursor-pointer"
@@ -202,7 +233,20 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
                 <tr className="bg-[#1a1a1a] border-b border-gray-800 text-gray-300 text-sm">
                   <th className="py-4 px-6 font-bold">{dict.prices_th_sku}</th>
                   <th className="py-4 px-6 font-bold">{dict.prices_th_service}</th>
-                  <th className="py-4 px-6 font-bold text-gray-400">{dict.prices_th_guest}</th>
+                  <th 
+                    className="py-4 px-6 font-bold text-gray-300 cursor-pointer hover:text-white transition-colors select-none"
+                    onClick={() => setPriceSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                    title="Klik untuk mengubah urutan harga"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>{dict.prices_th_guest}</span>
+                      {priceSortOrder === 'asc' ? (
+                        <ArrowDownWideNarrow className="w-3.5 h-3.5 text-theme-primary" />
+                      ) : (
+                        <ArrowUpWideNarrow className="w-3.5 h-3.5 text-theme-primary" />
+                      )}
+                    </div>
+                  </th>
                   <th className="py-4 px-6 font-bold">{dict.prices_th_member}</th>
                   <th className="py-4 px-6 font-bold">{dict.prices_th_platinum}</th>
                   <th className="py-4 px-6 font-bold">{dict.prices_th_gold}</th>
