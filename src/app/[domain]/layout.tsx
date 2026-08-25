@@ -293,15 +293,17 @@ export default async function StorefrontLayout({
   const supportedCurrencies: Currency[] = Array.isArray(config.supported_currencies) && config.supported_currencies.length > 0
     ? config.supported_currencies
     : (config.currency ? [config.currency as Currency] : [config.language === 'ms' ? 'MYR' : 'IDR']);
-  const defaultCurrency: Currency = (config.default_currency as Currency) || supportedCurrencies[0] || 'IDR';
+  const defaultCurrency: Currency = (config.default_currency as Currency) || (config.currency as Currency) || (config.language === 'ms' ? 'MYR' : 'IDR') || supportedCurrencies[0] || 'IDR';
 
   let activeCurrency: Currency = defaultCurrency;
   if (userCurrencyCookie && supportedCurrencies.includes(userCurrencyCookie)) {
     activeCurrency = userCurrencyCookie;
   }
 
-  // Dynamic Language resolution synced with active currency or tenant configuration
-  const activeLanguage: Language = isMultiCurrency || userCurrencyCookie
+  // Dynamic Language resolution:
+  // If user has explicitly chosen a currency via cookie -> sync language to that currency
+  // If first time visitor (no cookie) -> respect tenant's configured default language (config.language) or default currency language
+  const activeLanguage: Language = userCurrencyCookie
     ? getLanguageFromCurrency(activeCurrency)
     : (config.language || getLanguageFromCurrency(activeCurrency) || 'id');
 

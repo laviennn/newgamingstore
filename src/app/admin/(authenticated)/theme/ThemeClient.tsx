@@ -124,7 +124,22 @@ export default function ThemeClient() {
     setSupportedCurrencies(next);
 
     if (!next.includes(defaultCurrency)) {
-      setDefaultCurrency(next[0]);
+      const fallback = next[0];
+      setDefaultCurrency(fallback);
+      setCurrency(fallback);
+    }
+  };
+
+  const handleDefaultCurrencyChange = (newCur: Currency) => {
+    setDefaultCurrency(newCur);
+    setCurrency(newCur);
+    // Automatically suggest default language if changing default currency
+    if (newCur === "MYR" && language === "id") {
+      setLanguage("ms");
+    } else if (newCur === "IDR" && language === "ms") {
+      setLanguage("id");
+    } else if (newCur === "SGD" && (language === "id" || language === "ms")) {
+      setLanguage("en");
     }
   };
 
@@ -132,14 +147,15 @@ export default function ThemeClient() {
     if (!tenantId) return;
     setSaving(true);
     try {
+      const activeDefaultCurr = multiCurrencyEnabled ? defaultCurrency : currency;
       const updatedConfig = {
          ...themeConfig,
          themePreset,
          language,
-         currency: defaultCurrency || currency,
+         currency: activeDefaultCurr,
          multi_currency_enabled: multiCurrencyEnabled,
-         supported_currencies: supportedCurrencies,
-         default_currency: defaultCurrency,
+         supported_currencies: multiCurrencyEnabled ? supportedCurrencies : [activeDefaultCurr],
+         default_currency: activeDefaultCurr,
          colors: {
            primary: primaryColor,
            background: backgroundColor,
@@ -152,9 +168,9 @@ export default function ThemeClient() {
       if (error) throw error;
       
       setThemeConfig(updatedConfig);
-      setInitialCurrency(defaultCurrency || currency);
+      setInitialCurrency(activeDefaultCurr);
       setIsWarningModalOpen(false);
-      showNotification("success", "Tersimpan", "Pengaturan tema & multi-currency berhasil diperbarui.");
+      showNotification("success", "Tersimpan", "Pengaturan tema, bahasa & multi-currency berhasil diperbarui.");
     } catch (err) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const error = err as any;
@@ -167,7 +183,8 @@ export default function ThemeClient() {
   const handleSave = async () => {
     if (!tenantId) return;
     
-    if (currency !== initialCurrency) {
+    // Only warn single-currency tenants if they change the single base currency
+    if (!multiCurrencyEnabled && currency !== initialCurrency) {
       setIsWarningModalOpen(true);
       return;
     }
@@ -336,12 +353,12 @@ export default function ThemeClient() {
 
                 <div className="space-y-2 pt-2 border-t border-border/50">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Mata Uang Bawaan (Default):
+                    Mata Uang Bawaan (Default untuk Pengunjung Baru):
                   </label>
                   <select
                     className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
                     value={defaultCurrency}
-                    onChange={(e) => setDefaultCurrency(e.target.value as Currency)}
+                    onChange={(e) => handleDefaultCurrencyChange(e.target.value as Currency)}
                   >
                     {supportedCurrencies.map((cur) => (
                       <option key={cur} value={cur}>
@@ -349,6 +366,9 @@ export default function ThemeClient() {
                       </option>
                     ))}
                   </select>
+                  <p className="text-[11px] text-muted-foreground">
+                    Mata uang ini yang akan otomatis aktif pertama kali saat pengunjung baru membuka etalase toko Anda.
+                  </p>
                 </div>
               </div>
             )}
@@ -358,29 +378,40 @@ export default function ThemeClient() {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>Bahasa Utama Storefront</CardTitle>
-            <CardDescription>Pilih bahasa default untuk etalase toko Anda.</CardDescription>
+            <CardDescription>Pilih bahasa default yang terbuka saat pengunjung pertama kali datang.</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div 
-              className={`border-2 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all relative ${language === 'id' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-primary/50'}`}
+              className={`border-2 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all relative ${language === 'id' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-primary/50'}`}
               onClick={() => { setLanguage('id'); }}
             >
-              {language === 'id' && <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-primary" />}
-              <div className="text-4xl mb-2">🇮🇩</div>
-              <p className="font-semibold text-center text-sm">Indonesia (ID)</p>
-              <span className="text-[11px] text-muted-foreground mt-1 bg-white/5 px-2 py-0.5 rounded-full">
+              {language === 'id' && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-primary" />}
+              <div className="text-3xl mb-1">🇮🇩</div>
+              <p className="font-semibold text-center text-xs">Indonesia (ID)</p>
+              <span className="text-[10px] text-muted-foreground mt-1 bg-white/5 px-2 py-0.5 rounded-full">
                 Bahasa Indonesia
               </span>
             </div>
             <div 
-              className={`border-2 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all relative ${language === 'ms' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-primary/50'}`}
+              className={`border-2 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all relative ${language === 'ms' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-primary/50'}`}
               onClick={() => { setLanguage('ms'); }}
             >
-              {language === 'ms' && <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-primary" />}
-              <div className="text-4xl mb-2">🇲🇾</div>
-              <p className="font-semibold text-center text-sm">Malaysia (MS)</p>
-              <span className="text-[11px] text-muted-foreground mt-1 bg-white/5 px-2 py-0.5 rounded-full">
+              {language === 'ms' && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-primary" />}
+              <div className="text-3xl mb-1">🇲🇾</div>
+              <p className="font-semibold text-center text-xs">Malaysia (MS)</p>
+              <span className="text-[10px] text-muted-foreground mt-1 bg-white/5 px-2 py-0.5 rounded-full">
                 Bahasa Melayu
+              </span>
+            </div>
+            <div 
+              className={`border-2 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer transition-all relative ${language === 'en' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-primary/50'}`}
+              onClick={() => { setLanguage('en'); }}
+            >
+              {language === 'en' && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-primary" />}
+              <div className="text-3xl mb-1">🇬🇧</div>
+              <p className="font-semibold text-center text-xs">English (EN)</p>
+              <span className="text-[10px] text-muted-foreground mt-1 bg-white/5 px-2 py-0.5 rounded-full">
+                English
               </span>
             </div>
           </CardContent>

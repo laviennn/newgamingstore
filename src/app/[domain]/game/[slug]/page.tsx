@@ -21,10 +21,10 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { StorefrontGameForm } from '@/components/storefront/StorefrontGameForm';
-import { getDictionary } from '@/lib/dictionary';
+import { getDictionary, type Language } from '@/lib/dictionary';
 
 import { cookies } from 'next/headers';
-import { type Currency } from '@/lib/currencyUtils';
+import { type Currency, getLanguageFromCurrency } from '@/lib/currencyUtils';
 
 export default async function GameTopUpPage({
   params,
@@ -69,7 +69,7 @@ export default async function GameTopUpPage({
   const supportedCurrencies: Currency[] = Array.isArray(themeConfig?.supported_currencies) && themeConfig.supported_currencies.length > 0
     ? themeConfig.supported_currencies
     : (themeConfig?.currency ? [themeConfig.currency as Currency] : [themeConfig?.language === 'ms' ? 'MYR' : 'IDR']);
-  const defaultCurrency: Currency = (themeConfig?.default_currency as Currency) || supportedCurrencies[0] || 'IDR';
+  const defaultCurrency: Currency = (themeConfig?.default_currency as Currency) || (themeConfig?.currency as Currency) || (themeConfig?.language === 'ms' ? 'MYR' : 'IDR') || supportedCurrencies[0] || 'IDR';
   const activeCurrency: Currency = (userCurrencyCookie && supportedCurrencies.includes(userCurrencyCookie)) ? userCurrencyCookie : defaultCurrency;
 
   // 2. Fetch Game
@@ -107,7 +107,9 @@ export default async function GameTopUpPage({
     return pc.supported_currencies.includes(activeCurrency);
   });
 
-  const language = tenant?.theme_config?.language || 'id';
+  const language: Language = userCurrencyCookie
+    ? getLanguageFromCurrency(activeCurrency)
+    : (themeConfig?.language || getLanguageFromCurrency(activeCurrency) || 'id');
   const dict = getDictionary(language);
 
   return (
@@ -118,69 +120,74 @@ export default async function GameTopUpPage({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={gameDetailBanner}
-            alt='Game Detail Banner'
-            className='absolute inset-0 w-full h-full object-cover object-center'
+            alt={game.name}
+            className='w-full h-full object-cover'
           />
           <div className='absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent' />
         </div>
       )}
 
-      <div
-        className={`container mx-auto px-4 ${gameDetailBanner ? '-mt-12 lg:-mt-20' : 'pt-10'} relative z-10 max-w-7xl`}>
-        <div className='flex flex-col lg:flex-row gap-8'>
-          {/* LEFT COLUMN: Info */}
-          <div className='lg:w-[35%] space-y-6'>
-            {/* Poster & Title Card */}
-            <div className='flex gap-5'>
-              <div className='relative w-32 h-44 rounded-2xl overflow-hidden shadow-2xl border-[3px] border-border shrink-0 bg-muted'>
-                <Image
-                  src={
-                    game.image_url ||
-                    'https://assets.newgamingstore.com/placeholder.png'
-                  }
-                  alt={game.name}
-                  fill
-                  sizes='128px'
-                  className='object-cover'
-                />
-              </div>
-              <div className='pt-2 text-white flex flex-col justify-center'>
-                <h1 className='text-2xl md:text-3xl font-extrabold uppercase drop-shadow-lg tracking-tight'>
-                  {game.name}
-                </h1>
-                <p className='text-sm md:text-base opacity-90 drop-shadow-md font-medium mt-1 text-primary'>
-                  {game.developer || 'Official Developer'}
-                </p>
+      <div className='container mx-auto px-4 -mt-16 lg:-mt-24 relative z-10 max-w-6xl'>
+        <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+          {/* LEFT COLUMN: Game Details */}
+          <div className='lg:col-span-1 space-y-4'>
+            <div className='bg-theme-card border border-border/40 rounded-xl p-4 shadow-xl backdrop-blur-md'>
+              <div className='flex gap-4 items-start'>
+                <div className='relative w-20 h-28 rounded-lg overflow-hidden shrink-0 border border-white/10 shadow-md'>
+                  {game.image_url ? (
+                    <Image
+                      src={game.image_url}
+                      alt={game.name}
+                      fill
+                      sizes='80px'
+                      className='object-cover'
+                    />
+                  ) : (
+                    <div className='w-full h-full bg-muted flex items-center justify-center text-xs'>
+                      No Cover
+                    </div>
+                  )}
+                </div>
+                <div className='flex-1 min-w-0'>
+                  <h1 className='text-xl font-bold leading-tight line-clamp-2 text-white'>
+                    {game.name}
+                  </h1>
+                  <p className='text-xs text-muted-foreground mt-1'>
+                    {game.developer || game.categories?.name || 'Developer'}
+                  </p>
 
-                {/* Badges */}
-                <div className='flex flex-col gap-2 mt-4'>
-                  <div className='inline-flex items-center text-[11px] font-bold bg-green-500/20 text-green-400 px-3 py-1.5 rounded-full border border-green-500/30 w-fit backdrop-blur-sm'>
-                    <Zap className='w-3.5 h-3.5 mr-1.5' /> {dict.game_fast_process}
-                  </div>
-                  <div className='inline-flex items-center text-[11px] font-bold bg-[var(--accent-glow)] text-theme-primary opacity-90 px-3 py-1.5 rounded-full border border-theme-primary/30 w-fit backdrop-blur-sm'>
-                    <HeadphonesIcon className='w-3.5 h-3.5 mr-1.5' /> {dict.game_chat_support}
-                  </div>
-                  <div className='inline-flex items-center text-[11px] font-bold bg-purple-500/20 text-purple-400 px-3 py-1.5 rounded-full border border-purple-500/30 w-fit backdrop-blur-sm'>
-                    <ShieldCheck className='w-3.5 h-3.5 mr-1.5' /> {dict.game_official_product}
+                  {/* Badges */}
+                  <div className='flex flex-col gap-2 mt-4'>
+                    <div className='inline-flex items-center text-[11px] font-bold bg-green-500/20 text-green-400 px-3 py-1.5 rounded-full border border-green-500/30 w-fit backdrop-blur-sm'>
+                      <Zap className='w-3.5 h-3.5 mr-1.5' /> {dict.game_fast_process}
+                    </div>
+                    <div className='inline-flex items-center text-[11px] font-bold bg-[var(--accent-glow)] text-theme-primary opacity-90 px-3 py-1.5 rounded-full border border-theme-primary/30 w-fit backdrop-blur-sm'>
+                      <HeadphonesIcon className='w-3.5 h-3.5 mr-1.5' /> {dict.game_chat_support}
+                    </div>
+                    <div className='inline-flex items-center text-[11px] font-bold bg-purple-500/20 text-purple-400 px-3 py-1.5 rounded-full border border-purple-500/30 w-fit backdrop-blur-sm'>
+                      <ShieldCheck className='w-3.5 h-3.5 mr-1.5' /> {dict.game_official_product}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Accordion Deskripsi */}
-            {game.topup_instructions && (
-              <GameDescriptionAccordion description={game.topup_instructions} language={language} />
-            )}
+              {/* Accordion Deskripsi */}
+              {game.topup_instructions && (
+                <GameDescriptionAccordion description={game.topup_instructions} language={language} />
+              )}
+            </div>
           </div>
 
           {/* RIGHT COLUMN: Form */}
-          <StorefrontGameForm
-            game={game}
-            products={displayProducts}
-            paymentChannels={paymentChannels}
-            themeConfig={tenant?.theme_config || {}}
-            currency={activeCurrency}
-          />
+          <div className='lg:col-span-2'>
+            <StorefrontGameForm
+              game={game}
+              products={displayProducts}
+              paymentChannels={paymentChannels}
+              themeConfig={{ ...themeConfig, language }}
+              currency={activeCurrency}
+            />
+          </div>
         </div>
       </div>
     </div>

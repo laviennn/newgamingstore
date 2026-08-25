@@ -39,6 +39,81 @@ export function getLanguageFromCurrency(currency: Currency = "IDR"): Language {
   return "id";
 }
 
+export interface PhoneConfig {
+  flag: string;
+  dialCode: string;
+  countryName: string;
+  placeholder: string;
+  pattern: string;
+  helperText: string;
+  example: string;
+}
+
+/**
+ * Mendapatkan konfigurasi format dan placeholder nomor telepon/WhatsApp
+ * berdasarkan mata uang/region yang dipilih oleh visitor.
+ */
+export function getPhoneConfigForCurrency(
+  currency: Currency = "IDR",
+  lang: Language = "id"
+): PhoneConfig {
+  switch (currency) {
+    case "MYR":
+      return {
+        flag: "🇲🇾",
+        dialCode: "+60",
+        countryName: "Malaysia",
+        placeholder: lang === "ms" ? "Contoh: 0123456789 atau 60123456789" : "Example: 0123456789 or 60123456789",
+        pattern: "^(\\+?60|60|01)\\d{7,11}$",
+        helperText: lang === "ms" 
+          ? "Nombor WhatsApp Malaysia aktif (+60 / 01...) untuk menerima invois transaksi." 
+          : "Active Malaysia WhatsApp number (+60 / 01...) to receive transaction invoice.",
+        example: "60123456789",
+      };
+    case "SGD":
+      return {
+        flag: "🇸🇬",
+        dialCode: "+65",
+        countryName: "Singapore",
+        placeholder: "Example: 81234567 or +6581234567",
+        pattern: "^(\\+?65)?[89]\\d{7}$",
+        helperText: "Active Singapore WhatsApp / Mobile number (+65...) to receive transaction invoice.",
+        example: "+6581234567",
+      };
+    case "PHP":
+      return {
+        flag: "🇵🇭",
+        dialCode: "+63",
+        countryName: "Philippines",
+        placeholder: "Example: 09123456789 or 639123456789",
+        pattern: "^(\\+?63|09)\\d{9,10}$",
+        helperText: "Active Philippines mobile / WhatsApp number (+63...) to receive transaction invoice.",
+        example: "639123456789",
+      };
+    case "USD":
+      return {
+        flag: "🇺🇸",
+        dialCode: "+1",
+        countryName: "United States",
+        placeholder: "Example: +1 2345678900",
+        pattern: "^(\\+?1)?[2-9]\\d{9}$",
+        helperText: "Active US mobile number (+1...) to receive transaction invoice.",
+        example: "+12345678900",
+      };
+    case "IDR":
+    default:
+      return {
+        flag: "🇮🇩",
+        dialCode: "+62",
+        countryName: "Indonesia",
+        placeholder: "Contoh: 081234567890 atau 6281234567890",
+        pattern: "^(08|62|\\+62)\\d{8,13}$",
+        helperText: "Nomor WhatsApp Indonesia aktif (+62 / 08...) untuk menerima struk/invoice transaksi.",
+        example: "081234567890",
+      };
+  }
+}
+
 /**
  * Format angka ke format mata uang yang tepat (IDR vs MYR vs SGD)
  * @param amount Nilai nominal angka

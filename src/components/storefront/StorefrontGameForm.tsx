@@ -11,7 +11,7 @@ import { createOrder } from "@/components/storefront/checkoutActions";
 import { checkUsername } from "@/app/actions/usernameValidator";
 import { useNotification } from "@/components/ui/notification";
 import { getDictionary } from "@/lib/dictionary";
-import { formatCurrency, getProductPrice, getProductName, isProductAvailableInCurrency, type Currency } from "@/lib/currencyUtils";
+import { formatCurrency, getProductPrice, getProductName, isProductAvailableInCurrency, getPhoneConfigForCurrency, type Currency } from "@/lib/currencyUtils";
 
 // Helper for angled number badge
 const NumberBadge = ({ num }: { num: number }) => (
@@ -152,11 +152,19 @@ export function StorefrontGameForm({
     return acc;
   }, {});
 
-  // Helper removed from here
+  const phoneConfig = getPhoneConfigForCurrency(currency, themeConfig?.language || 'id');
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProduct || !selectedPayment) return;
+
+    // Validate phone number format for current currency
+    const cleanWa = waNumber.trim().replace(/[\s\-()]/g, '');
+    const phoneRegex = new RegExp(phoneConfig.pattern);
+    if (!phoneRegex.test(cleanWa)) {
+      showNotification('error', 'Format Nomor Tidak Sesuai', `${phoneConfig.helperText} (Contoh: ${phoneConfig.example})`);
+      return;
+    }
 
     // Extract form data to show in modal
     const form = e.target as HTMLFormElement;
@@ -230,6 +238,8 @@ export function StorefrontGameForm({
   const confirmCheckout = async () => {
     setIsSubmitting(true);
 
+    const cleanWa = waNumber.trim().replace(/[\s\-()]/g, '');
+
     // Construct order data
     const orderData = {
       tenantName: themeConfig?.siteName || "NewGamingStore",
@@ -250,7 +260,7 @@ export function StorefrontGameForm({
         return accObj;
       })(),
       promo: appliedPromo,
-      waNumber: waNumber,
+      waNumber: cleanWa || waNumber,
     };
 
     const res = await createOrder(orderData);
@@ -571,23 +581,30 @@ export function StorefrontGameForm({
         </div>
         <div className="p-4 bg-theme-card">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-white">No. WhatsApp</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-white">No. WhatsApp / Kontak</label>
+              <span className="text-[11px] text-theme-primary font-semibold flex items-center gap-1">
+                <span>{phoneConfig.flag}</span>
+                <span>{phoneConfig.countryName} ({phoneConfig.dialCode})</span>
+              </span>
+            </div>
             <div className="flex items-center rounded-xl bg-[#d1d5db] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
-              <div className="flex items-center justify-center px-4 border-r border-gray-400 bg-[#d1d5db]">
-                <span className="text-xl">{(themeConfig?.language === 'ms' || currency === 'MYR') ? '🇲🇾' : '🇮🇩'}</span>
+              <div className="flex items-center justify-center px-3 border-r border-gray-400 bg-[#d1d5db] shrink-0 gap-1.5">
+                <span className="text-lg">{phoneConfig.flag}</span>
+                <span className="text-xs font-bold text-gray-700">{phoneConfig.dialCode}</span>
               </div>
               <input
                 type="tel"
                 required
-                pattern={(themeConfig?.language === 'ms' || currency === 'MYR') ? "^(\\+?60|60|01)\\d{7,11}$" : "^(08|62|\\+62)\\d{8,13}$"}
+                pattern={phoneConfig.pattern}
                 value={waNumber}
                 onChange={(e) => setWaNumber(e.target.value)}
-                placeholder={dict.game_wa_placeholder}
+                placeholder={phoneConfig.placeholder}
                 className="flex h-12 flex-1 border-none bg-transparent px-4 py-2 text-sm text-black placeholder:text-gray-600 font-medium focus-visible:outline-none"
               />
             </div>
             <p className="text-[11px] text-muted-foreground italic mt-1">
-              {dict.game_wa_note}
+              {phoneConfig.helperText}
             </p>
             <div className="mt-4 flex items-center gap-2 rounded-lg bg-[#eef2ff] px-3 py-2.5 border border-blue-200 shadow-sm">
               <Info className="w-5 h-5 text-theme-primary shrink-0" />
