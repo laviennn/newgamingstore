@@ -16,8 +16,8 @@ jobs:
         run: |
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "env_name=production" >> $GITHUB_OUTPUT
-            echo "app_dir=/var/www/gamingstore-prod" >> $GITHUB_OUTPUT
-            echo "pm2_name=gamingstore-prod" >> $GITHUB_OUTPUT
+            echo "app_dir=/var/www/gamingstore" >> $GITHUB_OUTPUT
+            echo "pm2_name=gamingstore" >> $GITHUB_OUTPUT
             echo "port=3000" >> $GITHUB_OUTPUT
             echo "mem_limit=1024" >> $GITHUB_OUTPUT
           else
