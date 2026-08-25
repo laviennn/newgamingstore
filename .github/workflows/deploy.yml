@@ -28,26 +28,41 @@ jobs:
             echo "mem_limit=768" >> $GITHUB_OUTPUT
           fi
 
-      - name: 🚀 Execute Remote Deployment via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: 🔑 Configure SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script_stop: true
-          script: |
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: 🚀 Execute Remote Deployment via OpenSSH
+        run: |
+          SSH_HOST="${{ secrets.SSH_HOST }}"
+          SSH_USER="${{ secrets.SSH_USER }}"
+          SSH_PORT="${{ secrets.SSH_PORT || '22' }}"
+          APP_DIR="${{ steps.target.outputs.app_dir }}"
+          ENV_NAME="${{ steps.target.outputs.env_name }}"
+          PM2_NAME="${{ steps.target.outputs.pm2_name }}"
+          APP_PORT="${{ steps.target.outputs.port }}"
+          MEM_LIMIT="${{ steps.target.outputs.mem_limit }}"
+          BRANCH="${{ github.ref_name }}"
+
+          echo "Connecting to $SSH_USER@$SSH_HOST on port $SSH_PORT..."
+
+          ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "bash -s" << EOF
+            set -e
+
             echo "=========================================="
-            echo "📦 Deploying to: ${{ steps.target.outputs.env_name }}"
-            echo "📁 Target Directory: ${{ steps.target.outputs.app_dir }}"
+            echo "📦 Deploying to: $ENV_NAME"
+            echo "📁 Target Directory: $APP_DIR"
             echo "=========================================="
 
-            cd ${{ steps.target.outputs.app_dir }}
+            # Pastikan direktori ada
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
 
             # 1. Tarik perubahan code terbaru
-            echo "🔄 Pulling latest code from branch ${{ github.ref_name }}..."
-            git fetch origin ${{ github.ref_name }}
-            git reset --hard origin/${{ github.ref_name }}
+            echo "🔄 Pulling latest code from branch $BRANCH..."
+            git fetch origin "$BRANCH"
+            git reset --hard "origin/$BRANCH"
 
             # 2. Install dependencies yang bersih
             echo "📥 Installing dependencies..."
@@ -63,16 +78,17 @@ jobs:
             cp -r .next/static .next/standalone/.next/
 
             # 5. Reload atau Start PM2 dengan Zero-Downtime
-            echo "⚡ Reloading PM2 process (${{ steps.target.outputs.pm2_name }})..."
-            if pm2 describe ${{ steps.target.outputs.pm2_name }} > /dev/null 2>&1; then
-              pm2 reload ${{ steps.target.outputs.pm2_name }} --update-env
+            echo "⚡ Reloading PM2 process ($PM2_NAME)..."
+            if pm2 describe "$PM2_NAME" > /dev/null 2>&1; then
+              pm2 reload "$PM2_NAME" --update-env
             else
-              cd ${{ steps.target.outputs.app_dir }}/.next/standalone
-              PORT=${{ steps.target.outputs.port }} pm2 start server.js --name "${{ steps.target.outputs.pm2_name }}" --node-args="--max-old-space-size=${{ steps.target.outputs.mem_limit }}"
+              cd "$APP_DIR/.next/standalone"
+              PORT="$APP_PORT" pm2 start server.js --name "$PM2_NAME" --node-args="--max-old-space-size=$MEM_LIMIT"
               pm2 save
             fi
 
             echo "=========================================="
-            echo "✅ Deployment ${{ steps.target.outputs.env_name }} Sukses & Aktif!"
+            echo "✅ Deployment $ENV_NAME Sukses & Aktif!"
             echo "=========================================="
             pm2 status
+          EOF
