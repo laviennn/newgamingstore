@@ -7,7 +7,7 @@ import { checkOrderStatus } from "@/components/storefront/checkoutActions";
 import Link from "next/link";
 import Image from "next/image";
 import { getDictionary, Language } from "@/lib/dictionary";
-import { Currency, formatCurrency } from "@/lib/currencyUtils";
+import { Currency, formatCurrency, getProductName } from "@/lib/currencyUtils";
 
 export function TrackClient({ language = 'id', currency = 'IDR' }: { language?: Language, currency?: Currency }) {
   const dict = getDictionary(language);
@@ -122,7 +122,7 @@ export function TrackClient({ language = 'id', currency = 'IDR' }: { language?: 
                  </div>
                  <div>
                     <h3 className="text-lg font-bold">{order.games?.name}</h3>
-                    <p className="text-gray-400">{order.products?.name}</p>
+                    <p className="text-gray-400">{getProductName(order.products, (order.currency as Currency) || currency) || order.products?.name}</p>
                  </div>
               </div>
 

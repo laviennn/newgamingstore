@@ -77,7 +77,7 @@ export default async function MemberDashboardPage({
   // 3. Fetch User's Orders & Deposits from DB strictly for this tenant
   let ordersQuery = supabase
     .from('orders')
-    .select('*, games(name)')
+    .select('*, games(name), products(name, names)')
     .order('created_at', { ascending: false });
 
   let depositsQuery = supabase

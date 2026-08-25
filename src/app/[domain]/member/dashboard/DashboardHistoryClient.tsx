@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { getDictionary, Language } from "@/lib/dictionary";
-import { Currency, formatCurrency } from "@/lib/currencyUtils";
+import { Currency, formatCurrency, getProductName } from "@/lib/currencyUtils";
 
 export function DashboardHistoryClient({ mergedHistory, language = "id", currency = "IDR" }: { mergedHistory: any[], language?: Language, currency?: Currency }) {
   const dict = getDictionary(language);
@@ -69,9 +69,9 @@ export function DashboardHistoryClient({ mergedHistory, language = "id", currenc
                     ? Object.values(item.form_data).join(" ")
                     : "-");
                     
-                  const itemName = isDeposit ? "Deposit Saldo" : (item.games?.name ? `${item.games.name} Item` : "Top Up Service");
-                  const price = isDeposit ? item.amount : item.total_price;
                   const itemCurrency = item.currency || currency;
+                  const itemName = isDeposit ? "Deposit Saldo" : (getProductName(item.products, itemCurrency) || (item.games?.name ? `${item.games.name} Item` : "Top Up Service"));
+                  const price = isDeposit ? item.amount : item.total_price;
                   const orderDate = new Date(item.created_at).toLocaleDateString("id-ID", {
                     day: "2-digit",
                     month: "short",

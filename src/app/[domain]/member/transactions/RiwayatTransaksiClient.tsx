@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { getDictionary, Language } from "@/lib/dictionary";
-import { Currency, formatCurrency } from "@/lib/currencyUtils";
+import { Currency, formatCurrency, getProductName } from "@/lib/currencyUtils";
 
 export function RiwayatTransaksiClient({ initialOrders, language = "id", currency = "IDR" }: { initialOrders: any[], language?: Language, currency?: Currency }) {
   const dict = getDictionary(language);
@@ -189,7 +189,7 @@ export function RiwayatTransaksiClient({ initialOrders, language = "id", currenc
                         </Link>
                       </td>
                       <td className="py-5 px-6 font-medium text-white text-sm">
-                        {order.games?.name ? `${order.games.name} Item` : "Top Up Service"}
+                        {getProductName(order.products, (order.currency as Currency) || currency) || (order.games?.name ? `${order.games.name} Item` : "Top Up Service")}
                       </td>
                       <td className="py-5 px-6 text-gray-400 text-sm font-medium">
                         {targetFormatted}

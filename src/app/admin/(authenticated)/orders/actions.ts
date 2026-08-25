@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { getActiveAdminTenantId } from "@/app/admin/actions";
 import { logActivity } from "@/lib/activity-logger";
+import { getProductName, Currency } from "@/lib/currencyUtils";
 
 export async function adminUpdateOrderStatus(invoiceId: string, status: string, paymentStatus: string) {
   try {
@@ -15,7 +16,7 @@ export async function adminUpdateOrderStatus(invoiceId: string, status: string, 
     // Fetch previous order snapshot with game & product names
     const { data: previousOrder } = await supabase
       .from('orders')
-      .select('id, invoice_id, status, payment_status, total_price, customer_email, games(name), products(name)')
+      .select('id, invoice_id, status, payment_status, total_price, customer_email, currency, games(name), products(name, names)')
       .eq('invoice_id', invoiceId)
       .eq('tenant_id', tenant_id)
       .maybeSingle();
@@ -43,7 +44,7 @@ export async function adminUpdateOrderStatus(invoiceId: string, status: string, 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const gameName = (previousOrder?.games as any)?.name;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const productName = (previousOrder?.products as any)?.name;
+    const productName = getProductName(previousOrder?.products as any, (previousOrder?.currency as Currency) || "IDR") || (previousOrder?.products as any)?.name;
 
     await logActivity({
       action,

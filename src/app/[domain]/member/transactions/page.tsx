@@ -57,7 +57,7 @@ export default async function MemberTransactionsHistoryPage({
   // Fetch all orders strictly for this tenant
   let ordersQuery = supabase
     .from("orders")
-    .select("*, games(name)")
+    .select("*, games(name), products(name, names)")
     .order("created_at", { ascending: false });
 
   if (tenantId) {

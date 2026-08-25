@@ -37,7 +37,7 @@ export default async function CheckoutPage({
     .select(`
       *,
       games (name, image_url),
-      products (name),
+      products (name, names, price, prices),
       payment_channels (name, category, account_number, account_name, qr_image_url)
     `)
     .eq('tenant_id', tenantData.id);
