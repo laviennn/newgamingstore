@@ -140,32 +140,58 @@ export function ProductFormModal({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
     const formData = new FormData(e.currentTarget);
     formData.append("image_url", imageUrl);
 
-    // Build names and numeric prices objects
+    // Build names and numeric prices objects (only for enabled/filled currencies)
     const finalNames: Record<string, string> = {};
     const finalPrices: Record<string, number> = {};
     const finalOriginalPrices: Record<string, number> = {};
 
+    let hasAtLeastOnePrice = false;
+    const globalFallbackName = (formData.get("name") as string || product?.name || "").trim();
+
     activeCurrencies.forEach((cur) => {
-      finalNames[cur] = (names[cur] || "").trim() || (formData.get("name") as string || product?.name || "");
+      const rawPrice = prices[cur];
+      const val = Number(rawPrice);
 
-      const val = Number(prices[cur]) || 0;
-      finalPrices[cur] = val;
+      // Hanya simpan currency jika admin mengisi harga > 0
+      if (rawPrice !== "" && rawPrice !== undefined && rawPrice !== null && !isNaN(val) && val > 0) {
+        hasAtLeastOnePrice = true;
+        finalPrices[cur] = val;
+        
+        const customName = (names[cur] || "").trim();
+        finalNames[cur] = customName || globalFallbackName;
 
-      if (isFlashSale) {
-        const origVal = Number(originalPrices[cur]) || 0;
-        finalOriginalPrices[cur] = origVal;
+        if (isFlashSale) {
+          const rawOrig = originalPrices[cur];
+          const origVal = Number(rawOrig);
+          if (rawOrig !== "" && rawOrig !== undefined && !isNaN(origVal) && origVal > 0) {
+            finalOriginalPrices[cur] = origVal;
+          }
+        }
       }
     });
 
+    if (!hasAtLeastOnePrice) {
+      showNotification(
+        "error",
+        "Harga Wajib Diisi",
+        "Minimal satu wilayah / mata uang harus memiliki harga yang valid (> 0). Kosongkan wilayah yang tidak tersedia."
+      );
+      return;
+    }
+
+    setLoading(true);
+
     const primaryCurrency = currency || activeCurrencies[0] || "IDR";
-    const primaryName = finalNames[primaryCurrency] || finalNames.IDR || finalNames.MYR || finalNames.SGD || (formData.get("name") as string) || "";
-    const primaryPrice = finalPrices[primaryCurrency] || finalPrices.IDR || finalPrices.MYR || finalPrices.SGD || 0;
+    const availableCurrencies = Object.keys(finalPrices);
+    const resolvedPrimaryCurrency = finalPrices[primaryCurrency] ? primaryCurrency : availableCurrencies[0];
+
+    const primaryName = finalNames[resolvedPrimaryCurrency] || globalFallbackName || Object.values(finalNames)[0] || "";
+    const primaryPrice = finalPrices[resolvedPrimaryCurrency] || Object.values(finalPrices)[0] || 0;
     const primaryOriginalPrice = isFlashSale 
-      ? (finalOriginalPrices[primaryCurrency] || finalOriginalPrices.IDR || finalOriginalPrices.MYR || finalOriginalPrices.SGD || null)
+      ? (finalOriginalPrices[resolvedPrimaryCurrency] || Object.values(finalOriginalPrices)[0] || null)
       : null;
 
     formData.set("name", primaryName);
@@ -238,7 +264,7 @@ export function ProductFormModal({
                   <Tag className="w-4 h-4 text-primary" /> Nama Item / Denominasi per Wilayah
                 </label>
                 <span className="text-[11px] text-muted-foreground">
-                  Jumlah item dapat berbeda per negara
+                  Opsional: Kosongkan jika tidak dijual di region tsb
                 </span>
               </div>
 
@@ -256,7 +282,6 @@ export function ProductFormModal({
                         placeholder={placeholder}
                         value={names[cur] !== undefined ? names[cur] : ""}
                         onChange={(e) => handleNameChange(cur, e.target.value)}
-                        required
                         className="text-xs font-medium"
                       />
                     </div>
@@ -325,7 +350,7 @@ export function ProductFormModal({
                 <DollarSign className="w-4 h-4 text-primary" /> Harga Produk per Mata Uang
               </label>
               <span className="text-[11px] text-muted-foreground">
-                {activeCurrencies.length > 1 ? "Atur harga khusus tiap region" : "Harga tunggal"}
+                {activeCurrencies.length > 1 ? "Kosongkan jika tidak dijual di negara tsb" : "Harga tunggal"}
               </span>
             </div>
 
@@ -333,20 +358,35 @@ export function ProductFormModal({
               {activeCurrencies.map((cur) => {
                 const conf = CURRENCY_CONFIGS[cur] || CURRENCY_CONFIGS.IDR;
                 const isDecimal = conf.decimals > 0;
+                const isFilled = prices[cur] !== "" && prices[cur] !== undefined && Number(prices[cur]) > 0;
+
                 return (
-                  <div key={cur} className="p-3 bg-muted/40 rounded-xl border border-border/60 space-y-1.5">
-                    <span className="text-xs font-bold flex items-center gap-1 text-foreground">
-                      <span>{conf.flag}</span>
-                      <span>Harga {conf.code} ({conf.symbol})</span>
-                    </span>
+                  <div 
+                    key={cur} 
+                    className={`p-3 rounded-xl border transition-colors space-y-1.5 ${
+                      isFilled 
+                        ? "bg-muted/60 border-primary/40 shadow-xs" 
+                        : "bg-muted/20 border-border/40 opacity-80"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold flex items-center gap-1 text-foreground">
+                        <span>{conf.flag}</span>
+                        <span>Harga {conf.code} ({conf.symbol})</span>
+                      </span>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
+                        isFilled ? "bg-emerald-500/10 text-emerald-500" : "text-muted-foreground"
+                      }`}>
+                        {isFilled ? "Tersedia" : "Kosong"}
+                      </span>
+                    </div>
                     <Input
                       type="number"
                       step={isDecimal ? "0.01" : "1"}
                       min="0"
-                      placeholder={isDecimal ? `${conf.symbol} 1.50` : `${conf.symbol} 20000`}
+                      placeholder={isDecimal ? `${conf.symbol} 1.50 (Kosongkan jika N/A)` : `${conf.symbol} 20000 (Kosongkan jika N/A)`}
                       value={prices[cur] !== undefined ? prices[cur] : ""}
                       onChange={(e) => handlePriceChange(cur, e.target.value)}
-                      required
                       className="font-mono text-sm"
                     />
                   </div>
@@ -408,7 +448,6 @@ export function ProductFormModal({
                           placeholder={isDecimal ? `${conf.symbol} 2.00` : `${conf.symbol} 25000`}
                           value={originalPrices[cur] !== undefined ? originalPrices[cur] : ""}
                           onChange={(e) => handleOriginalPriceChange(cur, e.target.value)}
-                          required={isFlashSale}
                           className="font-mono text-sm"
                         />
                       </div>

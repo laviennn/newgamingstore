@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { ProductFormModal } from "@/components/admin/ProductFormModal";
 import Image from "next/image";
-import { Currency, formatCurrency } from "@/lib/currencyUtils";
+import { Currency, formatCurrency, getProductPrice, getProductOriginalPrice, getAvailableProductCurrencies, CURRENCY_CONFIGS } from "@/lib/currencyUtils";
 
 export function ProductsClient({ 
   initialProducts, 
@@ -670,14 +670,45 @@ export function ProductsClient({
                   )}
                 </td>
                 <td className="p-4 font-mono">
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-foreground">{formatCurrency(Number(p.price), currency)}</span>
-                    {p.is_flash_sale && p.original_price && (
-                      <span className="text-xs text-muted-foreground line-through">
-                        {formatCurrency(Number(p.original_price), currency)}
-                      </span>
-                    )}
-                  </div>
+                  {multiCurrencyEnabled && p.prices && Object.keys(p.prices).length > 0 ? (
+                    <div className="flex flex-col gap-1">
+                      {supportedCurrencies.map((cur) => {
+                        const conf = CURRENCY_CONFIGS[cur] || CURRENCY_CONFIGS.IDR;
+                        const curPrice = getProductPrice(p, cur);
+                        const curOrig = p.is_flash_sale ? getProductOriginalPrice(p, cur) : null;
+                        const isAvailable = curPrice > 0;
+
+                        return (
+                          <div key={cur} className="flex items-center gap-1.5 text-xs">
+                            <span className="text-[11px] shrink-0" title={conf.fullName}>{conf.flag}</span>
+                            {isAvailable ? (
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="font-semibold text-foreground">
+                                  {formatCurrency(curPrice, cur)}
+                                </span>
+                                {curOrig && curOrig > 0 && (
+                                  <span className="text-[10px] text-muted-foreground line-through">
+                                    {formatCurrency(curOrig, cur)}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground/60 italic">N/A (Tidak dijual)</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-foreground">{formatCurrency(getProductPrice(p, currency), currency)}</span>
+                      {p.is_flash_sale && getProductOriginalPrice(p, currency) && (
+                        <span className="text-xs text-muted-foreground line-through">
+                          {formatCurrency(getProductOriginalPrice(p, currency), currency)}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </td>
                 <td className="p-4">
                   <SkeuoStatusBadge

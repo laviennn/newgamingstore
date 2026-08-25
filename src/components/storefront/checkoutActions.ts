@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { generateInvoiceId } from "@/lib/invoiceUtils";
 import { getMemberSession } from "@/utils/memberSession";
-import { Currency, getProductPrice, getProductOriginalPrice } from "@/lib/currencyUtils";
+import { Currency, getProductPrice, getProductOriginalPrice, isProductAvailableInCurrency } from "@/lib/currencyUtils";
 
 export async function createOrder(orderData: any) {
   try {
@@ -34,8 +34,22 @@ export async function createOrder(orderData: any) {
       return { success: false, message: "Produk tidak ditemukan atau sedang tidak aktif." };
     }
 
+    // Check if product is actually offered / priced in the requested currency
+    if (!isProductAvailableInCurrency(product, requestedCurrency)) {
+      return {
+        success: false,
+        message: `Produk "${product.name}" tidak tersedia untuk wilayah / mata uang ${requestedCurrency}.`,
+      };
+    }
+
     // 3. Authoritative price calculation based on requested currency
     const serverProductPrice = getProductPrice(product, requestedCurrency);
+    if (serverProductPrice <= 0) {
+      return {
+        success: false,
+        message: `Harga produk tidak valid untuk mata uang ${requestedCurrency}.`,
+      };
+    }
     const serverOriginalPrice = getProductOriginalPrice(product, requestedCurrency) || serverProductPrice;
 
     // 4. Calculate total price with promo

@@ -115,30 +115,53 @@ export async function saveProduct(formData: FormData, id?: string) {
   const variant_type_raw = formData.get("variant_type") as string;
 
   const names_raw = formData.get("names") as string;
-  let names = {};
+  let names: Record<string, string> = {};
   if (names_raw) {
     try {
-      names = JSON.parse(names_raw);
+      const parsed = JSON.parse(names_raw);
+      if (parsed && typeof parsed === "object") {
+        for (const [k, v] of Object.entries(parsed)) {
+          if (typeof v === "string" && v.trim()) {
+            names[k] = v.trim();
+          }
+        }
+      }
     } catch {
       names = {};
     }
   }
 
   const prices_raw = formData.get("prices") as string;
-  let prices = {};
+  let prices: Record<string, number> = {};
   if (prices_raw) {
     try {
-      prices = JSON.parse(prices_raw);
+      const parsed = JSON.parse(prices_raw);
+      if (parsed && typeof parsed === "object") {
+        for (const [k, v] of Object.entries(parsed)) {
+          const num = Number(v);
+          if (!isNaN(num) && num > 0) {
+            prices[k] = num;
+          }
+        }
+      }
     } catch {
       prices = {};
     }
   }
 
   const original_prices_raw = formData.get("original_prices") as string;
-  let original_prices = {};
+  let original_prices: Record<string, number> = {};
   if (original_prices_raw) {
     try {
-      original_prices = JSON.parse(original_prices_raw);
+      const parsed = JSON.parse(original_prices_raw);
+      if (parsed && typeof parsed === "object") {
+        for (const [k, v] of Object.entries(parsed)) {
+          const num = Number(v);
+          if (!isNaN(num) && num > 0) {
+            original_prices[k] = num;
+          }
+        }
+      }
     } catch {
       original_prices = {};
     }
@@ -149,12 +172,12 @@ export async function saveProduct(formData: FormData, id?: string) {
     game_id,
     name,
     names,
-    price: priceRaw ? parseFloat(priceRaw) : 0,
+    price: priceRaw ? parseFloat(priceRaw) : (Object.values(prices)[0] || 0),
     prices,
     active,
     image_url,
     is_flash_sale,
-    original_price: original_price_raw ? parseFloat(original_price_raw) : null,
+    original_price: original_price_raw ? parseFloat(original_price_raw) : (Object.values(original_prices)[0] || null),
     original_prices,
     flash_sale_stock: flash_sale_stock_raw ? parseInt(flash_sale_stock_raw, 10) : 0,
     variant_type: variant_type_raw || null,

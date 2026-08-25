@@ -11,7 +11,7 @@ import { createOrder } from "@/components/storefront/checkoutActions";
 import { checkUsername } from "@/app/actions/usernameValidator";
 import { useNotification } from "@/components/ui/notification";
 import { getDictionary } from "@/lib/dictionary";
-import { formatCurrency, getProductPrice, getProductName, type Currency } from "@/lib/currencyUtils";
+import { formatCurrency, getProductPrice, getProductName, isProductAvailableInCurrency, type Currency } from "@/lib/currencyUtils";
 
 // Helper for angled number badge
 const NumberBadge = ({ num }: { num: number }) => (
@@ -40,10 +40,36 @@ export function StorefrontGameForm({
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
 
-  // Variant State
-  const variants = Array.from(new Set(products.map(p => p.variant_type).filter(Boolean))) as string[];
+  // Filter products that are actually available in the current active currency
+  const availableProducts = React.useMemo(() => {
+    return (products || []).filter((p: any) => isProductAvailableInCurrency(p, currency));
+  }, [products, currency]);
+
+  // Variant State (derived from available products for this currency)
+  const variants = React.useMemo(() => {
+    return Array.from(new Set(availableProducts.map((p: any) => p.variant_type).filter(Boolean))) as string[];
+  }, [availableProducts]);
+
   const hasVariants = variants.length > 0;
-  const [selectedVariant, setSelectedVariant] = useState<string | null>(variants.length > 0 ? variants[0] : null);
+  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
+
+  // Sync selected variant when available variants change
+  React.useEffect(() => {
+    if (variants.length > 0) {
+      if (!selectedVariant || !variants.includes(selectedVariant)) {
+        setSelectedVariant(variants[0]);
+      }
+    } else {
+      setSelectedVariant(null);
+    }
+  }, [variants, selectedVariant]);
+
+  // Reset selected product if it is not available in the new currency
+  React.useEffect(() => {
+    if (selectedProduct && !isProductAvailableInCurrency(selectedProduct, currency)) {
+      setSelectedProduct(null);
+    }
+  }, [currency, selectedProduct]);
 
   const [waNumber, setWaNumber] = useState("");
   const [promoCodeInput, setPromoCodeInput] = useState("");
@@ -309,8 +335,8 @@ export function StorefrontGameForm({
 
           {(() => {
             const displayProducts = hasVariants && selectedVariant
-              ? products.filter((p: any) => p.variant_type === selectedVariant)
-              : products;
+              ? availableProducts.filter((p: any) => p.variant_type === selectedVariant)
+              : availableProducts;
 
             return displayProducts.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

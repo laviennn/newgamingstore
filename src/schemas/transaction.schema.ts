@@ -5,20 +5,22 @@ export type CurrencyCode = z.infer<typeof CurrencyCodeEnum>;
 
 /**
  * Zod Schema untuk nama per mata uang / wilayah (Multi-Currency)
+ * Memungkinkan nama per wilayah bersifat opsional / parsial (misal hanya IDR atau hanya MYR).
  */
 export const CurrencyNamesSchema = z.record(
   CurrencyCodeEnum,
-  z.string().min(1, "Nama produk tidak boleh kosong")
+  z.string().optional()
 );
 
 export type CurrencyNamesInput = z.infer<typeof CurrencyNamesSchema>;
 
 /**
  * Zod Schema untuk harga per mata uang (Multi-Currency)
+ * Memungkinkan harga per wilayah bersifat opsional / parsial.
  */
 export const CurrencyPricesSchema = z.record(
   CurrencyCodeEnum,
-  z.number().min(0, "Harga tidak boleh negatif")
+  z.number().nonnegative("Harga tidak boleh negatif").optional()
 );
 
 export type CurrencyPricesInput = z.infer<typeof CurrencyPricesSchema>;

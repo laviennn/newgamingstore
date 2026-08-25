@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Search, ChevronDown, Download, RefreshCcw, LayoutGrid, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import { getDictionary, Language } from "@/lib/dictionary";
-import { Currency, formatCurrency, getProductPrice, getProductName } from "@/lib/currencyUtils";
+import { Currency, formatCurrency, getProductPrice, getProductName, isProductAvailableInCurrency } from "@/lib/currencyUtils";
 import { normalizeAssetUrl } from "@/lib/storageUtils";
 
 export function PricesClient({ initialGames, initialProducts, language = 'id', currency = 'IDR' }: { initialGames: any[], initialProducts: any[], language?: Language, currency?: Currency }) {
@@ -29,9 +29,9 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
     return `${initials}-${shortId}`;
   };
 
-  // Filter products
+  // Filter products by currency availability and search filters
   const filteredProducts = useMemo(() => {
-    let result = initialProducts;
+    let result = (initialProducts || []).filter((p) => isProductAvailableInCurrency(p, currency));
 
     if (selectedGameId) {
       result = result.filter(p => p.game_id === selectedGameId);
@@ -48,7 +48,7 @@ export function PricesClient({ initialGames, initialProducts, language = 'id', c
     }
 
     return result;
-  }, [initialProducts, selectedGameId, searchQuery]);
+  }, [initialProducts, selectedGameId, searchQuery, currency]);
 
 
 

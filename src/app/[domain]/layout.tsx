@@ -225,7 +225,7 @@ export default async function StorefrontLayout({
           .eq('is_active', true),
         supabase
           .from('products')
-          .select('name, names, games(name, image_url)')
+          .select('name, names, price, prices, games(name, image_url)')
           .eq('tenant_id', tenantData.id)
           .eq('active', true),
       ]);
@@ -240,7 +240,7 @@ export default async function StorefrontLayout({
           {
             gameName: string;
             gameImage: string;
-            products: Array<{ itemName: string; names?: Record<string, string> | null }>;
+            products: Array<{ itemName: string; names?: Record<string, string> | null; price?: number; prices?: Record<string, number> | null }>;
           }
         >();
 
@@ -262,6 +262,8 @@ export default async function StorefrontLayout({
           gameMap.get(key)!.products.push({
             itemName: product.name,
             names: (product as any).names || null,
+            price: Number(product.price) || 0,
+            prices: (product as any).prices || null,
           });
         }
 
@@ -274,6 +276,8 @@ export default async function StorefrontLayout({
               gameImage: entry.gameImage,
               itemName: item.itemName,
               names: item.names,
+              price: item.price,
+              prices: item.prices,
             });
           }
         }

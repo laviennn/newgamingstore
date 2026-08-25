@@ -13,7 +13,7 @@ import { SnowfallEffect } from "@/components/storefront/SnowfallEffect";
 import { LatestArticlesSection } from "@/components/storefront/LatestArticlesSection";
 import { FaqSection } from "@/components/storefront/FaqSection";
 import { getDictionary } from "@/lib/dictionary";
-import { getProductPrice, getProductOriginalPrice, getProductName, type Currency } from "@/lib/currencyUtils";
+import { getProductPrice, getProductOriginalPrice, getProductName, isProductAvailableInCurrency, type Currency } from "@/lib/currencyUtils";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -120,8 +120,10 @@ export default async function StorefrontPage({
           flashSaleProducts = flashSaleData
             .filter(p => {
               const gameSupported = p.games?.supported_currencies;
-              if (!gameSupported || !Array.isArray(gameSupported) || gameSupported.length === 0) return true;
-              return gameSupported.includes(activeCurrency);
+              if (gameSupported && Array.isArray(gameSupported) && gameSupported.length > 0) {
+                if (!gameSupported.includes(activeCurrency)) return false;
+              }
+              return isProductAvailableInCurrency(p, activeCurrency);
             })
             .map(p => ({
               id: p.id,

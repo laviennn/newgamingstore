@@ -5,13 +5,15 @@ import Image from "next/image";
 import { BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDictionary, Language } from "@/lib/dictionary";
-import { Currency, getLanguageFromCurrency, getProductName } from "@/lib/currencyUtils";
+import { Currency, getLanguageFromCurrency, getProductName, isProductAvailableInCurrency } from "@/lib/currencyUtils";
 
 export type NotificationItem = {
   gameName: string;
   gameImage: string;
   itemName: string;
   names?: Record<string, string> | null;
+  price?: number;
+  prices?: Record<string, number> | null;
 };
 
 interface PurchaseNotificationProps {
@@ -103,14 +105,17 @@ export function PurchaseNotification({
   const showNextNotification = () => {
     if (!notifications || notifications.length === 0) return;
 
-    // 1. Pick random product
-    const randomItem = notifications[Math.floor(Math.random() * notifications.length)];
-
-    // 2. Multi-Currency Mix: Pick random currency from supportedCurrencies
+    // 1. Multi-Currency Mix: Pick random currency from supportedCurrencies
     const activeCurrencies = supportedCurrencies && supportedCurrencies.length > 0
       ? supportedCurrencies
       : ["IDR" as Currency];
     const pickedCurrency = activeCurrencies[Math.floor(Math.random() * activeCurrencies.length)];
+
+    // 2. Pick random product available in that currency (or fallback)
+    const validItemsForCurrency = notifications.filter(item => isProductAvailableInCurrency(item, pickedCurrency));
+    const randomItem = (validItemsForCurrency.length > 0 ? validItemsForCurrency : notifications)[
+      Math.floor(Math.random() * (validItemsForCurrency.length > 0 ? validItemsForCurrency.length : notifications.length))
+    ];
 
     // 3. Derive country-specific dictionary, phone number & denomination
     const pickedLang = getLanguageFromCurrency(pickedCurrency);
