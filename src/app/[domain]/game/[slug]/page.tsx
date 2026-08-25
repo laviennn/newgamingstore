@@ -78,7 +78,7 @@ export default async function GameTopUpPage({
     .select('*, categories(name)')
     .eq('slug', slug)
     .eq('tenant_id', tenant.id)
-    .single();
+    .maybeSingle();
 
   if (gameError || !game) {
     return notFound();

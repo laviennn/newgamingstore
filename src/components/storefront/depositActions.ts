@@ -66,7 +66,7 @@ export async function createDepositOrder(depositData: any) {
 
     const invoiceId = generateInvoiceId("DEP", "DEP");
 
-    const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', validData.tenantId).single();
+    const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', validData.tenantId).maybeSingle();
     const defaultCurrency = (tenantData?.theme_config?.default_currency || tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR')) as Currency;
     const requestedCurrency: Currency = ((validData as any).currency as Currency) || defaultCurrency;
 

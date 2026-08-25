@@ -91,7 +91,7 @@ export function UpgradeClient({
       const { createClient } = await import("@/utils/supabase/client");
       const supabase = createClient();
       if (user?.email) {
-        const { data } = await supabase.from('wallets').select('balance').eq('email', user.email.toLowerCase()).single();
+        const { data } = await supabase.from('wallets').select('balance').eq('email', user.email.toLowerCase()).maybeSingle();
         if (data) setWalletBalance(data.balance);
       }
     };

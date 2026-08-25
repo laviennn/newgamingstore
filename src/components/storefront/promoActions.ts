@@ -14,7 +14,7 @@ export async function validatePromoCode(code: string) {
     .select("*")
     .eq("code", code.toUpperCase())
     .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (error || !promo) {
     return { success: false, message: "Kode promo tidak ditemukan atau sudah tidak aktif" };

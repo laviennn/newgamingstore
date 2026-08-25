@@ -26,7 +26,7 @@ export async function createUpgradeOrder({
 
     const isWalletPayment = paymentChannelId === '11111111-1111-1111-1111-111111111111';
 
-    const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', tenantId).single();
+    const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', tenantId).maybeSingle();
     const currency = tenantData?.theme_config?.currency || (tenantData?.theme_config?.language === 'ms' ? 'MYR' : 'IDR');
 
     if (isWalletPayment) {

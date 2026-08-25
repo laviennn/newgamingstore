@@ -60,7 +60,7 @@ export default async function AdminDashboardPage() {
           supabase.from('orders').select('total_price, currency').eq('tenant_id', currentTenantId).eq('payment_status', 'PAID'),
           supabase.from('orders').select('total_price, currency').eq('tenant_id', currentTenantId).in('payment_status', ['PENDING', 'UNPAID']),
           supabase.from('orders').select('*, games(name), products(name, names), payment_channels(name, category)').eq('tenant_id', currentTenantId).order('created_at', { ascending: false }).limit(6),
-          supabase.from('tenants').select('theme_config').eq('id', currentTenantId).single(),
+          supabase.from('tenants').select('theme_config').eq('id', currentTenantId).maybeSingle(),
         ]);
 
         const paidSumByCurrency: Record<string, number> = {};

@@ -34,7 +34,7 @@ export default async function AdminOrdersPage() {
         
         if (!error && data) orders = data;
 
-        const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', currentTenantId).single();
+        const { data: tenantData } = await supabase.from('tenants').select('theme_config').eq('id', currentTenantId).maybeSingle();
         if (tenantData?.theme_config) {
            const tLang = tenantData.theme_config.language || 'id';
            currency = (tenantData.theme_config.currency || (tLang === 'ms' ? 'MYR' : 'IDR')) as Currency;

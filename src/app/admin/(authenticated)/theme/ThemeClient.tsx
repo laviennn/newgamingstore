@@ -67,7 +67,7 @@ export default function ThemeClient() {
           .from('tenants')
           .select('theme_config')
           .eq('id', activeTenantId)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         

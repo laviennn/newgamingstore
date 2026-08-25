@@ -98,7 +98,7 @@ export function StorefrontGameForm({
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.email) {
         setUserEmail(session.user.email);
-        const { data } = await supabase.from('wallets').select('balance').eq('email', session.user.email.toLowerCase()).single();
+        const { data } = await supabase.from('wallets').select('balance').eq('email', session.user.email.toLowerCase()).maybeSingle();
         if (data) setWalletBalance(data.balance);
       }
     };
