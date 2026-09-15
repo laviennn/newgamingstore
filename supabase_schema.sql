@@ -214,3 +214,15 @@ ON CONFLICT (id) DO UPDATE SET
   is_active = true,
   name = 'Saldo Akun (Wallet)';
 
+-- 7. Create Reviews Table
+CREATE TABLE public.reviews (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  tenant_id uuid REFERENCES public.tenants(id) ON DELETE CASCADE,
+  game_id uuid REFERENCES public.games(id) ON DELETE CASCADE,
+  product_id uuid REFERENCES public.products(id) ON DELETE CASCADE,
+  reviewer_name text NOT NULL,
+  rating integer NOT NULL DEFAULT 5 CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER TABLE public.reviews DISABLE ROW LEVEL SECURITY;

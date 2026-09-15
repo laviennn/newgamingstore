@@ -25,6 +25,7 @@ import {
   UserCheck,
   Activity,
   History,
+  Star,
 } from "lucide-react";
 
 interface AdminSidebarNavProps {
@@ -79,6 +80,7 @@ export function AdminSidebarNav({ isSuperAdmin, permissions }: AdminSidebarNavPr
           { name: "Games", href: "/games", icon: Gamepad2, perm: "manage_games" },
           { name: "Categories", href: "/categories", icon: Layers, perm: "manage_categories" },
           { name: "Products", href: "/products", icon: ShoppingCart, perm: "manage_products" },
+          { name: "Reviews", href: "/reviews", icon: Star, perm: "manage_reviews" },
         ],
       },
       {

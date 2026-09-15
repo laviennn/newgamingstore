@@ -15,6 +15,7 @@ const AVAILABLE_PERMISSIONS = [
     { id: "manage_games", label: "Manage Games" },
     { id: "manage_categories", label: "Manage Categories" },
     { id: "manage_products", label: "Manage Products" },
+    { id: "manage_reviews", label: "Manage Reviews" },
   ]},
   { category: "Transaksi & Promo", perms: [
     { id: "manage_orders", label: "Manage Orders" },

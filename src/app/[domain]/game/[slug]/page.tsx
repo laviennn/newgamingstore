@@ -6,6 +6,7 @@ export const revalidate = 3600; // 1-hour ISR cache on Edge CDN
 import Link from 'next/link';
 import { DynamicFieldBuilder } from '@/components/storefront/DynamicFieldBuilder';
 import { GameDescriptionAccordion } from '@/components/storefront/GameDescriptionAccordion';
+import { GameReviews } from '@/components/storefront/GameReviews';
 import {
   Dialog,
   DialogContent,
@@ -95,6 +96,15 @@ export default async function GameTopUpPage({
 
   const displayProducts = products || [];
 
+  // 4. Fetch Reviews
+  const { data: reviewsData } = await supabase
+    .from('reviews')
+    .select('*, products(name)')
+    .eq('game_id', game.id)
+    .eq('tenant_id', tenant.id)
+    .order('created_at', { ascending: false });
+  const reviews = reviewsData || [];
+
   // 4. Fetch Payment Channels & Filter by Active Currency
   const { data: channels } = await supabase
     .from('payment_channels')
@@ -176,6 +186,11 @@ export default async function GameTopUpPage({
                 <GameDescriptionAccordion description={game.topup_instructions} language={language} />
               )}
             </div>
+            
+            {/* Desktop Reviews (Left Column) */}
+            <div className="hidden lg:block mt-6">
+              <GameReviews reviews={reviews} />
+            </div>
           </div>
 
           {/* RIGHT COLUMN: Form */}
@@ -187,6 +202,11 @@ export default async function GameTopUpPage({
               themeConfig={{ ...themeConfig, language }}
               currency={activeCurrency}
             />
+
+            {/* Mobile Reviews (Bottom) */}
+            <div className="block lg:hidden mt-6 pb-24">
+              <GameReviews reviews={reviews} />
+            </div>
           </div>
         </div>
       </div>
