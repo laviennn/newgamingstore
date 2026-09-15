@@ -168,7 +168,7 @@ export function ReviewsClient({ initialReviews, games, products }: { initialRevi
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label>Game <span className="text-red-500">*</span></Label>
-              <Select value={formData.game_id} onValueChange={(val) => setFormData({ ...formData, game_id: val, product_id: "" })}>
+              <Select value={formData.game_id} onValueChange={(val) => setFormData({ ...formData, game_id: val || "", product_id: "" })}>
                 <SelectTrigger className="w-full bg-background border-border/50 hover:bg-muted/50 transition-colors">
                   <SelectValue placeholder="Pilih Game">
                     {games.find(g => g.id === formData.game_id)?.name || "Pilih Game"}
@@ -184,7 +184,7 @@ export function ReviewsClient({ initialReviews, games, products }: { initialRevi
 
             <div className="space-y-2">
               <Label>Produk</Label>
-              <Select value={formData.product_id} onValueChange={(val) => setFormData({ ...formData, product_id: val })} disabled={!formData.game_id}>
+              <Select value={formData.product_id} onValueChange={(val) => setFormData({ ...formData, product_id: val || "" })} disabled={!formData.game_id}>
                 <SelectTrigger className="w-full bg-background border-border/50 hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Pilih Produk">
                     {formData.product_id === "none" ? "-- Tidak Memilih Produk --" : (filteredProducts.find(p => p.id === formData.product_id)?.name || "Pilih Produk")}
