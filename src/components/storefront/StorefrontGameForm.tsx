@@ -583,7 +583,7 @@ export function StorefrontGameForm({
                                 </div>
 
                                 {/* Details Info (Shown only when selected) */}
-                                {isSelected && (pc.account_name || pc.account_number) && (
+                                {isSelected && (pc.account_name || pc.account_number) && pc.show_details_on_storefront !== false && (
                                   <div className="bg-[#1a1b1e] p-4 border-t border-border/10">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                       {pc.account_name && (

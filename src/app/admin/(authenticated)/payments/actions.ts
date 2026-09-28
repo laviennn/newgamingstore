@@ -14,6 +14,8 @@ export async function savePayment(formData: FormData, id?: string) {
   const account_name = formData.get("account_name") as string;
   const is_active_raw = formData.get("is_active") as string;
   const is_active = is_active_raw === "true";
+  const show_details_raw = formData.get("show_details_on_storefront") as string;
+  const show_details_on_storefront = show_details_raw !== "false";
 
   const supported_currencies_raw = formData.get("supported_currencies") as string;
   let supported_currencies = ["IDR"];
@@ -45,6 +47,7 @@ export async function savePayment(formData: FormData, id?: string) {
     qr_image_url,
     is_active,
     supported_currencies,
+    show_details_on_storefront,
   };
 
   try {
