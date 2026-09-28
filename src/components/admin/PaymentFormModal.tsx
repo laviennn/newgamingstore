@@ -26,6 +26,7 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
   const [logoPreview, setLogoPreview] = React.useState<string | null>(payment?.logo_url || null);
   const [qrPreview, setQrPreview] = React.useState<string | null>(payment?.qr_image_url || null);
   const [isActive, setIsActive] = React.useState(payment?.is_active ?? true);
+  const [showDetails, setShowDetails] = React.useState(payment?.show_details_on_storefront ?? true);
   const [supportedCurrencies, setSupportedCurrencies] = React.useState<string[]>(
     payment?.supported_currencies && Array.isArray(payment.supported_currencies) && payment.supported_currencies.length > 0
       ? payment.supported_currencies
@@ -40,6 +41,7 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
     setLogoPreview(payment?.logo_url || null);
     setQrPreview(payment?.qr_image_url || null);
     setIsActive(payment?.is_active ?? true);
+    setShowDetails(payment?.show_details_on_storefront ?? true);
     setSupportedCurrencies(
       payment?.supported_currencies && Array.isArray(payment.supported_currencies) && payment.supported_currencies.length > 0
         ? payment.supported_currencies
@@ -107,6 +109,7 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
     formData.set("logo_url", logoPreview || "");
     formData.set("qr_image_url", qrPreview || "");
     formData.set("is_active", isActive.toString());
+    formData.set("show_details_on_storefront", showDetails.toString());
     formData.set("supported_currencies", JSON.stringify(supportedCurrencies));
 
     const result = await savePayment(formData, payment?.id);
@@ -250,15 +253,28 @@ export function PaymentFormModal({ isOpen, onClose, payment }: { isOpen: boolean
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 border-t">
-              <label className="text-sm font-medium block">Status Tampil di Footer</label>
-              <div>
-                <SkeuoToggle
-                  checked={isActive}
-                  onChange={(val) => setIsActive(val)}
-                  activeText="Aktif"
-                  inactiveText="Nonaktif"
-                />
+            <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+              <div className="space-y-2">
+                <label className="text-sm font-medium block">Tampil Nama & Rekening</label>
+                <div>
+                  <SkeuoToggle
+                    checked={showDetails}
+                    onChange={(val) => setShowDetails(val)}
+                    activeText="Tampil"
+                    inactiveText="Sembunyi"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium block">Status Aktif Pembayaran</label>
+                <div>
+                  <SkeuoToggle
+                    checked={isActive}
+                    onChange={(val) => setIsActive(val)}
+                    activeText="Aktif"
+                    inactiveText="Nonaktif"
+                  />
+                </div>
               </div>
             </div>
 
